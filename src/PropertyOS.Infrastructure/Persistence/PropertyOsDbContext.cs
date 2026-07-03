@@ -36,6 +36,13 @@ public class PropertyOsDbContext : DbContext
     public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
 
     // ---------------------------------------------------------------------------
+    // Module 2 — Subscriptions
+    // ---------------------------------------------------------------------------
+
+    public DbSet<PropertyOS.Domain.Subscriptions.SubscriptionPlan> SubscriptionPlans => Set<PropertyOS.Domain.Subscriptions.SubscriptionPlan>();
+    public DbSet<PropertyOS.Domain.Subscriptions.CompanySubscription> CompanySubscriptions => Set<PropertyOS.Domain.Subscriptions.CompanySubscription>();
+
+    // ---------------------------------------------------------------------------
     // Future modules will add their DbSets here as they are implemented.
     // Do not add DbSets speculatively — only add when the module is in scope.
     // ---------------------------------------------------------------------------
@@ -47,6 +54,8 @@ public class PropertyOsDbContext : DbContext
         // Register PostgreSQL enums so EF Core maps them properly instead of as integers
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.CompanyType>("company_type_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>("late_fee_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum");
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>
         // classes in this assembly. This is the only call in OnModelCreating —

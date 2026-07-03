@@ -2,6 +2,7 @@ using DotNet.Testcontainers.Builders;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using PropertyOS.Domain.Companies.Enums;
+using PropertyOS.Domain.Subscriptions.Enums;
 using PropertyOS.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -62,6 +63,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(appConnectionString);
         dataSourceBuilder.MapEnum<CompanyType>("company_type_enum");
         dataSourceBuilder.MapEnum<LateFeeType>("late_fee_type_enum");
+        dataSourceBuilder.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
+        dataSourceBuilder.MapEnum<BillingCycleEnum>("billing_cycle_enum");
         _dataSource = dataSourceBuilder.Build();
 
         // Build runtime connection string for app_user (for RLS tests)
@@ -74,6 +77,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         var appUserDataSourceBuilder = new NpgsqlDataSourceBuilder(appUserConnectionString);
         appUserDataSourceBuilder.MapEnum<CompanyType>("company_type_enum");
         appUserDataSourceBuilder.MapEnum<LateFeeType>("late_fee_type_enum");
+        appUserDataSourceBuilder.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
+        appUserDataSourceBuilder.MapEnum<BillingCycleEnum>("billing_cycle_enum");
         AppUserDataSource = appUserDataSourceBuilder.Build();
 
         // 3. Create the test Context backed by the mapped DataSource.
@@ -82,6 +87,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
             {
                 o.MapEnum<CompanyType>("company_type_enum");
                 o.MapEnum<LateFeeType>("late_fee_type_enum");
+                o.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
+                o.MapEnum<BillingCycleEnum>("billing_cycle_enum");
             })
             .Options;
 
@@ -94,7 +101,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         await using var cmd = conn.CreateCommand();
 
         cmd.CommandText = @"
-            TRUNCATE TABLE company_settings, companies
+            TRUNCATE TABLE company_subscriptions, subscription_plans, company_settings, companies
             RESTART IDENTITY
             CASCADE;
         ";

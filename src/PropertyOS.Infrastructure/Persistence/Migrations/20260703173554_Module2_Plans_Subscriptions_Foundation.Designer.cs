@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PropertyOS.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PropertyOS.Infrastructure.Persistence;
 namespace PropertyOS.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PropertyOsDbContext))]
-    partial class PropertyOsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260703173554_Module2_Plans_Subscriptions_Foundation")]
+    partial class Module2_Plans_Subscriptions_Foundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
