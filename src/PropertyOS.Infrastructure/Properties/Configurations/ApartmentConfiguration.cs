@@ -221,6 +221,15 @@ internal sealed class ApartmentConfiguration : IEntityTypeConfiguration<Apartmen
             .OnDelete(DeleteBehavior.Restrict);
 
         // -----------------------------------------------------------------------
+        // Candidate key: UNIQUE(company_id, building_id, id)
+        // Required by the composite FK from parking_spots:
+        //   parking_spots(company_id, building_id, default_apartment_id)
+        //       → apartments(company_id, building_id, id)
+        // -----------------------------------------------------------------------
+        builder.HasAlternateKey(a => new { a.CompanyId, a.BuildingId, a.Id })
+            .HasName("uq_apartments_company_building_id");
+
+        // -----------------------------------------------------------------------
         // FK: created_by / updated_by / deleted_by → users(id) ON DELETE SET NULL
         // -----------------------------------------------------------------------
         builder.HasOne<PropertyOS.Domain.Identity.Entities.User>()

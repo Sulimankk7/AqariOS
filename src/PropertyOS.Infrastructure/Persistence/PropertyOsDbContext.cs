@@ -51,6 +51,8 @@ public class PropertyOsDbContext : DbContext
     public DbSet<BuildingAddress> BuildingAddresses => Set<BuildingAddress>();
     public DbSet<Floor> Floors => Set<Floor>();
     public DbSet<Apartment> Apartments => Set<Apartment>();
+    public DbSet<ParkingSpot> ParkingSpots => Set<ParkingSpot>();
+    public DbSet<ParkingAssignment> ParkingAssignments => Set<ParkingAssignment>();
 
     // ---------------------------------------------------------------------------
     // Module 3 — Security / Identity / RBAC / Audit
@@ -92,6 +94,8 @@ public class PropertyOsDbContext : DbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.FloorType>("floor_type_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OwnershipStatus>("ownership_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OccupancyStatus>("occupancy_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.ParkingType>("parking_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.ParkingAssignmentStatus>("parking_assignment_status_enum");
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>
         // classes in this assembly. This is the only call in OnModelCreating —

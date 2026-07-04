@@ -107,6 +107,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<FloorType>("floor_type_enum");
         dataSourceBuilder.MapEnum<OwnershipStatus>("ownership_status_enum");
         dataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum");
+        dataSourceBuilder.MapEnum<ParkingType>("parking_type_enum");
+        dataSourceBuilder.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
         _dataSource = dataSourceBuilder.Build();
 
         AppUserConnectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
@@ -137,6 +139,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<FloorType>("floor_type_enum");
         appUserDataSourceBuilder.MapEnum<OwnershipStatus>("ownership_status_enum");
         appUserDataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum");
+        appUserDataSourceBuilder.MapEnum<ParkingType>("parking_type_enum");
+        appUserDataSourceBuilder.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
         AppUserDataSource = appUserDataSourceBuilder.Build();
 
         // 3. Create the test Context backed by the mapped DataSource.
@@ -162,6 +166,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<FloorType>("floor_type_enum");
                 o.MapEnum<OwnershipStatus>("ownership_status_enum");
                 o.MapEnum<OccupancyStatus>("occupancy_status_enum");
+                o.MapEnum<ParkingType>("parking_type_enum");
+                o.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
             })
             .Options;
 
@@ -205,7 +211,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         await using var cmd = conn.CreateCommand();
 
         cmd.CommandText = @"
-            TRUNCATE TABLE apartments, building_addresses, floors, buildings,
+            TRUNCATE TABLE parking_assignments, parking_spots, apartments, building_addresses, floors, buildings,
                            company_subscriptions, subscription_plans, company_settings, companies
             RESTART IDENTITY
             CASCADE;

@@ -63,6 +63,8 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<FloorType>("floor_type_enum", null);
         dataSourceBuilder.MapEnum<OwnershipStatus>("ownership_status_enum", null);
         dataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum", null);
+        dataSourceBuilder.MapEnum<ParkingType>("parking_type_enum", null);
+        dataSourceBuilder.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum", null);
 
         var dataSource = dataSourceBuilder.Build();
 
@@ -131,6 +133,8 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<FloorType>("floor_type_enum");
                     npgsqlOptions.MapEnum<OwnershipStatus>("ownership_status_enum");
                     npgsqlOptions.MapEnum<OccupancyStatus>("occupancy_status_enum");
+                    npgsqlOptions.MapEnum<ParkingType>("parking_type_enum");
+                    npgsqlOptions.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
                 });
 
             // Register the interceptor from the scoped DI container.

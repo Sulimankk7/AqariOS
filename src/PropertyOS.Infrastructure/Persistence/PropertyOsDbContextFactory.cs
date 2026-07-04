@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Npgsql;
 using PropertyOS.Domain.Companies.Enums;
+using PropertyOS.Domain.Properties.Enums;
 
 namespace PropertyOS.Infrastructure.Persistence;
 
@@ -41,6 +42,14 @@ internal sealed class PropertyOsDbContextFactory : IDesignTimeDbContextFactory<P
 
         dataSourceBuilder.MapEnum<LateFeeType>(
             pgName: "late_fee_type_enum",
+            nameTranslator: null);
+
+        dataSourceBuilder.MapEnum<ParkingType>(
+            pgName: "parking_type_enum",
+            nameTranslator: null);
+
+        dataSourceBuilder.MapEnum<ParkingAssignmentStatus>(
+            pgName: "parking_assignment_status_enum",
             nameTranslator: null);
 
         var dataSource = dataSourceBuilder.Build();
