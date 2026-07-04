@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PropertyOS.Domain.Companies;
+using PropertyOS.Domain.Properties;
 
 namespace PropertyOS.Infrastructure.Persistence;
 
@@ -43,9 +44,13 @@ public class PropertyOsDbContext : DbContext
     public DbSet<PropertyOS.Domain.Subscriptions.CompanySubscription> CompanySubscriptions => Set<PropertyOS.Domain.Subscriptions.CompanySubscription>();
 
     // ---------------------------------------------------------------------------
-    // Future modules will add their DbSets here as they are implemented.
-    // Do not add DbSets speculatively — only add when the module is in scope.
+    // Module 4 — Properties (Phase 1: buildings, building_addresses, floors, apartments)
     // ---------------------------------------------------------------------------
+
+    public DbSet<Building> Buildings => Set<Building>();
+    public DbSet<BuildingAddress> BuildingAddresses => Set<BuildingAddress>();
+    public DbSet<Floor> Floors => Set<Floor>();
+    public DbSet<Apartment> Apartments => Set<Apartment>();
 
     // ---------------------------------------------------------------------------
     // Module 3 — Security / Identity / RBAC / Audit
@@ -80,6 +85,13 @@ public class PropertyOsDbContext : DbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditAction>("audit_action_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSeverity>("audit_severity_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSource>("audit_source_enum");
+
+        // Module 4
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.BuildingType>("building_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.Governorate>("governorate_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.FloorType>("floor_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OwnershipStatus>("ownership_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OccupancyStatus>("occupancy_status_enum");
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>
         // classes in this assembly. This is the only call in OnModelCreating —

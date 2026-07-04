@@ -6,6 +6,7 @@ using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Audit.Enums;
 using PropertyOS.Domain.Companies.Enums;
 using PropertyOS.Domain.Identity.Enums;
+using PropertyOS.Domain.Properties.Enums;
 using PropertyOS.Infrastructure.Persistence;
 using PropertyOS.Infrastructure.Persistence.Audit;
 using PropertyOS.Infrastructure.Persistence.Interceptors;
@@ -55,6 +56,13 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<MfaType>("mfa_type_enum", null);
         dataSourceBuilder.MapEnum<OtpPurpose>("otp_purpose_enum", null);
         dataSourceBuilder.MapEnum<RevokeReason>("revoke_reason_enum", null);
+
+        // Module 4 enums
+        dataSourceBuilder.MapEnum<BuildingType>("building_type_enum", null);
+        dataSourceBuilder.MapEnum<Governorate>("governorate_enum", null);
+        dataSourceBuilder.MapEnum<FloorType>("floor_type_enum", null);
+        dataSourceBuilder.MapEnum<OwnershipStatus>("ownership_status_enum", null);
+        dataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum", null);
 
         var dataSource = dataSourceBuilder.Build();
 
@@ -116,6 +124,13 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<MfaType>("mfa_type_enum");
                     npgsqlOptions.MapEnum<OtpPurpose>("otp_purpose_enum");
                     npgsqlOptions.MapEnum<RevokeReason>("revoke_reason_enum");
+
+                    // Module 4
+                    npgsqlOptions.MapEnum<BuildingType>("building_type_enum");
+                    npgsqlOptions.MapEnum<Governorate>("governorate_enum");
+                    npgsqlOptions.MapEnum<FloorType>("floor_type_enum");
+                    npgsqlOptions.MapEnum<OwnershipStatus>("ownership_status_enum");
+                    npgsqlOptions.MapEnum<OccupancyStatus>("occupancy_status_enum");
                 });
 
             // Register the interceptor from the scoped DI container.

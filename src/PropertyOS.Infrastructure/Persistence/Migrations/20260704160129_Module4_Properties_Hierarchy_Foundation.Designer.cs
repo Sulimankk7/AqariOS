@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PropertyOS.Infrastructure.Persistence;
@@ -12,9 +13,11 @@ using PropertyOS.Infrastructure.Persistence;
 namespace PropertyOS.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PropertyOsDbContext))]
-    partial class PropertyOsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260704160129_Module4_Properties_Hierarchy_Foundation")]
+    partial class Module4_Properties_Hierarchy_Foundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1317,9 +1320,6 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("uq_building_addresses_building_id");
 
-                    b.HasIndex("CompanyId", "BuildingId")
-                        .IsUnique();
-
                     b.HasIndex("CompanyId", "Governorate", "District")
                         .HasDatabaseName("idx_building_addresses_governorate_district");
 
@@ -1804,6 +1804,20 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PropertyOS.Domain.Properties.Apartment", b =>
                 {
+                    b.HasOne("PropertyOS.Domain.Properties.Building", null)
+                        .WithMany()
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_apartments_buildings_building_id");
+
+                    b.HasOne("PropertyOS.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_apartments_companies_company_id");
+
                     b.HasOne("PropertyOS.Domain.Identity.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("CreatedBy")
@@ -1863,17 +1877,37 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("PropertyOS.Domain.Properties.Building", "Building")
                         .WithOne("Address")
-                        .HasForeignKey("PropertyOS.Domain.Properties.BuildingAddress", "CompanyId", "BuildingId")
-                        .HasPrincipalKey("PropertyOS.Domain.Properties.Building", "CompanyId", "Id")
+                        .HasForeignKey("PropertyOS.Domain.Properties.BuildingAddress", "BuildingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_building_addresses_buildings_company_building");
+                        .HasConstraintName("FK_building_addresses_buildings_building_id");
+
+                    b.HasOne("PropertyOS.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_building_addresses_companies_company_id");
 
                     b.Navigation("Building");
                 });
 
             modelBuilder.Entity("PropertyOS.Domain.Properties.Floor", b =>
                 {
+                    b.HasOne("PropertyOS.Domain.Properties.Building", null)
+                        .WithMany("Floors")
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_floors_buildings_building_id");
+
+                    b.HasOne("PropertyOS.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_floors_companies_company_id");
+
                     b.HasOne("PropertyOS.Domain.Identity.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("CreatedBy")
@@ -1893,7 +1927,7 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasConstraintName("FK_floors_users_updated_by");
 
                     b.HasOne("PropertyOS.Domain.Properties.Building", null)
-                        .WithMany("Floors")
+                        .WithMany()
                         .HasForeignKey("CompanyId", "BuildingId")
                         .HasPrincipalKey("CompanyId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)

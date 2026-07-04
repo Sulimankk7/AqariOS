@@ -4,6 +4,7 @@ using Npgsql;
 using PropertyOS.Domain.Audit.Enums;
 using PropertyOS.Domain.Companies.Enums;
 using PropertyOS.Domain.Identity.Enums;
+using PropertyOS.Domain.Properties.Enums;
 using PropertyOS.Domain.Subscriptions.Enums;
 using PropertyOS.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
@@ -100,6 +101,12 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<MfaType>("mfa_type_enum");
         dataSourceBuilder.MapEnum<OtpPurpose>("otp_purpose_enum");
         dataSourceBuilder.MapEnum<RevokeReason>("revoke_reason_enum");
+        // Module 4
+        dataSourceBuilder.MapEnum<BuildingType>("building_type_enum");
+        dataSourceBuilder.MapEnum<Governorate>("governorate_enum");
+        dataSourceBuilder.MapEnum<FloorType>("floor_type_enum");
+        dataSourceBuilder.MapEnum<OwnershipStatus>("ownership_status_enum");
+        dataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum");
         _dataSource = dataSourceBuilder.Build();
 
         AppUserConnectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
@@ -124,6 +131,12 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<MfaType>("mfa_type_enum");
         appUserDataSourceBuilder.MapEnum<OtpPurpose>("otp_purpose_enum");
         appUserDataSourceBuilder.MapEnum<RevokeReason>("revoke_reason_enum");
+        // Module 4
+        appUserDataSourceBuilder.MapEnum<BuildingType>("building_type_enum");
+        appUserDataSourceBuilder.MapEnum<Governorate>("governorate_enum");
+        appUserDataSourceBuilder.MapEnum<FloorType>("floor_type_enum");
+        appUserDataSourceBuilder.MapEnum<OwnershipStatus>("ownership_status_enum");
+        appUserDataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum");
         AppUserDataSource = appUserDataSourceBuilder.Build();
 
         // 3. Create the test Context backed by the mapped DataSource.
@@ -143,6 +156,12 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<MfaType>("mfa_type_enum");
                 o.MapEnum<OtpPurpose>("otp_purpose_enum");
                 o.MapEnum<RevokeReason>("revoke_reason_enum");
+                // Module 4
+                o.MapEnum<BuildingType>("building_type_enum");
+                o.MapEnum<Governorate>("governorate_enum");
+                o.MapEnum<FloorType>("floor_type_enum");
+                o.MapEnum<OwnershipStatus>("ownership_status_enum");
+                o.MapEnum<OccupancyStatus>("occupancy_status_enum");
             })
             .Options;
 
@@ -186,7 +205,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         await using var cmd = conn.CreateCommand();
 
         cmd.CommandText = @"
-            TRUNCATE TABLE company_subscriptions, subscription_plans, company_settings, companies
+            TRUNCATE TABLE apartments, building_addresses, floors, buildings,
+                           company_subscriptions, subscription_plans, company_settings, companies
             RESTART IDENTITY
             CASCADE;
         ";
