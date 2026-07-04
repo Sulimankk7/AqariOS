@@ -51,8 +51,9 @@ public sealed class TenantSessionInterceptor : DbTransactionInterceptor
 {
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUserContext _currentUserContext;
-
-    public TenantSessionInterceptor(ITenantContext tenantContext, ICurrentUserContext currentUserContext)
+    public TenantSessionInterceptor(
+        ITenantContext tenantContext, 
+        ICurrentUserContext currentUserContext)
     {
         _tenantContext = tenantContext;
         _currentUserContext = currentUserContext;

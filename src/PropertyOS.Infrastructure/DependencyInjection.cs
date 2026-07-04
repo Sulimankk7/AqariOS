@@ -3,9 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using PropertyOS.Application.Common.Interfaces;
+using PropertyOS.Domain.Audit.Enums;
 using PropertyOS.Domain.Companies.Enums;
-using PropertyOS.Infrastructure.Identity;
+using PropertyOS.Domain.Identity.Enums;
 using PropertyOS.Infrastructure.Persistence;
+using PropertyOS.Infrastructure.Persistence.Audit;
 using PropertyOS.Infrastructure.Persistence.Interceptors;
 
 namespace PropertyOS.Infrastructure;
@@ -44,6 +46,16 @@ public static class DependencyInjection
             pgName: "late_fee_type_enum",
             nameTranslator: null);
 
+        // Module 3 Enums
+        dataSourceBuilder.MapEnum<AuditAction>("audit_action_enum", null);
+        dataSourceBuilder.MapEnum<AuditSeverity>("audit_severity_enum", null);
+        dataSourceBuilder.MapEnum<AuditSource>("audit_source_enum", null);
+        dataSourceBuilder.MapEnum<LoginStatus>("login_status_enum", null);
+        dataSourceBuilder.MapEnum<MembershipStatus>("membership_status_enum", null);
+        dataSourceBuilder.MapEnum<MfaType>("mfa_type_enum", null);
+        dataSourceBuilder.MapEnum<OtpPurpose>("otp_purpose_enum", null);
+        dataSourceBuilder.MapEnum<RevokeReason>("revoke_reason_enum", null);
+
         var dataSource = dataSourceBuilder.Build();
 
         // -----------------------------------------------------------------------
@@ -60,11 +72,19 @@ public static class DependencyInjection
         services.AddScoped<ITenantContext, NullTenantContext>();
         services.AddScoped<ICurrentUserContext, NullCurrentUserContext>();
 
+
         // -----------------------------------------------------------------------
         // Register the TenantSessionInterceptor as a scoped service so EF Core
         // can inject ITenantContext per-request from DI.
         // -----------------------------------------------------------------------
         services.AddScoped<TenantSessionInterceptor>();
+        services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<AuditTransactionInterceptor>();
+        services.AddScoped<AuditTransactionState>();
+        services.AddScoped<IAuditRequestContext, PropertyOS.Infrastructure.Audit.AuditRequestContext>();
+        
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(PropertyOS.Infrastructure.Persistence.Behaviors.TransactionBehavior<,>));
 
         services.AddDbContext<PropertyOsDbContext>((serviceProvider, options) =>
         {
@@ -86,13 +106,25 @@ public static class DependencyInjection
                     // Map enums for EF Core runtime type mapping
                     npgsqlOptions.MapEnum<CompanyType>("company_type_enum");
                     npgsqlOptions.MapEnum<LateFeeType>("late_fee_type_enum");
+
+                    // Module 3
+                    npgsqlOptions.MapEnum<AuditAction>("audit_action_enum");
+                    npgsqlOptions.MapEnum<AuditSeverity>("audit_severity_enum");
+                    npgsqlOptions.MapEnum<AuditSource>("audit_source_enum");
+                    npgsqlOptions.MapEnum<LoginStatus>("login_status_enum");
+                    npgsqlOptions.MapEnum<MembershipStatus>("membership_status_enum");
+                    npgsqlOptions.MapEnum<MfaType>("mfa_type_enum");
+                    npgsqlOptions.MapEnum<OtpPurpose>("otp_purpose_enum");
+                    npgsqlOptions.MapEnum<RevokeReason>("revoke_reason_enum");
                 });
 
             // Register the interceptor from the scoped DI container.
             // This is the approved pattern for injecting scoped services into
             // EF Core interceptors — using the serviceProvider overload.
             var tenantInterceptor = serviceProvider.GetRequiredService<TenantSessionInterceptor>();
-            options.AddInterceptors(tenantInterceptor);
+            var auditInterceptor = serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>();
+            var auditTxInterceptor = serviceProvider.GetRequiredService<AuditTransactionInterceptor>();
+            options.AddInterceptors(tenantInterceptor, auditInterceptor, auditTxInterceptor);
 
             // Performance rules (Architecture §6):
             //   • Lazy loading disabled — EF Core does NOT enable lazy loading by default.
@@ -102,5 +134,16 @@ public static class DependencyInjection
         });
 
         return services;
+    }
+
+    private sealed class NullTenantContext : ITenantContext
+    {
+        public Guid? CompanyId => null;
+        public bool IsPlatformAdmin => false;
+    }
+
+    private sealed class NullCurrentUserContext : ICurrentUserContext
+    {
+        public Guid? UserId => null;
     }
 }

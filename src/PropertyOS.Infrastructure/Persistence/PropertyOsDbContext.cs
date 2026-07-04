@@ -47,6 +47,20 @@ public class PropertyOsDbContext : DbContext
     // Do not add DbSets speculatively — only add when the module is in scope.
     // ---------------------------------------------------------------------------
 
+    // ---------------------------------------------------------------------------
+    // Module 3 — Security / Identity / RBAC / Audit
+    // ---------------------------------------------------------------------------
+
+    public DbSet<PropertyOS.Domain.Identity.Entities.User> Users => Set<PropertyOS.Domain.Identity.Entities.User>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.UserCompanyRole> UserCompanyRoles => Set<PropertyOS.Domain.Identity.Entities.UserCompanyRole>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.Role> Roles => Set<PropertyOS.Domain.Identity.Entities.Role>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.Permission> Permissions => Set<PropertyOS.Domain.Identity.Entities.Permission>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.RolePermission> RolePermissions => Set<PropertyOS.Domain.Identity.Entities.RolePermission>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.RefreshToken> RefreshTokens => Set<PropertyOS.Domain.Identity.Entities.RefreshToken>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.LoginHistory> LoginHistory => Set<PropertyOS.Domain.Identity.Entities.LoginHistory>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.OtpChallenge> OtpChallenges => Set<PropertyOS.Domain.Identity.Entities.OtpChallenge>();
+    public DbSet<PropertyOS.Domain.Audit.Entities.AuditLog> AuditLogs => Set<PropertyOS.Domain.Audit.Entities.AuditLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -56,6 +70,16 @@ public class PropertyOsDbContext : DbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>("late_fee_type_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum");
+
+        // Module 3
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MfaType>("mfa_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MembershipStatus>("membership_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.RevokeReason>("revoke_reason_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.LoginStatus>("login_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.OtpPurpose>("otp_purpose_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditAction>("audit_action_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSeverity>("audit_severity_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSource>("audit_source_enum");
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>
         // classes in this assembly. This is the only call in OnModelCreating —
