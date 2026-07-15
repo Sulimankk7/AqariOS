@@ -52,6 +52,30 @@ internal sealed class PropertyOsDbContextFactory : IDesignTimeDbContextFactory<P
             pgName: "parking_assignment_status_enum",
             nameTranslator: null);
 
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>(
+            pgName: "contract_status_enum",
+            nameTranslator: null);
+
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>(
+            pgName: "payment_frequency_enum",
+            nameTranslator: null);
+
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>(
+            pgName: "termination_type_enum",
+            nameTranslator: null);
+
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>(
+            pgName: "contract_document_type_enum",
+            nameTranslator: null);
+
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>(
+            pgName: "legal_regime_enum",
+            nameTranslator: null);
+
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TenantType>(
+            pgName: "tenant_type_enum",
+            nameTranslator: null);
+
         var dataSource = dataSourceBuilder.Build();
 
         var optionsBuilder = new DbContextOptionsBuilder<PropertyOsDbContext>();

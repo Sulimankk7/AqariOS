@@ -96,10 +96,14 @@ public class ParkingAssignmentConfiguration : IEntityTypeConfiguration<Domain.Pr
             .OnDelete(DeleteBehavior.Restrict);
 
         // -----------------------------------------------------------------------
-        // FK: lease_contract_id is a forward reference to Module 5 lease_contracts.
-        // It is defined as a raw UUID column here and intentionally unconstrained
-        // in EF. The actual FK will be added in Module 5.
+        // Composite FK: (company_id, lease_contract_id) -> lease_contracts(company_id, id)
         // -----------------------------------------------------------------------
+        builder.HasOne<Domain.Leasing.LeaseContract>()
+            .WithMany()
+            .HasForeignKey(p => new { p.CompanyId, p.LeaseContractId })
+            .HasPrincipalKey(lc => new { lc.CompanyId, lc.Id })
+            .HasConstraintName("fk_parking_assignments_lease_contracts_company_contract")
+            .OnDelete(DeleteBehavior.Restrict);
 
         // -----------------------------------------------------------------------
         // FK: created_by / updated_by / deleted_by -> users(id) ON DELETE SET NULL

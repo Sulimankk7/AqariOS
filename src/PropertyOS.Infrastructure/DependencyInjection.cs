@@ -10,6 +10,11 @@ using PropertyOS.Domain.Properties.Enums;
 using PropertyOS.Infrastructure.Persistence;
 using PropertyOS.Infrastructure.Persistence.Audit;
 using PropertyOS.Infrastructure.Persistence.Interceptors;
+using PropertyOS.Application.Leasing;
+using PropertyOS.Infrastructure.Leasing.Repositories;
+using PropertyOS.Application.Financials;
+using PropertyOS.Infrastructure.Financials.Repositories;
+
 
 namespace PropertyOS.Infrastructure;
 
@@ -66,7 +71,23 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<ParkingType>("parking_type_enum", null);
         dataSourceBuilder.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum", null);
 
+        // Module 5 enums
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>("contract_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>("payment_frequency_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>("termination_type_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>("contract_document_type_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>("legal_regime_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TenantType>("tenant_type_enum", null);
+
+        // Module 6 enums
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentPurpose>("payment_purpose_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentMethod>("payment_method_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum", null);
+
         var dataSource = dataSourceBuilder.Build();
+
 
         // -----------------------------------------------------------------------
         // ITenantContext — pre-authentication placeholder (Module 1 boundary).
@@ -87,8 +108,11 @@ public static class DependencyInjection
         // Register the TenantSessionInterceptor as a scoped service so EF Core
         // can inject ITenantContext per-request from DI.
         // -----------------------------------------------------------------------
-        services.AddScoped<TenantSessionInterceptor>();
+        services.AddScoped<ILeaseContractRepository, LeaseContractRepository>();
+        services.AddScoped<ILeasingReferenceRepository, LeasingReferenceRepository>();
+        services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
         services.AddScoped<AuditSaveChangesInterceptor>();
+
         services.AddHttpContextAccessor();
         services.AddScoped<AuditTransactionInterceptor>();
         services.AddScoped<AuditTransactionState>();
@@ -135,7 +159,23 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<OccupancyStatus>("occupancy_status_enum");
                     npgsqlOptions.MapEnum<ParkingType>("parking_type_enum");
                     npgsqlOptions.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
+
+                    // Module 5
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>("contract_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>("payment_frequency_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>("termination_type_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>("contract_document_type_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>("legal_regime_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Leasing.Enums.TenantType>("tenant_type_enum");
+
+                    // Module 6
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentPurpose>("payment_purpose_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentMethod>("payment_method_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
                 });
+
 
             // Register the interceptor from the scoped DI container.
             // This is the approved pattern for injecting scoped services into

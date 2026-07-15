@@ -55,7 +55,30 @@ public class PropertyOsDbContext : DbContext
     public DbSet<ParkingAssignment> ParkingAssignments => Set<ParkingAssignment>();
 
     // ---------------------------------------------------------------------------
+    // Module 5 — Leasing (Phase 1: tenants, tenant_family_members, tenant_emergency_contacts, tenant_vehicles)
+    // ---------------------------------------------------------------------------
+
+    public DbSet<PropertyOS.Domain.Leasing.Tenant> Tenants => Set<PropertyOS.Domain.Leasing.Tenant>();
+    public DbSet<PropertyOS.Domain.Leasing.TenantFamilyMember> TenantFamilyMembers => Set<PropertyOS.Domain.Leasing.TenantFamilyMember>();
+    public DbSet<PropertyOS.Domain.Leasing.TenantEmergencyContact> TenantEmergencyContacts => Set<PropertyOS.Domain.Leasing.TenantEmergencyContact>();
+    public DbSet<PropertyOS.Domain.Leasing.TenantVehicle> TenantVehicles => Set<PropertyOS.Domain.Leasing.TenantVehicle>();
+
+    public DbSet<PropertyOS.Domain.Leasing.LeaseContract> LeaseContracts => Set<PropertyOS.Domain.Leasing.LeaseContract>();
+    public DbSet<PropertyOS.Domain.Leasing.ContractTermination> ContractTerminations => Set<PropertyOS.Domain.Leasing.ContractTermination>();
+    public DbSet<PropertyOS.Domain.Leasing.ContractStatusHistory> ContractStatusHistory => Set<PropertyOS.Domain.Leasing.ContractStatusHistory>();
+    public DbSet<PropertyOS.Domain.Leasing.ContractDocument> ContractDocuments => Set<PropertyOS.Domain.Leasing.ContractDocument>();
+
+    // ---------------------------------------------------------------------------
+    // Module 6 — Rent Payments & Cheques
+    // ---------------------------------------------------------------------------
+
+    public DbSet<PropertyOS.Domain.Financials.RentPayment> RentPayments => Set<PropertyOS.Domain.Financials.RentPayment>();
+    public DbSet<PropertyOS.Domain.Financials.ChequeDetails> ChequeDetails => Set<PropertyOS.Domain.Financials.ChequeDetails>();
+    public DbSet<PropertyOS.Domain.Financials.PaymentAllocation> PaymentAllocations => Set<PropertyOS.Domain.Financials.PaymentAllocation>();
+
+    // ---------------------------------------------------------------------------
     // Module 3 — Security / Identity / RBAC / Audit
+
     // ---------------------------------------------------------------------------
 
     public DbSet<PropertyOS.Domain.Identity.Entities.User> Users => Set<PropertyOS.Domain.Identity.Entities.User>();
@@ -73,29 +96,45 @@ public class PropertyOsDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // Register PostgreSQL enums so EF Core maps them properly instead of as integers
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.CompanyType>("company_type_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>("late_fee_type_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.CompanyType>(name: "company_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>(name: "late_fee_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>(name: "subscription_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>(name: "billing_cycle_enum");
 
         // Module 3
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MfaType>("mfa_type_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MembershipStatus>("membership_status_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.RevokeReason>("revoke_reason_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.LoginStatus>("login_status_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.OtpPurpose>("otp_purpose_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditAction>("audit_action_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSeverity>("audit_severity_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSource>("audit_source_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MfaType>(name: "mfa_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MembershipStatus>(name: "membership_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.RevokeReason>(name: "revoke_reason_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.LoginStatus>(name: "login_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.OtpPurpose>(name: "otp_purpose_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditAction>(name: "audit_action_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSeverity>(name: "audit_severity_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSource>(name: "audit_source_enum");
 
         // Module 4
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.BuildingType>("building_type_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.Governorate>("governorate_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.FloorType>("floor_type_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OwnershipStatus>("ownership_status_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OccupancyStatus>("occupancy_status_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.ParkingType>("parking_type_enum");
-        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.ParkingAssignmentStatus>("parking_assignment_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.BuildingType>(name: "building_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.Governorate>(name: "governorate_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.FloorType>(name: "floor_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OwnershipStatus>(name: "ownership_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.OccupancyStatus>(name: "occupancy_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.ParkingType>(name: "parking_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Properties.Enums.ParkingAssignmentStatus>(name: "parking_assignment_status_enum");
+
+        // Module 5
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>(name: "contract_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>(name: "payment_frequency_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>(name: "termination_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>(name: "contract_document_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>(name: "legal_regime_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Leasing.Enums.TenantType>(name: "tenant_type_enum");
+
+        // Module 6
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.PaymentPurpose>(name: "payment_purpose_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.PaymentMethod>(name: "payment_method_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>(name: "due_date_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>(name: "cheque_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>(name: "allocation_status_enum");
+
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>
         // classes in this assembly. This is the only call in OnModelCreating —

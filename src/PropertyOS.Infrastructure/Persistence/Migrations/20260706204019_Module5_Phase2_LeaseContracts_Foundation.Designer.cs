@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PropertyOS.Infrastructure.Persistence;
@@ -12,9 +13,11 @@ using PropertyOS.Infrastructure.Persistence;
 namespace PropertyOS.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PropertyOsDbContext))]
-    partial class PropertyOsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260706204019_Module5_Phase2_LeaseContracts_Foundation")]
+    partial class Module5_Phase2_LeaseContracts_Foundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
