@@ -52,10 +52,12 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
     private PropertyOsDbContext CreateTenantContext(Guid? companyId)
     {
         var tenantContext = new StaticTenantContext { CompanyId = companyId, IsPlatformAdmin = false };
-        var userContext = new StaticCurrentUserContext { UserId = Guid.NewGuid() };
+        var userContext = new StaticCurrentUserContext { UserId = null };
+
+        var conn = _fixture.AppUserDataSource!.OpenConnection();
 
         var options = new DbContextOptionsBuilder<PropertyOsDbContext>()
-            .UseNpgsql(_sharedAppUserConnection!, o =>
+            .UseNpgsql(conn, contextOwnsConnection: true, o =>
             {
                 o.MapEnum<PropertyOS.Domain.Companies.Enums.CompanyType>("company_type_enum");
                 o.MapEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>("late_fee_type_enum");
@@ -72,7 +74,7 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
     private PropertyOsDbContext CreateAdminContext()
     {
         var tenantContext = new StaticTenantContext { CompanyId = null, IsPlatformAdmin = true };
-        var userContext = new StaticCurrentUserContext { UserId = Guid.NewGuid() };
+        var userContext = new StaticCurrentUserContext { UserId = null };
 
         var options = new DbContextOptionsBuilder<PropertyOsDbContext>()
             .UseNpgsql(_fixture.Context.Database.GetDbConnection(), o =>
@@ -113,7 +115,7 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             priority: MaintenancePriority.Medium,
             requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
             now: DateTimeOffset.UtcNow,
-            createdBy: Guid.NewGuid());
+            createdBy: null);
         ctx.MaintenanceRequests.Add(request);
         await ctx.SaveChangesAsync();
 
@@ -145,7 +147,7 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             priority: MaintenancePriority.Low,
             requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
             now: DateTimeOffset.UtcNow,
-            createdBy: Guid.NewGuid());
+            createdBy: null);
         ctx.MaintenanceRequests.Add(request);
         await ctx.SaveChangesAsync();
 
@@ -176,7 +178,7 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             priority: MaintenancePriority.Low,
             requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
             now: DateTimeOffset.UtcNow,
-            createdBy: Guid.NewGuid());
+            createdBy: null);
         ctx.MaintenanceRequests.Add(request);
         await ctx.SaveChangesAsync();
 
@@ -208,12 +210,12 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             priority: MaintenancePriority.Low,
             requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
             now: DateTimeOffset.UtcNow,
-            createdBy: Guid.NewGuid());
+            createdBy: null);
         ctx.MaintenanceRequests.Add(request);
         await ctx.SaveChangesAsync();
 
         var fileId = Guid.NewGuid();
-        request.AddAttachment(fileId, Guid.NewGuid(), "Photo 1", DateTimeOffset.UtcNow, Guid.NewGuid());
+        request.AddAttachment(fileId, null, "Photo 1", DateTimeOffset.UtcNow, null);
         await ctx.SaveChangesAsync();
 
         // Bypass domain duplicate check to insert a duplicate active attachment directly via DbContext
@@ -221,10 +223,10 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             companyId: companyId,
             maintenanceRequestId: request.Id,
             fileId: fileId,
-            uploadedBy: Guid.NewGuid(),
+            uploadedBy: null,
             description: "Photo 2 duplicate fileId",
             now: DateTimeOffset.UtcNow,
-            createdBy: Guid.NewGuid());
+            createdBy: null);
         ctx.MaintenanceRequestAttachments.Add(duplicateAttachment);
 
         var ex = await Assert.ThrowsAnyAsync<Exception>(() => ctx.SaveChangesAsync());
@@ -252,8 +254,8 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
         {
             await adminCtx.Database.BeginTransactionAsync();
 
-            var reqA = MaintenanceRequest.Create(companyA, buildingA, null, null, "Ticket A", "Desc A", MaintenanceCategory.Plumbing, MaintenancePriority.High, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, Guid.NewGuid());
-            var reqB = MaintenanceRequest.Create(companyB, buildingB, null, null, "Ticket B", "Desc B", MaintenanceCategory.Plumbing, MaintenancePriority.High, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, Guid.NewGuid());
+            var reqA = MaintenanceRequest.Create(companyA, buildingA, null, null, "Ticket A", "Desc A", MaintenanceCategory.Plumbing, MaintenancePriority.High, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, null);
+            var reqB = MaintenanceRequest.Create(companyB, buildingB, null, null, "Ticket B", "Desc B", MaintenanceCategory.Plumbing, MaintenancePriority.High, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, null);
             
             adminCtx.MaintenanceRequests.Add(reqA);
             adminCtx.MaintenanceRequests.Add(reqB);
@@ -263,14 +265,20 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             requestBId = reqB.Id;
 
             // Add attachments/comments/history
-            var attA = reqA.AddAttachment(Guid.NewGuid(), Guid.NewGuid(), "Pic A", DateTimeOffset.UtcNow, Guid.NewGuid());
-            var commA = reqA.AddComment("Context A", DateTimeOffset.UtcNow, Guid.NewGuid());
-            var histA = reqA.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, Guid.NewGuid());
+            var openHistA = MaintenanceStatusHistory.Create(companyA, reqA.Id, MaintenanceStatus.Open, DateTimeOffset.UtcNow, null, null, "Request opened");
+            adminCtx.MaintenanceStatusHistory.Add(openHistA);
+
+            var attA = reqA.AddAttachment(Guid.NewGuid(), null, "Pic A", DateTimeOffset.UtcNow, null);
+            var commA = reqA.AddComment("Context A", DateTimeOffset.UtcNow, null);
+            var histA = reqA.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(histA);
 
-            var attB = reqB.AddAttachment(Guid.NewGuid(), Guid.NewGuid(), "Pic B", DateTimeOffset.UtcNow, Guid.NewGuid());
-            var commB = reqB.AddComment("Context B", DateTimeOffset.UtcNow, Guid.NewGuid());
-            var histB = reqB.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, Guid.NewGuid());
+            var openHistB = MaintenanceStatusHistory.Create(companyB, reqB.Id, MaintenanceStatus.Open, DateTimeOffset.UtcNow, null, null, "Request opened");
+            adminCtx.MaintenanceStatusHistory.Add(openHistB);
+
+            var attB = reqB.AddAttachment(Guid.NewGuid(), null, "Pic B", DateTimeOffset.UtcNow, null);
+            var commB = reqB.AddComment("Context B", DateTimeOffset.UtcNow, null);
+            var histB = reqB.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(histB);
 
             await adminCtx.SaveChangesAsync();
@@ -325,7 +333,7 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
         await using (var adminCtx = CreateAdminContext())
         {
             await adminCtx.Database.BeginTransactionAsync();
-            var req = MaintenanceRequest.Create(companyId, buildingId, null, null, "Concurrency Ticket", "Desc", MaintenanceCategory.Other, MaintenancePriority.Low, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, Guid.NewGuid());
+            var req = MaintenanceRequest.Create(companyId, buildingId, null, null, "Concurrency Ticket", "Desc", MaintenanceCategory.Other, MaintenancePriority.Low, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceRequests.Add(req);
             await adminCtx.SaveChangesAsync();
             requestId = req.Id;
@@ -343,13 +351,13 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
         var req2 = await ctx2.MaintenanceRequests.FirstAsync(r => r.Id == requestId);
 
         // Update 1 succeeds
-        var hist1 = req1.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, Guid.NewGuid());
+        var hist1 = req1.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
         ctx1.MaintenanceStatusHistory.Add(hist1);
         await ctx1.SaveChangesAsync();
         await ctx1.Database.CommitTransactionAsync();
 
         // Update 2 fails with concurrency exception because the system xmin token changed
-        var hist2 = req2.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, Guid.NewGuid());
+        var hist2 = req2.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
         ctx2.MaintenanceStatusHistory.Add(hist2);
 
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => ctx2.SaveChangesAsync());
@@ -373,15 +381,18 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
         await using (var adminCtx = CreateAdminContext())
         {
             await adminCtx.Database.BeginTransactionAsync();
-            var req = MaintenanceRequest.Create(companyId, buildingId, null, null, "Ticket to delete", "Desc", MaintenanceCategory.Plumbing, MaintenancePriority.Medium, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, Guid.NewGuid());
+            var req = MaintenanceRequest.Create(companyId, buildingId, null, null, "Ticket to delete", "Desc", MaintenanceCategory.Plumbing, MaintenancePriority.Medium, DateOnly.FromDateTime(DateTime.UtcNow), DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceRequests.Add(req);
             await adminCtx.SaveChangesAsync();
 
             requestId = req.Id;
 
-            var att = req.AddAttachment(Guid.NewGuid(), Guid.NewGuid(), "Pic", DateTimeOffset.UtcNow, Guid.NewGuid());
-            var comm = req.AddComment("Comment text", DateTimeOffset.UtcNow, Guid.NewGuid());
-            var hist = req.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, Guid.NewGuid());
+            var openHist = MaintenanceStatusHistory.Create(companyId, req.Id, MaintenanceStatus.Open, DateTimeOffset.UtcNow, null, null, "Request opened");
+            adminCtx.MaintenanceStatusHistory.Add(openHist);
+
+            var att = req.AddAttachment(Guid.NewGuid(), null, "Pic", DateTimeOffset.UtcNow, null);
+            var comm = req.AddComment("Comment text", DateTimeOffset.UtcNow, null);
+            var hist = req.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(hist);
 
             await adminCtx.SaveChangesAsync();
@@ -421,7 +432,7 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             var repo = new PropertyOS.Infrastructure.Maintenance.Repositories.MaintenanceRequestRepository(tenantCtx);
             var req = await repo.GetByIdAsync(requestId);
             Assert.NotNull(req);
-            req.SoftDelete(DateTimeOffset.UtcNow, Guid.NewGuid());
+            req.SoftDelete(DateTimeOffset.UtcNow, null);
             await tenantCtx.SaveChangesAsync();
             await tenantCtx.Database.CommitTransactionAsync();
         }
@@ -482,8 +493,8 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             await conn.OpenAsync();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                INSERT INTO buildings (id, company_id, name, type, created_at, updated_at) 
-                VALUES (@bId, @cId, @name, 'residential', now(), now());
+                INSERT INTO buildings (id, company_id, name, building_type, total_floors, created_at, updated_at) 
+                VALUES (@bId, @cId, @name, 'residential', 1, now(), now());
             ";
             cmd.Parameters.Add(new NpgsqlParameter("bId", buildingId));
             cmd.Parameters.Add(new NpgsqlParameter("cId", companyId));

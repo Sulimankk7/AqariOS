@@ -135,7 +135,7 @@ public class MaintenanceQueries : IMaintenanceQueries
             .Where(a => a.MaintenanceRequestId == requestId)
             .Select(a => new MaintenanceAttachmentDto(
                 a.Id,
-                a.FileId ?? Guid.Empty, // Handle nullable FileId
+                a.FileId,       // Nullable — no file_id FK until File module (Module 10) is implemented
                 a.Description,
                 a.UploadedBy,
                 a.CreatedBy,

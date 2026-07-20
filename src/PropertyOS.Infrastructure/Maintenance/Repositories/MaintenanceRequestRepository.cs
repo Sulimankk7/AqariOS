@@ -55,12 +55,19 @@ public class MaintenanceRequestRepository : IMaintenanceRequestRepository
             .AnyAsync(t => t.Id == tenantId && t.CompanyId == companyId, cancellationToken);
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="NotSupportedException">
+    /// Always thrown. File existence validation is intentionally deferred until the
+    /// File storage module (Module 10) is implemented. Do not call this method from
+    /// any Module 8 handler. When the File module exists, replace this body with a
+    /// real query against the file_storage table.
+    /// </exception>
     public Task<bool> FileExistsAsync(Guid fileId, CancellationToken cancellationToken = default)
     {
-        // NOTE: Attachment file existence validation (via file_storage table check)
-        // is intentionally deferred/skipped because the File storage module does not yet exist.
-        // Once implemented, this can query: return _context.FileStorage.AnyAsync(f => f.Id == fileId, cancellationToken);
-        // For now, to allow seamless test seeding and execution, we return true.
-        return Task.FromResult(true);
+        throw new NotSupportedException(
+            "FileExistsAsync is not implemented. " +
+            "File existence validation is deferred until the File storage module (Module 10) is available. " +
+            "Do not call this method from Module 8 handlers.");
     }
+
 }

@@ -30,7 +30,6 @@ public class MaintenanceCommandHandlerTests
         public HashSet<Guid> ExistentBuildings { get; } = new();
         public HashSet<Guid> ExistentApartments { get; } = new();
         public HashSet<Guid> ExistentTenants { get; } = new();
-        public HashSet<Guid> ExistentFiles { get; } = new();
 
         public Task<MaintenanceRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
@@ -64,9 +63,15 @@ public class MaintenanceCommandHandlerTests
             return Task.FromResult(ExistentTenants.Contains(tenantId));
         }
 
+        /// <summary>
+        /// Deferred — the File storage module has not been implemented yet.
+        /// No Module 8 handler calls this method; it exists solely to satisfy the interface contract.
+        /// </summary>
         public Task<bool> FileExistsAsync(Guid fileId, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(ExistentFiles.Contains(fileId));
+            throw new NotSupportedException(
+                "FileExistsAsync must not be called from Module 8 handlers. " +
+                "File validation is deferred until the File storage module is available.");
         }
     }
 

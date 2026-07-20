@@ -39,8 +39,18 @@ public interface IMaintenanceRequestRepository
     Task<bool> TenantExistsAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Verifies that a file exists in <c>file_storage</c> before allowing it
-    /// to be attached. Prevents attaching phantom file references.
+    /// Verifies that a file exists in the file storage subsystem before it may be attached
+    /// to a maintenance request.
+    ///
+    /// <para>
+    /// <b>DEFERRED — do not call from any Module 8 handler.</b>
+    /// The File storage module (Module 10) has not yet been implemented.
+    /// This method exists as a forward-compatible abstraction so that enabling file validation
+    /// later requires only: (1) a real implementation, and (2) a call-site in
+    /// <see cref="Commands.AddMaintenanceAttachment.AddMaintenanceAttachmentCommandHandler"/>.
+    /// Until then, <c>file_id</c> is stored as a raw nullable UUID with no FK constraint,
+    /// and attachment creation succeeds without file verification.
+    /// </para>
     /// </summary>
     Task<bool> FileExistsAsync(Guid fileId, CancellationToken cancellationToken = default);
 }

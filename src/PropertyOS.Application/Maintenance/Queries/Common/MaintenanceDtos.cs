@@ -48,10 +48,18 @@ public record MaintenanceRequestDetailDto(
     Guid? UpdatedBy,
     DateTimeOffset UpdatedAt);
 
-/// <summary>Projection of a single attachment row.</summary>
+/// <summary>
+/// Projection of a single attachment row.
+/// <para>
+/// <c>FileId</c> is nullable because the File storage module (Module 10) has not yet been implemented.
+/// Attachment records are accepted without a validated file reference until that module exists.
+/// Once the File module is available and <see cref="IMaintenanceRequestRepository.FileExistsAsync"/> is
+/// called from handlers, all new attachments will carry a non-null, verified FileId.
+/// </para>
+/// </summary>
 public record MaintenanceAttachmentDto(
     Guid Id,
-    Guid FileId,
+    Guid? FileId,
     string? Description,
     Guid? UploadedBy,
     Guid? CreatedBy,

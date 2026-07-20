@@ -8,6 +8,7 @@ using PropertyOS.Domain.Companies.Enums;
 using PropertyOS.Domain.Identity.Enums;
 using PropertyOS.Domain.Properties.Enums;
 using PropertyOS.Domain.Subscriptions.Enums;
+using PropertyOS.Domain.Maintenance.Enums;
 using PropertyOS.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -83,6 +84,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 GRANT SELECT, INSERT, UPDATE, DELETE ON roles, user_company_roles, role_permissions, refresh_tokens TO propertyos_app;
                 GRANT SELECT ON permissions, users TO propertyos_app;
                 GRANT SELECT, INSERT, UPDATE, DELETE ON expenses, expense_receipts, company_receipt_sequences, rent_payment_receipts, efawateercom_transactions TO propertyos_app;
+                GRANT SELECT, INSERT, UPDATE, DELETE ON maintenance_requests, maintenance_request_attachments, maintenance_request_comments, maintenance_status_history TO propertyos_app;
             ");
             
             // Create a non-superuser role for runtime tests to ensure RLS is genuinely enforced.
@@ -143,6 +145,11 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
+
+        // Module 8
+        dataSourceBuilder.MapEnum<MaintenanceCategory>("maintenance_category_enum");
+        dataSourceBuilder.MapEnum<MaintenancePriority>("maintenance_priority_enum");
+        dataSourceBuilder.MapEnum<MaintenanceStatus>("maintenance_status_enum");
         _dataSource = dataSourceBuilder.Build();
 
         AppUserConnectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
@@ -196,6 +203,11 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
+
+        // Module 8
+        appUserDataSourceBuilder.MapEnum<MaintenanceCategory>("maintenance_category_enum");
+        appUserDataSourceBuilder.MapEnum<MaintenancePriority>("maintenance_priority_enum");
+        appUserDataSourceBuilder.MapEnum<MaintenanceStatus>("maintenance_status_enum");
         AppUserDataSource = appUserDataSourceBuilder.Build();
 
         // 3. Create the test Context backed by the mapped DataSource.

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MediatR;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Maintenance;
+using PropertyOS.Domain.Maintenance.Enums;
 
 namespace PropertyOS.Application.Maintenance.Commands.CreateMaintenanceRequest;
 
@@ -49,8 +50,7 @@ public class CreateMaintenanceRequestCommandHandler : IRequestHandler<CreateMain
                 throw new KeyNotFoundException($"Tenant '{request.TenantId.Value}' was not found.");
         }
 
-        // ── Aggregate creation (domain enforces all remaining invariants) ─────
-
+        var now = DateTimeOffset.UtcNow;
         var maintenanceRequest = MaintenanceRequest.Create(
             companyId: companyId,
             buildingId: request.BuildingId,
@@ -61,12 +61,22 @@ public class CreateMaintenanceRequestCommandHandler : IRequestHandler<CreateMain
             category: request.Category,
             priority: request.Priority,
             requestDate: request.RequestDate,
-            now: DateTimeOffset.UtcNow,
+            now: now,
             createdBy: _currentUserContext.UserId);
 
         await _repository.AddAsync(maintenanceRequest, cancellationToken);
 
-        // Persistence is owned by TransactionBehavior — SaveChangesAsync not called here.
+        var history = MaintenanceStatusHistory.Create(
+            companyId: companyId,
+            maintenanceRequestId: maintenanceRequest.Id,
+            newStatus: MaintenanceStatus.Open,
+            changedAt: now,
+            previousStatus: null,
+            changedBy: _currentUserContext.UserId,
+            reason: "Request opened");
+
+        await _repository.AddStatusHistoryAsync(history, cancellationToken);
+
         return maintenanceRequest.Id;
     }
 }
