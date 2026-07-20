@@ -22,6 +22,7 @@ public class RlsIsolationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await _fixture.ResetDatabaseAsync();
         _sharedAppUserConnection = await _fixture.AppUserDataSource!.OpenConnectionAsync();
     }
 
@@ -29,7 +30,6 @@ public class RlsIsolationTests : IAsyncLifetime
     {
         if (_sharedAppUserConnection != null)
             await _sharedAppUserConnection.DisposeAsync();
-        await _fixture.ResetDatabaseAsync();
     }
 
     private sealed class StaticTenantContext : ITenantContext

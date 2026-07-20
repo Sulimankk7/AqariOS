@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using FluentValidation;
+using MediatR;
 
 namespace PropertyOS.Application;
 
@@ -9,7 +10,11 @@ public static class DependencyInjection
     {
         var assembly = typeof(DependencyInjection).Assembly;
 
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
+        services.AddMediatR(cfg => 
+        {
+            cfg.RegisterServicesFromAssembly(assembly);
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(PropertyOS.Application.Common.Behaviors.ValidationBehavior<,>));
+        });
         services.AddValidatorsFromAssembly(assembly);
 
         return services;

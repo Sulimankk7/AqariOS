@@ -17,6 +17,7 @@ public class ParkingPhysicalInvariantTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await _fixture.ResetDatabaseAsync();
         _appConnection = await _fixture.AppUserDataSource!.OpenConnectionAsync();
     }
 
@@ -24,7 +25,6 @@ public class ParkingPhysicalInvariantTests : IAsyncLifetime
     {
         if (_appConnection != null)
             await _appConnection.DisposeAsync();
-        await _fixture.ResetDatabaseAsync();
     }
 
     // =========================================================================
@@ -114,8 +114,38 @@ public class ParkingPhysicalInvariantTests : IAsyncLifetime
         return (Guid)(await cmd.ExecuteScalarAsync())!;
     }
 
+    private async Task<Guid> SeedLeaseContract(NpgsqlConnection conn, Guid companyId)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            WITH new_tenant AS (
+                INSERT INTO tenants (company_id, name, national_id, phone, created_at, updated_at) 
+                VALUES (@cid, 'T ' || left(gen_random_uuid()::text, 8), left(gen_random_uuid()::text, 12), '+962' || left(gen_random_uuid()::text, 10), now(), now()) RETURNING id
+            ),
+            new_bldg AS (
+                INSERT INTO buildings (company_id, name, building_type, total_floors, created_at, updated_at) 
+                VALUES (@cid, 'B', 'residential', 1, now(), now()) RETURNING id
+            ),
+            new_floor AS (
+                INSERT INTO floors (company_id, building_id, floor_number, floor_label, floor_type, created_at, updated_at) 
+                SELECT @cid, id, 1, 'Floor 1', 'regular', now(), now() FROM new_bldg RETURNING id, building_id
+            ),
+            new_apt AS (
+                INSERT INTO apartments (floor_id, building_id, company_id, unit_number, occupancy_status, bedrooms, bathrooms, base_rent_amount, area_sqm, created_at, updated_at) 
+                SELECT id, building_id, @cid, '101', 'vacant', 1, 1, 100, 100, now(), now() FROM new_floor RETURNING id, building_id
+            )
+            INSERT INTO lease_contracts (company_id, building_id, apartment_id, tenant_id, contract_number, start_date, end_date, monthly_rent_amount, payment_frequency, payment_due_day, created_at, legal_regime, tenant_type, status, security_deposit_amount, updated_at) 
+            SELECT @cid, a.building_id, a.id, t.id, 'LC-' || left(gen_random_uuid()::text, 8), CURRENT_DATE, CURRENT_DATE + interval '1 year', 100, 'monthly', 1, now(), 'standard', 'personal', 'draft', 100, now()
+            FROM new_apt a CROSS JOIN new_tenant t RETURNING id;
+        ";
+        cmd.Parameters.AddWithValue("cid", companyId);
+        return (Guid)(await cmd.ExecuteScalarAsync())!;
+    }
+
     private async Task<Guid> SeedParkingAssignment(NpgsqlConnection conn, Guid companyId, Guid parkingSpotId, string status)
     {
+        var leaseId = await SeedLeaseContract(conn, companyId);
+        
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
             INSERT INTO parking_assignments (company_id, parking_spot_id, lease_contract_id, status, assigned_from, created_at, updated_at)
@@ -123,7 +153,7 @@ public class ParkingPhysicalInvariantTests : IAsyncLifetime
             RETURNING id;";
         cmd.Parameters.AddWithValue("cid", companyId);
         cmd.Parameters.AddWithValue("spotId", parkingSpotId);
-        cmd.Parameters.AddWithValue("leaseId", Guid.NewGuid()); // Deferred FK to Module 5
+        cmd.Parameters.AddWithValue("leaseId", leaseId);
         cmd.Parameters.AddWithValue("status", status);
         return (Guid)(await cmd.ExecuteScalarAsync())!;
     }

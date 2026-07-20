@@ -32,4 +32,18 @@ public interface IRentPaymentRepository
     Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(CancellationToken cancellationToken = default);
     Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, CancellationToken cancellationToken = default);
     Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, CancellationToken cancellationToken = default);
+
+    // Rent Payment Receipt read-side
+    Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, CancellationToken cancellationToken = default);
+    Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, CancellationToken cancellationToken = default);
 }
+
+public record RentPaymentReceiptFilterOptions(
+    Guid? LeaseContractId = null,
+    Guid? TenantId = null,
+    DateOnly? DateFrom = null,
+    DateOnly? DateTo = null,
+    Guid? LastSeenId = null,
+    DateOnly? LastSeenIssueDate = null,
+    int PageSize = 50
+);

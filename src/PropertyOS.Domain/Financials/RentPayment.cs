@@ -28,6 +28,9 @@ public class RentPayment : ISoftDeletable
     public DueDateStatus DueDateStatus { get; private set; }
     public string? Notes { get; private set; }
 
+    // Child entity
+    public RentPaymentReceipt? Receipt { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
     public Guid? CreatedBy { get; private set; }
@@ -134,11 +137,45 @@ public class RentPayment : ISoftDeletable
         UpdatedBy = updatedBy;
     }
 
+    public void IssueReceipt(string receiptNumber, DateTimeOffset issuedAt, Guid? issuedBy, string? notes = null)
+    {
+        if (DueDateStatus != DueDateStatus.Paid)
+            throw new InvalidOperationException("Cannot issue a receipt for a payment that is not fully paid.");
+
+        if (AmountPaid != AmountDue)
+            throw new InvalidOperationException("Cannot issue a receipt for a payment where AmountPaid is not equal to AmountDue.");
+
+        if (Receipt != null && Receipt.DeletedAt == null)
+            throw new InvalidOperationException("A receipt has already been issued for this payment.");
+
+        Receipt = RentPaymentReceipt.Create(
+            companyId: CompanyId,
+            rentPaymentId: Id,
+            receiptNumber: receiptNumber,
+            issueDate: DateOnly.FromDateTime(issuedAt.DateTime),
+            issuedBy: issuedBy,
+            amount: AmountDue,
+            currency: Currency,
+            notes: notes,
+            now: issuedAt,
+            createdBy: issuedBy
+        );
+
+        ReceiptNumber = receiptNumber;
+        UpdatedAt = issuedAt;
+        UpdatedBy = issuedBy;
+    }
+
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)
     {
         DeletedAt = deletedAt;
         DeletedBy = deletedBy;
         UpdatedAt = deletedAt;
         UpdatedBy = deletedBy;
+
+        if (Receipt != null && Receipt.DeletedAt == null)
+        {
+            Receipt.SoftDelete(deletedAt, deletedBy);
+        }
     }
 }

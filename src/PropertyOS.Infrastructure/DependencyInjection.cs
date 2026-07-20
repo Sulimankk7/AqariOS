@@ -14,6 +14,9 @@ using PropertyOS.Application.Leasing;
 using PropertyOS.Infrastructure.Leasing.Repositories;
 using PropertyOS.Application.Financials;
 using PropertyOS.Infrastructure.Financials.Repositories;
+using PropertyOS.Application.Maintenance;
+using PropertyOS.Infrastructure.Maintenance.Repositories;
+using PropertyOS.Domain.Maintenance.Enums;
 
 
 namespace PropertyOS.Infrastructure;
@@ -86,6 +89,17 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum", null);
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum", null);
 
+        // Module 7 enums
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum", null);
+
+        // Module 8 enums
+        dataSourceBuilder.MapEnum<MaintenanceCategory>("maintenance_category_enum", null);
+        dataSourceBuilder.MapEnum<MaintenancePriority>("maintenance_priority_enum", null);
+        dataSourceBuilder.MapEnum<MaintenanceStatus>("maintenance_status_enum", null);
+
         var dataSource = dataSourceBuilder.Build();
 
 
@@ -108,9 +122,16 @@ public static class DependencyInjection
         // Register the TenantSessionInterceptor as a scoped service so EF Core
         // can inject ITenantContext per-request from DI.
         // -----------------------------------------------------------------------
+        services.AddScoped<TenantSessionInterceptor>();
         services.AddScoped<ILeaseContractRepository, LeaseContractRepository>();
         services.AddScoped<ILeasingReferenceRepository, LeasingReferenceRepository>();
         services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
+        services.AddScoped<IExpenseRepository, ExpenseRepository>();
+        services.AddScoped<ICompanyReceiptSequenceRepository, CompanyReceiptSequenceRepository>();
+        services.AddScoped<IEfawateercomTransactionRepository, EfawateercomTransactionRepository>();
+        services.AddScoped<IEfawateercomGateway, PropertyOS.Infrastructure.Payments.NullEfawateercomGateway>();
+        services.AddScoped<IMaintenanceRequestRepository, MaintenanceRequestRepository>();
+        services.AddScoped<IMaintenanceQueries, MaintenanceQueries>();
         services.AddScoped<AuditSaveChangesInterceptor>();
 
         services.AddHttpContextAccessor();
@@ -174,6 +195,17 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+
+                    // Module 7
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
+
+                    // Module 8
+                    npgsqlOptions.MapEnum<MaintenanceCategory>("maintenance_category_enum");
+                    npgsqlOptions.MapEnum<MaintenancePriority>("maintenance_priority_enum");
+                    npgsqlOptions.MapEnum<MaintenanceStatus>("maintenance_status_enum");
                 });
 
 

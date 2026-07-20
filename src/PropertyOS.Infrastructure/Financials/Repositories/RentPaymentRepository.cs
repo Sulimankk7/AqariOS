@@ -25,7 +25,7 @@ public class RentPaymentRepository : IRentPaymentRepository
 
     public Task<RentPayment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return _dbContext.RentPayments.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        return _dbContext.RentPayments.Include(p => p.Receipt).FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
     public async Task AddAsync(RentPayment rentPayment, CancellationToken cancellationToken = default)
@@ -202,6 +202,63 @@ public class RentPaymentRepository : IRentPaymentRepository
                         && c.DueDate <= limitDate)
             .OrderBy(c => c.DueDate)
             .ProjectToType<ChequeDetailDto>()
+            .ToListAsync(cancellationToken);
+    }
+
+    // ── Rent Payment Receipt read-side ───────────────────────────────────────
+
+    public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(
+        Guid rentPaymentId,
+        CancellationToken cancellationToken = default)
+    {
+        return _dbContext.RentPaymentReceipts
+            .AsNoTracking()
+            .Where(r => r.RentPaymentId == rentPaymentId && r.DeletedAt == null)
+            .ProjectToType<RentPaymentReceiptDto>()
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(
+        RentPaymentReceiptFilterOptions filter,
+        CancellationToken cancellationToken = default)
+    {
+        // Join receipts → payments to allow filtering by LeaseContractId / TenantId
+        var query =
+            from r in _dbContext.RentPaymentReceipts
+            join p in _dbContext.RentPayments on r.RentPaymentId equals p.Id
+            where r.DeletedAt == null
+            select new { r, p };
+
+        // ── Filters ─────────────────────────────────────────────────────────
+        if (filter.LeaseContractId.HasValue)
+            query = query.Where(x => x.p.LeaseContractId == filter.LeaseContractId.Value);
+
+        if (filter.TenantId.HasValue)
+            query = query.Where(x => x.p.TenantId == filter.TenantId.Value);
+
+        if (filter.DateFrom.HasValue)
+            query = query.Where(x => x.r.IssueDate >= filter.DateFrom.Value);
+
+        if (filter.DateTo.HasValue)
+            query = query.Where(x => x.r.IssueDate <= filter.DateTo.Value);
+
+        // ── Keyset pagination cursor: (IssueDate DESC, Id ASC) ───────────────
+        if (filter.LastSeenId.HasValue && filter.LastSeenIssueDate.HasValue)
+        {
+            var cursorDate = filter.LastSeenIssueDate.Value;
+            var cursorId   = filter.LastSeenId.Value;
+
+            query = query.Where(x =>
+                x.r.IssueDate < cursorDate ||
+                (x.r.IssueDate == cursorDate && x.r.Id.CompareTo(cursorId) > 0));
+        }
+
+        return query
+            .OrderByDescending(x => x.r.IssueDate)
+            .ThenBy(x => x.r.Id)
+            .Take(filter.PageSize)
+            .Select(x => x.r)
+            .ProjectToType<RentPaymentReceiptDto>()
             .ToListAsync(cancellationToken);
     }
 }

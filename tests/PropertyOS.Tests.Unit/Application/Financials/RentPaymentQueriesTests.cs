@@ -185,6 +185,9 @@ public class RentPaymentQueriesTests
                 .ToList();
             return Task.FromResult(list);
         }
+
+        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private RentPayment CreateRentPayment(Guid id, Guid leaseContractId, Guid tenantId, decimal amount, DueDateStatus status, DateOnly? dueDate = null)

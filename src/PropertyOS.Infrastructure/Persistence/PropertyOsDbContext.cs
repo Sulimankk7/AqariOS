@@ -77,6 +77,25 @@ public class PropertyOsDbContext : DbContext
     public DbSet<PropertyOS.Domain.Financials.PaymentAllocation> PaymentAllocations => Set<PropertyOS.Domain.Financials.PaymentAllocation>();
 
     // ---------------------------------------------------------------------------
+    // Module 7 — Financial Operations
+    // ---------------------------------------------------------------------------
+
+    public DbSet<PropertyOS.Domain.Financials.Expense> Expenses => Set<PropertyOS.Domain.Financials.Expense>();
+    public DbSet<PropertyOS.Domain.Financials.ExpenseReceipt> ExpenseReceipts => Set<PropertyOS.Domain.Financials.ExpenseReceipt>();
+    public DbSet<PropertyOS.Domain.Financials.RentPaymentReceipt> RentPaymentReceipts => Set<PropertyOS.Domain.Financials.RentPaymentReceipt>();
+    public DbSet<PropertyOS.Domain.Financials.CompanyReceiptSequence> CompanyReceiptSequences => Set<PropertyOS.Domain.Financials.CompanyReceiptSequence>();
+    public DbSet<PropertyOS.Domain.Financials.EfawateercomTransaction> EfawateercomTransactions => Set<PropertyOS.Domain.Financials.EfawateercomTransaction>();
+
+    // ---------------------------------------------------------------------------
+    // Module 8 — Maintenance
+    // ---------------------------------------------------------------------------
+
+    public DbSet<PropertyOS.Domain.Maintenance.MaintenanceRequest> MaintenanceRequests => Set<PropertyOS.Domain.Maintenance.MaintenanceRequest>();
+    public DbSet<PropertyOS.Domain.Maintenance.MaintenanceRequestAttachment> MaintenanceRequestAttachments => Set<PropertyOS.Domain.Maintenance.MaintenanceRequestAttachment>();
+    public DbSet<PropertyOS.Domain.Maintenance.MaintenanceRequestComment> MaintenanceRequestComments => Set<PropertyOS.Domain.Maintenance.MaintenanceRequestComment>();
+    public DbSet<PropertyOS.Domain.Maintenance.MaintenanceStatusHistory> MaintenanceStatusHistory => Set<PropertyOS.Domain.Maintenance.MaintenanceStatusHistory>();
+
+    // ---------------------------------------------------------------------------
     // Module 3 — Security / Identity / RBAC / Audit
 
     // ---------------------------------------------------------------------------
@@ -134,6 +153,17 @@ public class PropertyOsDbContext : DbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>(name: "due_date_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>(name: "cheque_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>(name: "allocation_status_enum");
+
+        // Module 7
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>(name: "expense_category_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>(name: "expense_payment_method_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>(name: "receipt_reset_policy_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>(name: "efawateercom_status_enum");
+
+        // Module 8
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Maintenance.Enums.MaintenanceCategory>(name: "maintenance_category_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Maintenance.Enums.MaintenancePriority>(name: "maintenance_priority_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Maintenance.Enums.MaintenanceStatus>(name: "maintenance_status_enum");
 
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>

@@ -1,6 +1,8 @@
 using DotNet.Testcontainers.Builders;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Respawn;
+using Respawn.Graph;
 using PropertyOS.Domain.Audit.Enums;
 using PropertyOS.Domain.Companies.Enums;
 using PropertyOS.Domain.Identity.Enums;
@@ -17,11 +19,15 @@ public sealed class PostgresTestFixture : IAsyncLifetime
 
     private readonly PostgreSqlContainer _container;
     private NpgsqlDataSource? _dataSource;
+    public NpgsqlDataSource DataSource => _dataSource ?? throw new InvalidOperationException("DataSource not initialized");
     public NpgsqlDataSource? AppUserDataSource { get; private set; }
     public string RawConnectionString { get; private set; } = string.Empty;
     public string AppUserConnectionString { get; private set; } = string.Empty;
 
     public PropertyOsDbContext Context { get; private set; } = null!;
+    public PropertyOsDbContext AppUserContext { get; private set; } = null!;
+
+    private Respawner _respawner = default!;
 
     public PostgresTestFixture()
     {
@@ -71,6 +77,13 @@ public sealed class PostgresTestFixture : IAsyncLifetime
 
 
             await migrationContext.Database.MigrateAsync();
+
+            // Grant missing table privileges to propertyos_app role (production privilege defect workaround)
+            await migrationContext.Database.ExecuteSqlRawAsync(@"
+                GRANT SELECT, INSERT, UPDATE, DELETE ON roles, user_company_roles, role_permissions, refresh_tokens TO propertyos_app;
+                GRANT SELECT ON permissions, users TO propertyos_app;
+                GRANT SELECT, INSERT, UPDATE, DELETE ON expenses, expense_receipts, company_receipt_sequences, rent_payment_receipts, efawateercom_transactions TO propertyos_app;
+            ");
             
             // Create a non-superuser role for runtime tests to ensure RLS is genuinely enforced.
             // (A PostgreSQL superuser cannot remove its own superuser status).
@@ -109,6 +122,27 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum");
         dataSourceBuilder.MapEnum<ParkingType>("parking_type_enum");
         dataSourceBuilder.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
+
+        // Module 5
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>("contract_status_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>("payment_frequency_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>("termination_type_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>("contract_document_type_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>("legal_regime_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TenantType>("tenant_type_enum");
+
+        // Module 6
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentPurpose>("payment_purpose_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentMethod>("payment_method_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+
+        // Module 7
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
         _dataSource = dataSourceBuilder.Build();
 
         AppUserConnectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
@@ -141,6 +175,27 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<OccupancyStatus>("occupancy_status_enum");
         appUserDataSourceBuilder.MapEnum<ParkingType>("parking_type_enum");
         appUserDataSourceBuilder.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
+
+        // Module 5
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>("contract_status_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>("payment_frequency_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>("termination_type_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>("contract_document_type_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>("legal_regime_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Leasing.Enums.TenantType>("tenant_type_enum");
+
+        // Module 6
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentPurpose>("payment_purpose_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentMethod>("payment_method_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+
+        // Module 7
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
         AppUserDataSource = appUserDataSourceBuilder.Build();
 
         // 3. Create the test Context backed by the mapped DataSource.
@@ -168,10 +223,81 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<OccupancyStatus>("occupancy_status_enum");
                 o.MapEnum<ParkingType>("parking_type_enum");
                 o.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
+
+                // Module 5
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>("contract_status_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>("payment_frequency_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>("termination_type_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>("contract_document_type_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>("legal_regime_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.TenantType>("tenant_type_enum");
+
+                // Module 6
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentPurpose>("payment_purpose_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentMethod>("payment_method_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+
+                // Module 7
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
             })
             .Options;
 
         Context = new PropertyOsDbContext(options);
+
+        var appUserOptions = new DbContextOptionsBuilder<PropertyOsDbContext>()
+            .UseNpgsql(AppUserDataSource, o =>
+            {
+                o.MapEnum<CompanyType>("company_type_enum");
+                o.MapEnum<LateFeeType>("late_fee_type_enum");
+                o.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
+                o.MapEnum<BillingCycleEnum>("billing_cycle_enum");
+                // Module 3
+                o.MapEnum<AuditAction>("audit_action_enum");
+                o.MapEnum<AuditSeverity>("audit_severity_enum");
+                o.MapEnum<AuditSource>("audit_source_enum");
+                o.MapEnum<LoginStatus>("login_status_enum");
+                o.MapEnum<MembershipStatus>("membership_status_enum");
+                o.MapEnum<MfaType>("mfa_type_enum");
+                o.MapEnum<OtpPurpose>("otp_purpose_enum");
+                o.MapEnum<RevokeReason>("revoke_reason_enum");
+                // Module 4
+                o.MapEnum<BuildingType>("building_type_enum");
+                o.MapEnum<Governorate>("governorate_enum");
+                o.MapEnum<FloorType>("floor_type_enum");
+                o.MapEnum<OwnershipStatus>("ownership_status_enum");
+                o.MapEnum<OccupancyStatus>("occupancy_status_enum");
+                o.MapEnum<ParkingType>("parking_type_enum");
+                o.MapEnum<ParkingAssignmentStatus>("parking_assignment_status_enum");
+
+                // Module 5
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractStatus>("contract_status_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.PaymentFrequency>("payment_frequency_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.TerminationType>("termination_type_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.ContractDocumentType>("contract_document_type_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.LegalRegime>("legal_regime_enum");
+                o.MapEnum<PropertyOS.Domain.Leasing.Enums.TenantType>("tenant_type_enum");
+
+                // Module 6
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentPurpose>("payment_purpose_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.PaymentMethod>("payment_method_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+
+                // Module 7
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
+            })
+            .Options;
+
+        AppUserContext = new PropertyOsDbContext(appUserOptions);
 
         // --- VERIFY SECURITY DEFINER ---
         await using var verifyConn = await _dataSource!.OpenConnectionAsync();
@@ -203,27 +329,37 @@ public sealed class PostgresTestFixture : IAsyncLifetime
             throw new Exception("Function insert_audit_log not found");
         }
         // -------------------------------
+        
+        await using var respawnConn = await _dataSource.OpenConnectionAsync();
+        _respawner = await Respawner.CreateAsync(respawnConn, new RespawnerOptions
+        {
+            DbAdapter = DbAdapter.Postgres,
+            SchemasToInclude = new[] { "public" },
+            TablesToIgnore = new Table[] { "__EFMigrationsHistory" }
+        });
     }
 
     public async Task ResetDatabaseAsync()
     {
         await using var conn = await _dataSource!.OpenConnectionAsync();
-        await using var cmd = conn.CreateCommand();
+        await _respawner.ResetAsync(conn);
 
-        cmd.CommandText = @"
-            TRUNCATE TABLE parking_assignments, parking_spots, apartments, building_addresses, floors, buildings,
-                           company_subscriptions, subscription_plans, company_settings, companies
-            RESTART IDENTITY
-            CASCADE;
-        ";
-
-        await cmd.ExecuteNonQueryAsync();
+        if (Context is not null)
+        {
+            Context.ChangeTracker.Clear();
+        }
+        if (AppUserContext is not null)
+        {
+            AppUserContext.ChangeTracker.Clear();
+        }
     }
 
     public async Task DisposeAsync()
     {
         if (Context is not null)
             await Context.DisposeAsync();
+        if (AppUserContext is not null)
+            await AppUserContext.DisposeAsync();
         if (_dataSource is not null)
             await _dataSource.DisposeAsync();
         if (AppUserDataSource is not null)

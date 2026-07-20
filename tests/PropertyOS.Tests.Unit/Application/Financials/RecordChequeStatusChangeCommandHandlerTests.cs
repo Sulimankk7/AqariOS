@@ -60,6 +60,8 @@ public class RecordChequeStatusChangeCommandHandlerTests
         public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private class FakeCurrentUserContext : ICurrentUserContext

@@ -27,6 +27,7 @@ public class LeaseContractRlsTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await _fixture.ResetDatabaseAsync();
         _sharedAppUserConnection = await _fixture.AppUserDataSource!.OpenConnectionAsync();
     }
 
@@ -34,7 +35,6 @@ public class LeaseContractRlsTests : IAsyncLifetime
     {
         if (_sharedAppUserConnection != null)
             await _sharedAppUserConnection.DisposeAsync();
-        await _fixture.ResetDatabaseAsync();
     }
 
     private sealed class StaticTenantContext : ITenantContext
@@ -65,6 +65,9 @@ public class LeaseContractRlsTests : IAsyncLifetime
                 o.MapEnum<ContractDocumentType>("contract_document_type_enum");
                 o.MapEnum<TerminationType>("termination_type_enum");
                 o.MapEnum<ContractStatus>("contract_status_enum");
+                o.MapEnum<LegalRegime>("legal_regime_enum");
+                o.MapEnum<TenantType>("tenant_type_enum");
+                o.MapEnum<PaymentFrequency>("payment_frequency_enum");
             })
             .AddInterceptors(new PropertyOS.Infrastructure.Persistence.Interceptors.TenantSessionInterceptor(tenantContext, userContext))
             .Options;
@@ -107,29 +110,29 @@ public class LeaseContractRlsTests : IAsyncLifetime
         var contractAId = Guid.NewGuid(); var contractBId = Guid.NewGuid();
 
         cmd.CommandText = @"
-            INSERT INTO buildings (id, company_id, name, created_at) VALUES (@buildA, @cA, 'BA', now()), (@buildB, @cB, 'BB', now());
-            INSERT INTO floors (id, building_id, number, created_at) VALUES (gen_random_uuid(), @buildA, 1, now()), (gen_random_uuid(), @buildB, 1, now());
-            INSERT INTO apartments (id, floor_id, building_id, company_id, number, type, bedrooms, bathrooms, base_rent_amount, size_sqm, created_at) 
-                VALUES (@aptA, (SELECT id FROM floors WHERE building_id = @buildA LIMIT 1), @buildA, @cA, '101A', 'Residential', 1, 1, 100, 100, now()),
-                       (@aptB, (SELECT id FROM floors WHERE building_id = @buildB LIMIT 1), @buildB, @cB, '101B', 'Residential', 1, 1, 100, 100, now());
-            INSERT INTO tenants (id, company_id, type, first_name, last_name, phone_number, created_at) 
-                VALUES (@tenA, @cA, 'Personal', 'TA', '1', '123A', now()), (@tenB, @cB, 'Personal', 'TB', '1', '123B', now());
+            INSERT INTO buildings (id, company_id, name, building_type, total_floors, created_at, updated_at) VALUES (@buildA, @cA, 'BA', 'residential', 1, now(), now()), (@buildB, @cB, 'BB', 'residential', 1, now(), now());
+            INSERT INTO floors (id, company_id, building_id, floor_number, floor_label, floor_type, created_at, updated_at) VALUES (gen_random_uuid(), @cA, @buildA, 1, 'Floor 1', 'regular', now(), now()), (gen_random_uuid(), @cB, @buildB, 1, 'Floor 1', 'regular', now(), now());
+            INSERT INTO apartments (id, floor_id, building_id, company_id, unit_number, occupancy_status, bedrooms, bathrooms, base_rent_amount, area_sqm, created_at, updated_at) 
+                VALUES (@aptA, (SELECT id FROM floors WHERE building_id = @buildA LIMIT 1), @buildA, @cA, '101A', 'vacant', 1, 1, 100, 100, now(), now()),
+                       (@aptB, (SELECT id FROM floors WHERE building_id = @buildB LIMIT 1), @buildB, @cB, '101B', 'vacant', 1, 1, 100, 100, now(), now());
+            INSERT INTO tenants (id, company_id, name, national_id, phone, created_at, updated_at) 
+                VALUES (@tenA, @cA, 'TA 1', '1234567890', '+962791234567', now(), now()), (@tenB, @cB, 'TB 1', '1234567890', '+962791234567', now(), now());
             
             INSERT INTO lease_contracts (id, company_id, building_id, apartment_id, tenant_id, contract_number, start_date, end_date, monthly_rent_amount, payment_frequency, payment_due_day, status, legal_regime, tenant_type, security_deposit_amount, created_at, updated_at)
-                VALUES (@contA, @cA, @buildA, @aptA, @tenA, 'LC-A', '2025-01-01', '2026-01-01', 100, 'Monthly', 1, 'Draft', 'Standard', 'Personal', 100, now(), now()),
-                       (@contB, @cB, @buildB, @aptB, @tenB, 'LC-B', '2025-01-01', '2026-01-01', 100, 'Monthly', 1, 'Draft', 'Standard', 'Personal', 100, now(), now());
+                VALUES (@contA, @cA, @buildA, @aptA, @tenA, 'LC-A', '2025-01-01', '2026-01-01', 100, 'monthly', 1, 'draft', 'standard', 'personal', 100, now(), now()),
+                       (@contB, @cB, @buildB, @aptB, @tenB, 'LC-B', '2025-01-01', '2026-01-01', 100, 'monthly', 1, 'draft', 'standard', 'personal', 100, now(), now());
             
-            INSERT INTO contract_terminations (id, company_id, lease_contract_id, notice_date, termination_date, termination_type, is_mutual, reason, created_at, updated_at)
-                VALUES (gen_random_uuid(), @cA, @contA, '2025-06-01', '2025-07-01', 'Mutual', true, 'N/A', now(), now()),
-                       (gen_random_uuid(), @cB, @contB, '2025-06-01', '2025-07-01', 'Mutual', true, 'N/A', now(), now());
+            INSERT INTO contract_terminations (id, company_id, lease_contract_id, termination_date, termination_type, reason, created_at, updated_at)
+                VALUES (gen_random_uuid(), @cA, @contA, '2025-07-01', 'mutual_agreement', 'N/A', now(), now()),
+                       (gen_random_uuid(), @cB, @contB, '2025-07-01', 'mutual_agreement', 'N/A', now(), now());
 
-            INSERT INTO contract_status_history (id, company_id, lease_contract_id, old_status, new_status, reason, created_at)
-                VALUES (gen_random_uuid(), @cA, @contA, 'Draft', 'Draft', 'init', now()),
-                       (gen_random_uuid(), @cB, @contB, 'Draft', 'Draft', 'init', now());
+            INSERT INTO contract_status_history (id, company_id, lease_contract_id, previous_status, new_status, reason, changed_at)
+                VALUES (gen_random_uuid(), @cA, @contA, NULL, 'draft', 'init', now()),
+                       (gen_random_uuid(), @cB, @contB, NULL, 'draft', 'init', now());
 
             INSERT INTO contract_documents (id, company_id, lease_contract_id, file_id, document_type, created_at, updated_at)
-                VALUES (gen_random_uuid(), @cA, @contA, gen_random_uuid(), 'SignedContract', now(), now()),
-                       (gen_random_uuid(), @cB, @contB, gen_random_uuid(), 'SignedContract', now(), now());
+                VALUES (gen_random_uuid(), @cA, @contA, gen_random_uuid(), 'signed_contract', now(), now()),
+                       (gen_random_uuid(), @cB, @contB, gen_random_uuid(), 'signed_contract', now(), now());
         ";
         cmd.Parameters.Add(new NpgsqlParameter("cA", companyA_Id));
         cmd.Parameters.Add(new NpgsqlParameter("cB", companyB_Id));

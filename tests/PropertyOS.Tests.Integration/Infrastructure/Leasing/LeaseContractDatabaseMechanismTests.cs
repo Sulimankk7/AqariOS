@@ -24,7 +24,7 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
     public Task InitializeAsync() => _fixture.ResetDatabaseAsync();
     public Task DisposeAsync() => Task.CompletedTask;
 
-    private sealed record LeasingSeed(Guid CompanyId, Guid BuildingId, Guid ApartmentId, Guid TenantId);
+    private sealed record LeasingSeed(Guid CompanyId, Guid BuildingId, Guid ApartmentId, Guid TenantId, Guid UserId);
 
     private async Task<LeasingSeed> SeedPrerequisites()
     {
@@ -33,19 +33,22 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
         var floorId = Guid.NewGuid();
         var apartmentId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
 
         await using var conn = ((NpgsqlConnection)_fixture.Context.Database.GetDbConnection()).CloneWith(_fixture.RawConnectionString);
         await conn.OpenAsync();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
-            INSERT INTO companies (id, name, type, created_at) VALUES (@cId, 'Test', 'Owner', now());
-            INSERT INTO buildings (id, company_id, name, created_at) VALUES (@bId, @cId, 'B', now());
-            INSERT INTO floors (id, building_id, number, created_at) VALUES (@fId, @bId, 1, now());
-            INSERT INTO apartments (id, floor_id, building_id, company_id, number, type, bedrooms, bathrooms, base_rent_amount, size_sqm, created_at) 
-                VALUES (@aId, @fId, @bId, @cId, '101', 'Residential', 1, 1, 100, 100, now());
-            INSERT INTO tenants (id, company_id, type, first_name, last_name, phone_number, created_at) 
-                VALUES (@tId, @cId, 'Personal', 'T', '1', '123', now());
+            INSERT INTO users (id, full_name, email) VALUES (@uId, 'Test User', 'test@example.com');
+            INSERT INTO companies (id, legal_name, display_name, primary_phone, company_type, created_at, updated_at) VALUES (@cId, 'Test', 'Test', '+962791234567', 'individual_owner', now(), now());
+            INSERT INTO buildings (id, company_id, name, building_type, total_floors, created_at, updated_at) VALUES (@bId, @cId, 'B', 'residential', 1, now(), now());
+            INSERT INTO floors (id, company_id, building_id, floor_number, floor_label, floor_type, created_at, updated_at) VALUES (@fId, @cId, @bId, 1, 'Floor 1', 'regular', now(), now());
+            INSERT INTO apartments (id, floor_id, building_id, company_id, unit_number, occupancy_status, bedrooms, bathrooms, base_rent_amount, area_sqm, created_at, updated_at) 
+                VALUES (@aId, @fId, @bId, @cId, '101', 'vacant', 1, 1, 100, 100, now(), now());
+            INSERT INTO tenants (id, company_id, name, national_id, phone, created_at, updated_at) 
+                VALUES (@tId, @cId, 'T 1', '1234567890', '+962791234567', now(), now());
         ";
+        cmd.Parameters.Add(new NpgsqlParameter("uId", userId));
         cmd.Parameters.Add(new NpgsqlParameter("cId", companyId));
         cmd.Parameters.Add(new NpgsqlParameter("bId", buildingId));
         cmd.Parameters.Add(new NpgsqlParameter("fId", floorId));
@@ -53,7 +56,7 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
         cmd.Parameters.Add(new NpgsqlParameter("tId", tenantId));
         await cmd.ExecuteNonQueryAsync();
 
-        return new LeasingSeed(companyId, buildingId, apartmentId, tenantId);
+        return new LeasingSeed(companyId, buildingId, apartmentId, tenantId, userId);
     }
 
     [Fact]
@@ -61,11 +64,11 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
     {
         var seed = await SeedPrerequisites();
 
-        var contract1 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
+        var contract1 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
         _fixture.Context.LeaseContracts.Add(contract1);
         await _fixture.Context.SaveChangesAsync();
 
-        var contract2 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-2", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
+        var contract2 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-2", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
         _fixture.Context.LeaseContracts.Add(contract2);
 
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => _fixture.Context.SaveChangesAsync());
@@ -80,15 +83,15 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
     {
         var seed = await SeedPrerequisites();
 
-        var contract1 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
+        var contract1 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
         _fixture.Context.LeaseContracts.Add(contract1);
         await _fixture.Context.SaveChangesAsync();
 
-        var contract2 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-2", new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), contract1.Id, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Draft);
+        var contract2 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-2", new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, contract1.Id, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Draft);
         _fixture.Context.LeaseContracts.Add(contract2);
         await _fixture.Context.SaveChangesAsync();
 
-        var contract3 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-3", new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), contract1.Id, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Draft);
+        var contract3 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-3", new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, contract1.Id, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Draft);
         _fixture.Context.LeaseContracts.Add(contract3);
 
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => _fixture.Context.SaveChangesAsync());
@@ -103,12 +106,12 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
     {
         var seed = await SeedPrerequisites();
 
-        var contract1 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
-        contract1.SoftDelete(DateTimeOffset.UtcNow, Guid.NewGuid());
+        var contract1 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
+        contract1.SoftDelete(DateTimeOffset.UtcNow, seed.UserId);
         _fixture.Context.LeaseContracts.Add(contract1);
         await _fixture.Context.SaveChangesAsync();
 
-        var contract2 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-2", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
+        var contract2 = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-2", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
         _fixture.Context.LeaseContracts.Add(contract2);
         await _fixture.Context.SaveChangesAsync();
         
@@ -127,14 +130,14 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
         var apartmentBefore = await _fixture.Context.Apartments.AsNoTracking().SingleAsync(a => a.Id == seed.ApartmentId);
         Assert.Equal(OccupancyStatus.Vacant, apartmentBefore.OccupancyStatus);
 
-        var contract = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Draft);
+        var contract = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Draft);
         _fixture.Context.LeaseContracts.Add(contract);
         await _fixture.Context.SaveChangesAsync();
 
         var apartmentDraft = await _fixture.Context.Apartments.AsNoTracking().SingleAsync(a => a.Id == seed.ApartmentId);
         Assert.Equal(OccupancyStatus.Vacant, apartmentDraft.OccupancyStatus);
 
-        await _fixture.Context.Database.ExecuteSqlRawAsync("UPDATE lease_contracts SET status = 'Active' WHERE id = {0}", contract.Id);
+        await _fixture.Context.Database.ExecuteSqlRawAsync("UPDATE lease_contracts SET status = 'active' WHERE id = {0}", contract.Id);
 
         var apartmentActive = await _fixture.Context.Apartments.AsNoTracking().SingleAsync(a => a.Id == seed.ApartmentId);
         Assert.Equal(OccupancyStatus.Occupied, apartmentActive.OccupancyStatus);
@@ -145,14 +148,14 @@ public class LeaseContractDatabaseMechanismTests : IAsyncLifetime
     {
         var seed = await SeedPrerequisites();
 
-        var contract = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, Guid.NewGuid(), null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
+        var contract = LeaseContract.Create(seed.CompanyId, seed.BuildingId, seed.ApartmentId, seed.TenantId, "LC-1", new DateOnly(2025, 1, 1), new DateOnly(2026, 1, 1), 100, PaymentFrequency.Monthly, 1, DateTimeOffset.UtcNow, seed.UserId, null, LegalRegime.Standard, TenantType.Personal, 100, ContractStatus.Active);
         _fixture.Context.LeaseContracts.Add(contract);
         await _fixture.Context.SaveChangesAsync();
 
         var apartmentActive = await _fixture.Context.Apartments.AsNoTracking().SingleAsync(a => a.Id == seed.ApartmentId);
         Assert.Equal(OccupancyStatus.Occupied, apartmentActive.OccupancyStatus);
 
-        await _fixture.Context.Database.ExecuteSqlRawAsync("UPDATE lease_contracts SET status = 'Terminated' WHERE id = {0}", contract.Id);
+        await _fixture.Context.Database.ExecuteSqlRawAsync("UPDATE lease_contracts SET status = 'terminated' WHERE id = {0}", contract.Id);
 
         var apartmentTerminated = await _fixture.Context.Apartments.AsNoTracking().SingleAsync(a => a.Id == seed.ApartmentId);
         Assert.Equal(OccupancyStatus.Vacant, apartmentTerminated.OccupancyStatus);

@@ -36,6 +36,7 @@ public class PropertiesHierarchyTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await _fixture.ResetDatabaseAsync();
         _appConnection = await _fixture.AppUserDataSource!.OpenConnectionAsync();
     }
 
@@ -43,7 +44,6 @@ public class PropertiesHierarchyTests : IAsyncLifetime
     {
         if (_appConnection != null)
             await _appConnection.DisposeAsync();
-        await _fixture.ResetDatabaseAsync();
     }
 
     // =========================================================================
