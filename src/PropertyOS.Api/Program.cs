@@ -74,6 +74,21 @@ if (!string.IsNullOrEmpty(connectionString))
 builder.Services.AddHealthChecks()
     .AddNpgSql(connectionString ?? string.Empty);
 
+// Configure Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("ViewingRequestLimit", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -87,6 +102,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

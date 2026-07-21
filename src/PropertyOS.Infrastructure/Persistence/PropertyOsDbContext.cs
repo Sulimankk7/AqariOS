@@ -96,8 +96,14 @@ public class PropertyOsDbContext : DbContext
     public DbSet<PropertyOS.Domain.Maintenance.MaintenanceStatusHistory> MaintenanceStatusHistory => Set<PropertyOS.Domain.Maintenance.MaintenanceStatusHistory>();
 
     // ---------------------------------------------------------------------------
-    // Module 3 — Security / Identity / RBAC / Audit
+    // Module 9 — Marketplace
+    // ---------------------------------------------------------------------------
+    public DbSet<PropertyOS.Domain.Marketplace.MarketplaceListing> MarketplaceListings => Set<PropertyOS.Domain.Marketplace.MarketplaceListing>();
+    public DbSet<PropertyOS.Domain.Marketplace.ListingImage> ListingImages => Set<PropertyOS.Domain.Marketplace.ListingImage>();
+    public DbSet<PropertyOS.Domain.Marketplace.ViewingRequest> ViewingRequests => Set<PropertyOS.Domain.Marketplace.ViewingRequest>();
 
+    // ---------------------------------------------------------------------------
+    // Module 3 — Security / Identity / RBAC / Audit
     // ---------------------------------------------------------------------------
 
     public DbSet<PropertyOS.Domain.Identity.Entities.User> Users => Set<PropertyOS.Domain.Identity.Entities.User>();
@@ -164,6 +170,11 @@ public class PropertyOsDbContext : DbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Maintenance.Enums.MaintenanceCategory>(name: "maintenance_category_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Maintenance.Enums.MaintenancePriority>(name: "maintenance_priority_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Maintenance.Enums.MaintenanceStatus>(name: "maintenance_status_enum");
+
+        // Module 9
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Common.Enums.CurrencyCode>(name: "currency_code_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Marketplace.Enums.ListingStatus>(name: "listing_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Marketplace.Enums.ViewingRequestStatus>(name: "viewing_request_status_enum");
 
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>

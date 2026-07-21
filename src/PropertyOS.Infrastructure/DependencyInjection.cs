@@ -17,6 +17,13 @@ using PropertyOS.Infrastructure.Financials.Repositories;
 using PropertyOS.Application.Maintenance;
 using PropertyOS.Infrastructure.Maintenance.Repositories;
 using PropertyOS.Domain.Maintenance.Enums;
+using PropertyOS.Application.Marketplace;
+using PropertyOS.Infrastructure.Marketplace.Repositories;
+using PropertyOS.Infrastructure.Marketplace.Services;
+using PropertyOS.Domain.Common.Enums;
+using PropertyOS.Domain.Marketplace.Enums;
+using PropertyOS.Application.Properties;
+using PropertyOS.Infrastructure.Properties.Repositories;
 
 
 namespace PropertyOS.Infrastructure;
@@ -100,6 +107,11 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<MaintenancePriority>("maintenance_priority_enum", null);
         dataSourceBuilder.MapEnum<MaintenanceStatus>("maintenance_status_enum", null);
 
+        // Module 9 enums
+        dataSourceBuilder.MapEnum<CurrencyCode>("currency_code_enum", null);
+        dataSourceBuilder.MapEnum<ListingStatus>("listing_status_enum", null);
+        dataSourceBuilder.MapEnum<ViewingRequestStatus>("viewing_request_status_enum", null);
+
         var dataSource = dataSourceBuilder.Build();
 
 
@@ -132,6 +144,16 @@ public static class DependencyInjection
         services.AddScoped<IEfawateercomGateway, PropertyOS.Infrastructure.Payments.NullEfawateercomGateway>();
         services.AddScoped<IMaintenanceRequestRepository, MaintenanceRequestRepository>();
         services.AddScoped<IMaintenanceQueries, MaintenanceQueries>();
+
+        // Module 9 - Marketplace
+        services.AddScoped<IMarketplaceListingRepository, MarketplaceListingRepository>();
+        services.AddScoped<IViewingRequestRepository, ViewingRequestRepository>();
+        services.AddScoped<IMarketplaceQueries, MarketplaceQueries>();
+        services.AddScoped<IFileStorageValidator, FileStorageValidator>();
+
+        // Module 4 - Properties
+        services.AddScoped<IApartmentRepository, ApartmentRepository>();
+
         services.AddScoped<AuditSaveChangesInterceptor>();
 
         services.AddHttpContextAccessor();
@@ -206,6 +228,11 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<MaintenanceCategory>("maintenance_category_enum");
                     npgsqlOptions.MapEnum<MaintenancePriority>("maintenance_priority_enum");
                     npgsqlOptions.MapEnum<MaintenanceStatus>("maintenance_status_enum");
+
+                    // Module 9
+                    npgsqlOptions.MapEnum<CurrencyCode>("currency_code_enum");
+                    npgsqlOptions.MapEnum<ListingStatus>("listing_status_enum");
+                    npgsqlOptions.MapEnum<ViewingRequestStatus>("viewing_request_status_enum");
                 });
 
 

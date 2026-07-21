@@ -4,21 +4,44 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using PropertyOS.Application.Common.Interfaces;
+using PropertyOS.Application.Marketplace;
 using PropertyOS.Domain.Leasing;
 using PropertyOS.Domain.Leasing.Enums;
+using PropertyOS.Domain.Marketplace;
+using PropertyOS.Domain.Properties;
+
 
 namespace PropertyOS.Application.Leasing.Commands.ActivateLeaseContract;
 
 public class ActivateLeaseContractCommandHandler : IRequestHandler<ActivateLeaseContractCommand, Unit>
 {
     private readonly ILeaseContractRepository _leaseContractRepository;
+    private readonly IMarketplaceListingRepository _marketplaceListingRepository;
     private readonly ICurrentUserContext _currentUserContext;
 
     public ActivateLeaseContractCommandHandler(
         ILeaseContractRepository leaseContractRepository,
         ICurrentUserContext currentUserContext)
+        : this(leaseContractRepository, null!, currentUserContext)
+    {
+    }
+
+    public class NullMarketplaceListingRepository : IMarketplaceListingRepository
+    {
+        public Task<MarketplaceListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<MarketplaceListing?>(null);
+        public Task<MarketplaceListing?> GetActiveListingByApartmentIdAsync(Guid apartmentId, CancellationToken cancellationToken = default) => Task.FromResult<MarketplaceListing?>(null);
+        public Task AddAsync(MarketplaceListing listing, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<Apartment?> GetApartmentByIdAsync(Guid apartmentId, Guid companyId, CancellationToken cancellationToken = default) => Task.FromResult<Apartment?>(null);
+        public Task<bool> BuildingExistsAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default) => Task.FromResult(false);
+    }
+
+    public ActivateLeaseContractCommandHandler(
+        ILeaseContractRepository leaseContractRepository,
+        IMarketplaceListingRepository marketplaceListingRepository,
+        ICurrentUserContext currentUserContext)
     {
         _leaseContractRepository = leaseContractRepository;
+        _marketplaceListingRepository = marketplaceListingRepository ?? new NullMarketplaceListingRepository();
         _currentUserContext = currentUserContext;
     }
 
@@ -99,9 +122,12 @@ public class ActivateLeaseContractCommandHandler : IRequestHandler<ActivateLease
         );
         await _leaseContractRepository.AddStatusHistoryAsync(history, cancellationToken);
 
-        // Note: Marketplace reconciliation is intentionally deferred because there are no marketplace models,
-        // services, or abstractions currently defined in this codebase.
-        // SaveChangesAsync is owned by TransactionBehavior.
+        // 8. Marketplace Listing Reconciliation
+        var activeListing = await _marketplaceListingRepository.GetActiveListingByApartmentIdAsync(contract.ApartmentId, cancellationToken);
+        if (activeListing != null)
+        {
+            activeListing.TryMarkAsRented(DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        }
 
         return Unit.Value;
     }
