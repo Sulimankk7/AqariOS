@@ -103,6 +103,13 @@ public class PropertyOsDbContext : DbContext
     public DbSet<PropertyOS.Domain.Marketplace.ViewingRequest> ViewingRequests => Set<PropertyOS.Domain.Marketplace.ViewingRequest>();
 
     // ---------------------------------------------------------------------------
+    // Module 10 — Documents & Central File Storage
+    // ---------------------------------------------------------------------------
+    public DbSet<PropertyOS.Domain.Files.Entities.FileStorage> FileStorage => Set<PropertyOS.Domain.Files.Entities.FileStorage>();
+    public DbSet<PropertyOS.Domain.Documents.Entities.DocumentCategory> DocumentCategories => Set<PropertyOS.Domain.Documents.Entities.DocumentCategory>();
+    public DbSet<PropertyOS.Domain.Documents.Entities.BuildingDocument> BuildingDocuments => Set<PropertyOS.Domain.Documents.Entities.BuildingDocument>();
+
+    // ---------------------------------------------------------------------------
     // Module 3 — Security / Identity / RBAC / Audit
     // ---------------------------------------------------------------------------
 

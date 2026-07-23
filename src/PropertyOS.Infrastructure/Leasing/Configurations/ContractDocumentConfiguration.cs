@@ -90,9 +90,11 @@ internal sealed class ContractDocumentConfiguration : IEntityTypeConfiguration<C
             .HasConstraintName("fk_contract_documents_lease_contracts_company_contract")
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Note: Missing FK to file_storage. It physically does not exist yet.
-        // MIGRATION SQL / FUTURE MODULE REQUIRED for:
-        // ADD CONSTRAINT fk_contract_documents_file_storage_file_id FOREIGN KEY (file_id) REFERENCES file_storage(id) ON DELETE RESTRICT;
+        builder.HasOne<PropertyOS.Domain.Files.Entities.FileStorage>()
+            .WithMany()
+            .HasForeignKey(d => d.FileId)
+            .HasConstraintName("fk_contract_documents_file_storage_file_id")
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<PropertyOS.Domain.Identity.Entities.User>()
             .WithMany()

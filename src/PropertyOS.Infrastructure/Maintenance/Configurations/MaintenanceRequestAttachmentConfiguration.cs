@@ -90,6 +90,12 @@ internal sealed class MaintenanceRequestAttachmentConfiguration
         // The parent FK is defined on the MaintenanceRequest side (HasMany/WithOne).
         // We still add a dedicated FK constraint name on this side for clarity.
 
+        builder.HasOne<PropertyOS.Domain.Files.Entities.FileStorage>()
+            .WithMany()
+            .HasForeignKey(a => a.FileId)
+            .HasConstraintName("fk_maintenance_request_attachments_file_storage_file_id")
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<PropertyOS.Domain.Identity.Entities.User>()
             .WithMany()
             .HasForeignKey(a => a.UploadedBy)

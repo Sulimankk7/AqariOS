@@ -275,8 +275,14 @@ public class MarketplaceIntegrationTests : IAsyncLifetime
         {
             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-            var file1 = Guid.NewGuid();
-            var file2 = Guid.NewGuid();
+            var dbContext = scope.ServiceProvider.GetRequiredService<PropertyOS.Infrastructure.Persistence.PropertyOsDbContext>();
+            var fs1 = PropertyOS.Tests.Integration.Infrastructure.TestFileStorageFactory.CreateImageFileStorage(_companyId, null, "img1.png");
+            var fs2 = PropertyOS.Tests.Integration.Infrastructure.TestFileStorageFactory.CreateImageFileStorage(_companyId, null, "img2.jpg", "image/jpeg");
+            dbContext.Set<PropertyOS.Domain.Files.Entities.FileStorage>().AddRange(fs1, fs2);
+            await dbContext.SaveChangesAsync();
+
+            var file1 = fs1.Id;
+            var file2 = fs2.Id;
 
             var imgId1 = await mediator.Send(new AddListingImageCommand(listingIdCreated, file1, false));
             var imgId2 = await mediator.Send(new AddListingImageCommand(listingIdCreated, file2, false));
@@ -387,6 +393,11 @@ public class MarketplaceIntegrationTests : IAsyncLifetime
         {
             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
+            var dbContext = scope.ServiceProvider.GetRequiredService<PropertyOS.Infrastructure.Persistence.PropertyOsDbContext>();
+            var contractDocFile = PropertyOS.Tests.Integration.Infrastructure.TestFileStorageFactory.CreateValidFileStorage(_companyId, null, "contract.pdf");
+            dbContext.Set<PropertyOS.Domain.Files.Entities.FileStorage>().Add(contractDocFile);
+            await dbContext.SaveChangesAsync();
+
             // Seed tenant, lease_contract, contract_document using SQL to bypass constructor restrictions
             var tenantId = Guid.NewGuid();
             var leaseContractId = Guid.NewGuid();
@@ -404,7 +415,7 @@ public class MarketplaceIntegrationTests : IAsyncLifetime
                     VALUES (@lcId, @companyId, @buildingId, @apartmentId, @tenantId, 'LC-999', '2025-01-01', '2026-01-01', 500, 'monthly'::payment_frequency_enum, 1, 'draft'::contract_status_enum, 'standard'::legal_regime_enum, 'personal'::tenant_type_enum, 200, now(), now());
 
                     INSERT INTO contract_documents (id, company_id, lease_contract_id, file_id, document_type, created_at, updated_at)
-                    VALUES (@docId, @companyId, @lcId, gen_random_uuid(), 'signed_contract'::contract_document_type_enum, now(), now());
+                    VALUES (@docId, @companyId, @lcId, @fileId, 'signed_contract'::contract_document_type_enum, now(), now());
                 ";
                 cmd.Parameters.Add(new NpgsqlParameter("tenantId", tenantId));
                 cmd.Parameters.Add(new NpgsqlParameter("companyId", _companyId));
@@ -412,6 +423,7 @@ public class MarketplaceIntegrationTests : IAsyncLifetime
                 cmd.Parameters.Add(new NpgsqlParameter("apartmentId", _apartmentId));
                 cmd.Parameters.Add(new NpgsqlParameter("lcId", leaseContractId));
                 cmd.Parameters.Add(new NpgsqlParameter("docId", documentId));
+                cmd.Parameters.Add(new NpgsqlParameter("fileId", contractDocFile.Id));
 
                 await cmd.ExecuteNonQueryAsync();
             }

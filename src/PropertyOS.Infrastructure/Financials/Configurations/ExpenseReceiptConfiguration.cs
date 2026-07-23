@@ -117,6 +117,12 @@ internal sealed class ExpenseReceiptConfiguration : IEntityTypeConfiguration<Exp
             .HasConstraintName("fk_expense_receipts_expenses_company_expense")
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<PropertyOS.Domain.Files.Entities.FileStorage>()
+            .WithMany()
+            .HasForeignKey(r => r.FileId)
+            .HasConstraintName("fk_expense_receipts_file_storage_file_id")
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<PropertyOS.Domain.Identity.Entities.User>()
             .WithMany()
             .HasForeignKey(r => r.UploadedBy)

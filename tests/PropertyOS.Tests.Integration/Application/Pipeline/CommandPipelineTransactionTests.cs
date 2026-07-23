@@ -288,9 +288,14 @@ public class CommandPipelineTransactionTests : IAsyncLifetime
         _fixture.Context.LeaseContracts.Add(contract2);
         await _fixture.Context.SaveChangesAsync(); 
 
+        var docFileId = Guid.NewGuid();
         await _fixture.Context.Database.ExecuteSqlRawAsync(
-            "INSERT INTO contract_documents (id, company_id, lease_contract_id, file_id, document_type, created_at, updated_at) VALUES (gen_random_uuid(), {0}, {1}, gen_random_uuid(), 'signed_contract', now(), now())",
-            seed.CompanyId, contract2.Id); 
+            "INSERT INTO file_storage (id, company_id, original_filename, mime_type, size_bytes, storage_key, created_at, updated_at) VALUES ({0}, {1}, 'doc.pdf', 'application/pdf', 1024, {2}, now(), now())",
+            docFileId, seed.CompanyId, "key-pipe-" + docFileId);
+
+        await _fixture.Context.Database.ExecuteSqlRawAsync(
+            "INSERT INTO contract_documents (id, company_id, lease_contract_id, file_id, document_type, created_at, updated_at) VALUES (gen_random_uuid(), {0}, {1}, {2}, 'signed_contract', now(), now())",
+            seed.CompanyId, contract2.Id, docFileId); 
 
         await using var conn = ((NpgsqlConnection)_fixture.Context.Database.GetDbConnection()).CloneWith(_fixture.RawConnectionString);
         await conn.OpenAsync();

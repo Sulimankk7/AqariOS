@@ -21,7 +21,7 @@ internal sealed class ListingImageConfiguration : IEntityTypeConfiguration<Listi
             .HasColumnName("id")
             .HasColumnType("uuid")
             .HasDefaultValueSql("uuid_generate_v7()")
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
 
         builder.Property(img => img.CompanyId)
             .HasColumnName("company_id")
@@ -94,8 +94,11 @@ internal sealed class ListingImageConfiguration : IEntityTypeConfiguration<Listi
             .HasConstraintName("fk_listing_images_companies_company_id")
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Note: No file_storage FK constraint yet since that table is deferred.
-        // It will be added in Module 10 migrations.
+        builder.HasOne<PropertyOS.Domain.Files.Entities.FileStorage>()
+            .WithMany()
+            .HasForeignKey(img => img.FileId)
+            .HasConstraintName("fk_listing_images_file_storage_file_id")
+            .OnDelete(DeleteBehavior.Restrict);
 
         // ── Indexes (spec §9.2) ──────────────────────────────────────────────
 

@@ -151,6 +151,15 @@ public static class DependencyInjection
         services.AddScoped<IMarketplaceQueries, MarketplaceQueries>();
         services.AddScoped<IFileStorageValidator, FileStorageValidator>();
 
+        // Module 10 - Documents & Files Subsystem
+        services.Configure<PropertyOS.Application.Files.Options.FileStorageOptions>(configuration.GetSection(PropertyOS.Application.Files.Options.FileStorageOptions.SectionName));
+        services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PropertyOS.Application.Files.Options.FileStorageOptions>>().Value);
+        services.AddScoped<PropertyOS.Application.Files.IFileStorageRepository, PropertyOS.Infrastructure.Files.Repositories.FileStorageRepository>();
+        services.AddScoped<PropertyOS.Application.Files.Services.IStorageProvider, PropertyOS.Infrastructure.Files.Services.PhysicalFileStorageProvider>();
+        services.AddScoped<PropertyOS.Application.Documents.IDocumentCategoryRepository, PropertyOS.Infrastructure.Documents.Repositories.DocumentCategoryRepository>();
+        services.AddScoped<PropertyOS.Application.Documents.IBuildingDocumentRepository, PropertyOS.Infrastructure.Documents.Repositories.BuildingDocumentRepository>();
+        services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PropertyOS.Infrastructure.Documents.Security.ConfidentialDocumentAuthorizationHandler>();
+
         // Module 4 - Properties
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
 

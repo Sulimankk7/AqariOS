@@ -130,10 +130,18 @@ public class LeaseContractRlsTests : IAsyncLifetime
                 VALUES (gen_random_uuid(), @cA, @contA, NULL, 'draft', 'init', now()),
                        (gen_random_uuid(), @cB, @contB, NULL, 'draft', 'init', now());
 
+            INSERT INTO file_storage (id, company_id, original_filename, mime_type, size_bytes, storage_key, created_at, updated_at)
+                VALUES (@fileA, @cA, 'leaseA.pdf', 'application/pdf', 1024, 'key-lease-rls-a', now(), now()),
+                       (@fileB, @cB, 'leaseB.pdf', 'application/pdf', 1024, 'key-lease-rls-b', now(), now());
+
             INSERT INTO contract_documents (id, company_id, lease_contract_id, file_id, document_type, created_at, updated_at)
-                VALUES (gen_random_uuid(), @cA, @contA, gen_random_uuid(), 'signed_contract', now(), now()),
-                       (gen_random_uuid(), @cB, @contB, gen_random_uuid(), 'signed_contract', now(), now());
+                VALUES (gen_random_uuid(), @cA, @contA, @fileA, 'signed_contract', now(), now()),
+                       (gen_random_uuid(), @cB, @contB, @fileB, 'signed_contract', now(), now());
         ";
+        var fileA = Guid.NewGuid();
+        var fileB = Guid.NewGuid();
+        cmd.Parameters.Add(new NpgsqlParameter("fileA", fileA));
+        cmd.Parameters.Add(new NpgsqlParameter("fileB", fileB));
         cmd.Parameters.Add(new NpgsqlParameter("cA", companyA_Id));
         cmd.Parameters.Add(new NpgsqlParameter("cB", companyB_Id));
         cmd.Parameters.Add(new NpgsqlParameter("buildA", buildA));

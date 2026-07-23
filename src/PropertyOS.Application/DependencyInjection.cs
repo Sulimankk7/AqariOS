@@ -17,6 +17,9 @@ public static class DependencyInjection
         });
         services.AddValidatorsFromAssembly(assembly);
 
+        services.AddScoped<PropertyOS.Application.Files.Services.IFileValidationService, PropertyOS.Application.Files.Services.FileValidationService>();
+        services.AddScoped<PropertyOS.Application.Documents.Services.IDocumentCategorySeeder, PropertyOS.Application.Documents.Services.DocumentCategorySeeder>();
+
         return services;
     }
 }

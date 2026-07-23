@@ -214,7 +214,11 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
         ctx.MaintenanceRequests.Add(request);
         await ctx.SaveChangesAsync();
 
-        var fileId = Guid.NewGuid();
+        var fileStorage = TestFileStorageFactory.CreateImageFileStorage(companyId, null, "photo1.jpg", "image/jpeg", 1024);
+        ctx.Set<PropertyOS.Domain.Files.Entities.FileStorage>().Add(fileStorage);
+        await ctx.SaveChangesAsync();
+
+        var fileId = fileStorage.Id;
         request.AddAttachment(fileId, null, "Photo 1", DateTimeOffset.UtcNow, null);
         await ctx.SaveChangesAsync();
 
@@ -268,7 +272,12 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             var openHistA = MaintenanceStatusHistory.Create(companyA, reqA.Id, MaintenanceStatus.Open, DateTimeOffset.UtcNow, null, null, "Request opened");
             adminCtx.MaintenanceStatusHistory.Add(openHistA);
 
-            var attA = reqA.AddAttachment(Guid.NewGuid(), null, "Pic A", DateTimeOffset.UtcNow, null);
+            var fsA = TestFileStorageFactory.CreateImageFileStorage(companyA, null, "picA.png");
+            var fsB = TestFileStorageFactory.CreateImageFileStorage(companyB, null, "picB.png");
+            adminCtx.Set<PropertyOS.Domain.Files.Entities.FileStorage>().AddRange(fsA, fsB);
+            await adminCtx.SaveChangesAsync();
+
+            var attA = reqA.AddAttachment(fsA.Id, null, "Pic A", DateTimeOffset.UtcNow, null);
             var commA = reqA.AddComment("Context A", DateTimeOffset.UtcNow, null);
             var histA = reqA.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(histA);
@@ -276,7 +285,7 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             var openHistB = MaintenanceStatusHistory.Create(companyB, reqB.Id, MaintenanceStatus.Open, DateTimeOffset.UtcNow, null, null, "Request opened");
             adminCtx.MaintenanceStatusHistory.Add(openHistB);
 
-            var attB = reqB.AddAttachment(Guid.NewGuid(), null, "Pic B", DateTimeOffset.UtcNow, null);
+            var attB = reqB.AddAttachment(fsB.Id, null, "Pic B", DateTimeOffset.UtcNow, null);
             var commB = reqB.AddComment("Context B", DateTimeOffset.UtcNow, null);
             var histB = reqB.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(histB);
@@ -390,7 +399,11 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             var openHist = MaintenanceStatusHistory.Create(companyId, req.Id, MaintenanceStatus.Open, DateTimeOffset.UtcNow, null, null, "Request opened");
             adminCtx.MaintenanceStatusHistory.Add(openHist);
 
-            var att = req.AddAttachment(Guid.NewGuid(), null, "Pic", DateTimeOffset.UtcNow, null);
+            var fs = TestFileStorageFactory.CreateImageFileStorage(companyId, null, "pic.png");
+            adminCtx.Set<PropertyOS.Domain.Files.Entities.FileStorage>().Add(fs);
+            await adminCtx.SaveChangesAsync();
+
+            var att = req.AddAttachment(fs.Id, null, "Pic", DateTimeOffset.UtcNow, null);
             var comm = req.AddComment("Comment text", DateTimeOffset.UtcNow, null);
             var hist = req.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(hist);
