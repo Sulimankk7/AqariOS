@@ -185,7 +185,7 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
     // AUDIT DATA FLOW TESTS (11-15)
     // ============================================================
 
-    [Fact(Skip = "Endpoints not implemented yet")]
+    [Fact]
     public async Task Test11_RequestId_Reaches_AuditLogs_RequestId()
     {
         var expectedRequestId = Guid.NewGuid();

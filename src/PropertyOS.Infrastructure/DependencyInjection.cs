@@ -123,18 +123,13 @@ public static class DependencyInjection
 
 
         // -----------------------------------------------------------------------
-        // ITenantContext — pre-authentication placeholder (Module 1 boundary).
-        // NullTenantContext is fail-closed: CompanyId returns null, causing
-        // TenantSessionInterceptor to skip SET LOCAL and RLS to reject all
-        // tenant-scoped queries.
-        //
-        // REPLACED in Module 3 by ClaimsPrincipalTenantContext, which reads
-        // the authenticated JWT company_id claim from IHttpContextAccessor.
-        // The DI registration below is replaced at that point — never retained
-        // alongside the real implementation.
+        // Module 3 — Security / Identity / Auth Context Providers & Services
         // -----------------------------------------------------------------------
-        services.AddScoped<ITenantContext, NullTenantContext>();
-        services.AddScoped<ICurrentUserContext, NullCurrentUserContext>();
+        services.AddScoped<ITenantContext, PropertyOS.Infrastructure.Identity.ClaimsPrincipalTenantContext>();
+        services.AddScoped<ICurrentUserContext, PropertyOS.Infrastructure.Identity.ClaimsPrincipalCurrentUserContext>();
+        services.AddScoped<PropertyOS.Application.Identity.IPasswordHasher, PropertyOS.Infrastructure.Identity.PasswordHasher>();
+        services.AddScoped<PropertyOS.Application.Identity.IJwtTokenGenerator, PropertyOS.Infrastructure.Identity.JwtTokenGenerator>();
+        services.AddScoped<PropertyOS.Application.Identity.IAuthService, PropertyOS.Infrastructure.Identity.AuthService>();
 
 
         // -----------------------------------------------------------------------
@@ -173,6 +168,9 @@ public static class DependencyInjection
         // Module 11 - Notifications
         services.AddScoped<PropertyOS.Application.Notifications.INotificationTemplateRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationTemplateRepository>();
         services.AddScoped<PropertyOS.Application.Notifications.INotificationRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationRepository>();
+
+        // Module 2 - Subscriptions
+        services.AddScoped<PropertyOS.Application.Subscriptions.ISubscriptionService, PropertyOS.Infrastructure.Subscriptions.Services.SubscriptionService>();
 
         services.AddScoped<AuditSaveChangesInterceptor>();
 

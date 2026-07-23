@@ -67,7 +67,10 @@ if (!string.IsNullOrEmpty(connectionString))
 {
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
-    builder.Services.AddHangfireServer();
+    builder.Services.AddHangfireServer(options =>
+    {
+        options.ShutdownTimeout = TimeSpan.FromMilliseconds(500);
+    });
 }
 
 // Configure Health Checks
