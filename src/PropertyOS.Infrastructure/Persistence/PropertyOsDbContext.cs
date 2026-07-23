@@ -110,6 +110,13 @@ public class PropertyOsDbContext : DbContext
     public DbSet<PropertyOS.Domain.Documents.Entities.BuildingDocument> BuildingDocuments => Set<PropertyOS.Domain.Documents.Entities.BuildingDocument>();
 
     // ---------------------------------------------------------------------------
+    // Module 11 — Notifications
+    // ---------------------------------------------------------------------------
+    public DbSet<PropertyOS.Domain.Notifications.NotificationTemplate> NotificationTemplates => Set<PropertyOS.Domain.Notifications.NotificationTemplate>();
+    public DbSet<PropertyOS.Domain.Notifications.Notification> Notifications => Set<PropertyOS.Domain.Notifications.Notification>();
+    public DbSet<PropertyOS.Domain.Notifications.NotificationDelivery> NotificationDeliveries => Set<PropertyOS.Domain.Notifications.NotificationDelivery>();
+
+    // ---------------------------------------------------------------------------
     // Module 3 — Security / Identity / RBAC / Audit
     // ---------------------------------------------------------------------------
 
@@ -183,6 +190,13 @@ public class PropertyOsDbContext : DbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Marketplace.Enums.ListingStatus>(name: "listing_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Marketplace.Enums.ViewingRequestStatus>(name: "viewing_request_status_enum");
 
+
+        // Module 11
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Notifications.Enums.NotificationType>(name: "notification_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Notifications.Enums.NotificationStatus>(name: "notification_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>(name: "notification_priority_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>(name: "delivery_channel_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>(name: "delivery_status_enum");
 
         // All entity configurations are discovered from IEntityTypeConfiguration<T>
         // classes in this assembly. This is the only call in OnModelCreating —

@@ -112,6 +112,13 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<ListingStatus>("listing_status_enum", null);
         dataSourceBuilder.MapEnum<ViewingRequestStatus>("viewing_request_status_enum", null);
 
+        // Module 11 enums
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationType>("notification_type_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationStatus>("notification_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum", null);
+
         var dataSource = dataSourceBuilder.Build();
 
 
@@ -162,6 +169,10 @@ public static class DependencyInjection
 
         // Module 4 - Properties
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
+
+        // Module 11 - Notifications
+        services.AddScoped<PropertyOS.Application.Notifications.INotificationTemplateRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationTemplateRepository>();
+        services.AddScoped<PropertyOS.Application.Notifications.INotificationRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationRepository>();
 
         services.AddScoped<AuditSaveChangesInterceptor>();
 
@@ -242,6 +253,13 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<CurrencyCode>("currency_code_enum");
                     npgsqlOptions.MapEnum<ListingStatus>("listing_status_enum");
                     npgsqlOptions.MapEnum<ViewingRequestStatus>("viewing_request_status_enum");
+
+                    // Module 11
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationType>("notification_type_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationStatus>("notification_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
                 });
 
 
