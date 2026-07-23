@@ -72,6 +72,7 @@ App_Data/Jobs/
 .env.*
 appsettings.local.json
 appsettings.*.local.json
+src/PropertyOS.Api/appsettings.Local.json
 secrets.json
 
 # Rider

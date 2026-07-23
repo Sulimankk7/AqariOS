@@ -1,3 +1,4 @@
+using System;
 using PropertyOS.Domain.Common;
 using PropertyOS.Domain.Companies.Enums;
 
@@ -122,43 +123,24 @@ public class Company : ISoftDeletable
         string? taxNumber = null,
         string? primaryEmail = null)
     {
-        // Approved business invariant: legal_name and display_name must be non-empty.
-        // primary_phone must be non-empty (format validated at app/DB CHECK level).
-        // country_code must be exactly 2 chars (CHAR(2) DB constraint is authoritative).
-        // These guards mirror the NOT NULL / format constraints without duplicating
-        // the DB's regex CHECK in C# logic.
-        if (string.IsNullOrWhiteSpace(legalName))
-            throw new ArgumentException("Legal name is required.", nameof(legalName));
-        if (string.IsNullOrWhiteSpace(displayName))
-            throw new ArgumentException("Display name is required.", nameof(displayName));
-        if (string.IsNullOrWhiteSpace(primaryPhone))
-            throw new ArgumentException("Primary phone is required.", nameof(primaryPhone));
         if (string.IsNullOrWhiteSpace(countryCode) || countryCode.Length != 2)
             throw new ArgumentException("Country code must be exactly 2 characters (ISO 3166-1 alpha-2).", nameof(countryCode));
 
         return new Company
         {
-            // Id left at Guid.Empty — the database DEFAULT uuid_generate_v7() sets
-            // the real value; EF Core reads it back via RETURNING on INSERT.
             Id = Guid.Empty,
-            LegalName = legalName.Trim(),
-            DisplayName = displayName.Trim(),
-            PrimaryPhone = primaryPhone.Trim(),
+            LegalName = NormalizeRequired(legalName, nameof(legalName), "Legal name is required."),
+            DisplayName = NormalizeRequired(displayName, nameof(displayName), "Display name is required."),
+            PrimaryPhone = NormalizeRequired(primaryPhone, nameof(primaryPhone), "Primary phone is required."),
             CompanyType = companyType,
             CountryCode = countryCode.ToUpperInvariant(),
             CreatedAt = createdAt,
             UpdatedAt = createdAt,
             CreatedBy = createdBy,
             UpdatedBy = createdBy,
-            CommercialRegistrationNo = string.IsNullOrWhiteSpace(commercialRegistrationNo)
-                ? null
-                : commercialRegistrationNo.Trim(),
-            TaxNumber = string.IsNullOrWhiteSpace(taxNumber)
-                ? null
-                : taxNumber.Trim(),
-            PrimaryEmail = string.IsNullOrWhiteSpace(primaryEmail)
-                ? null
-                : primaryEmail.Trim(),
+            CommercialRegistrationNo = NormalizeOptional(commercialRegistrationNo),
+            TaxNumber = NormalizeOptional(taxNumber),
+            PrimaryEmail = NormalizeOptional(primaryEmail),
             IsActive = true
         };
     }
@@ -187,5 +169,58 @@ public class Company : ISoftDeletable
     internal void SetSettings(CompanySettings settings)
     {
         Settings = settings;
+    }
+
+    /// <summary>
+    /// Updates the basic profile of the company.
+    /// Allowed modifications: LegalName, DisplayName, PrimaryPhone, and PrimaryEmail.
+    /// Immutable fields (Id, CompanyType, CountryCode, etc.) cannot be changed here.
+    /// Audit fields (UpdatedAt, UpdatedBy) are updated only when an actual modification occurs.
+    /// </summary>
+    public void UpdateProfile(
+        string legalName,
+        string displayName,
+        string primaryPhone,
+        string? primaryEmail,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        var newLegalName = NormalizeRequired(legalName, nameof(legalName), "Legal name is required.");
+        var newDisplayName = NormalizeRequired(displayName, nameof(displayName), "Display name is required.");
+        var newPrimaryPhone = NormalizeRequired(primaryPhone, nameof(primaryPhone), "Primary phone is required.");
+        var newPrimaryEmail = NormalizeOptional(primaryEmail);
+
+        if (LegalName == newLegalName &&
+            DisplayName == newDisplayName &&
+            PrimaryPhone == newPrimaryPhone &&
+            PrimaryEmail == newPrimaryEmail)
+        {
+            return; // No-op update, prevent unnecessary writes and audit noise
+        }
+
+        LegalName = newLegalName;
+        DisplayName = newDisplayName;
+        PrimaryPhone = newPrimaryPhone;
+        PrimaryEmail = newPrimaryEmail;
+        
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Private Helpers
+    // ---------------------------------------------------------------------------
+
+    private static string NormalizeRequired(string value, string argumentName, string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException(errorMessage, argumentName);
+        
+        return value.Trim();
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

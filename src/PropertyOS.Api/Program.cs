@@ -10,6 +10,9 @@ using PropertyOS.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Append appsettings.Local.json to allow local overrides while preserving framework defaults
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 // Configure Serilog
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));

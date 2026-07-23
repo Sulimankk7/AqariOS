@@ -137,6 +137,7 @@ public static class DependencyInjection
         // can inject ITenantContext per-request from DI.
         // -----------------------------------------------------------------------
         services.AddScoped<TenantSessionInterceptor>();
+        services.AddScoped<PropertyOS.Application.Companies.ICompanyRepository, PropertyOS.Infrastructure.Companies.Repositories.CompanyRepository>();
         services.AddScoped<ILeaseContractRepository, LeaseContractRepository>();
         services.AddScoped<ILeasingReferenceRepository, LeasingReferenceRepository>();
         services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
