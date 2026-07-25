@@ -121,7 +121,6 @@ public static class DependencyInjection
 
         var dataSource = dataSourceBuilder.Build();
 
-
         // -----------------------------------------------------------------------
         // Module 3 — Security / Identity / Auth Context Providers & Services
         // -----------------------------------------------------------------------
@@ -130,6 +129,8 @@ public static class DependencyInjection
         services.AddScoped<PropertyOS.Application.Identity.IPasswordHasher, PropertyOS.Infrastructure.Identity.PasswordHasher>();
         services.AddScoped<PropertyOS.Application.Identity.IJwtTokenGenerator, PropertyOS.Infrastructure.Identity.JwtTokenGenerator>();
         services.AddScoped<PropertyOS.Application.Identity.IAuthService, PropertyOS.Infrastructure.Identity.AuthService>();
+        services.AddScoped<PropertyOS.Application.Common.Interfaces.IPermissionCatalogSeeder, PropertyOS.Infrastructure.Identity.PermissionCatalogSeeder>();
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<PropertyOsDbContext>());
 
 
         // -----------------------------------------------------------------------
@@ -164,7 +165,10 @@ public static class DependencyInjection
         services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PropertyOS.Infrastructure.Documents.Security.ConfidentialDocumentAuthorizationHandler>();
 
         // Module 4 - Properties
+        services.AddScoped<IBuildingRepository, BuildingRepository>();
+        services.AddScoped<IFloorRepository, FloorRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
+        services.AddScoped<IParkingSpotRepository, ParkingSpotRepository>();
 
         // Module 11 - Notifications
         services.AddScoped<PropertyOS.Application.Notifications.INotificationTemplateRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationTemplateRepository>();

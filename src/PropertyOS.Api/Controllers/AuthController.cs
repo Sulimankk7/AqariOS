@@ -6,14 +6,16 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MediatR;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.DTOs.Identity;
 using PropertyOS.Application.Identity;
+using PropertyOS.Application.Identity.Commands.Register;
 
 namespace PropertyOS.Api.Controllers;
 
 /// <summary>
-/// API controller managing authentication operations, token refresh rotation, OTP verification, and session logout.
+/// API controller managing authentication operations, token refresh rotation, user registration, OTP verification, and session logout.
 /// </summary>
 [ApiVersion("1.0")]
 [ApiController]
@@ -22,14 +24,62 @@ namespace PropertyOS.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ISender _mediator;
 
     /// <summary>
     /// Initializes a new instance of AuthController.
     /// </summary>
     /// <param name="authService">The application authentication service.</param>
-    public AuthController(IAuthService authService)
+    /// <param name="mediator">The MediatR sender instance.</param>
+    public AuthController(IAuthService authService, ISender mediator)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+    }
+
+    /// <summary>
+    /// Registers a new user, provisions tenant company organization, and issues session tokens based on configured onboarding mode.
+    /// </summary>
+    /// <remarks>
+    /// Public endpoint. Governed by the active onboarding strategy (Public SaaS Registration, Enterprise Bootstrap Admin, or Invitation Only).
+    /// Sets an HttpOnly, Secure cookie with the refresh token and returns access token in body.
+    /// </remarks>
+    /// <param name="dto">Registration payload parameters.</param>
+    /// <param name="cancellationToken">Cancellation token passed from request.</param>
+    /// <returns>Registration response containing user profile, company details, and tokens.</returns>
+    /// <response code="201">Registration and provisioning successful.</response>
+    /// <response code="400">If request payload validation fails.</response>
+    /// <response code="403">If onboarding is rejected by active strategy (e.g. Bootstrap Admin already closed).</response>
+    /// <response code="409">If email or phone number is already registered.</response>
+    /// <response code="500">If an internal server error occurs.</response>
+    [HttpPost("register")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<RegisterResponseDto>> Register(
+        [FromBody] RegisterRequestDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new RegisterCommand(
+            dto.FullName,
+            dto.Email,
+            dto.Phone,
+            dto.Password,
+            dto.CompanyName,
+            dto.DisplayName,
+            dto.CompanyType,
+            dto.CountryCode,
+            dto.PreferredLanguage,
+            GetClientIpAddress(),
+            Request.Headers.UserAgent.ToString()
+        );
+
+        var response = await _mediator.Send(command, cancellationToken);
+        SetRefreshTokenCookie(response.RefreshToken);
+
+        return CreatedAtAction(nameof(GetMyProfile), response);
     }
 
     /// <summary>
@@ -55,8 +105,6 @@ public class AuthController : ControllerBase
         [FromBody] LoginRequestDto dto,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
             var ipAddress = GetClientIpAddress();
             var userAgent = Request.Headers.UserAgent.ToString();
 
@@ -64,14 +112,6 @@ public class AuthController : ControllerBase
             SetRefreshTokenCookie(response.RefreshToken);
 
             return Ok(response);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Problem(
-                title: "Authentication Failed",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status401Unauthorized);
-        }
     }
 
     /// <summary>
@@ -206,7 +246,8 @@ public class AuthController : ControllerBase
         [FromBody] OtpRequestDto dto,
         CancellationToken cancellationToken = default)
     {
-        var code = await _authService.RequestOtpAsync(dto, cancellationToken);
+        var clientIp = GetClientIpAddress();
+        var code = await _authService.RequestOtpAsync(dto, clientIp, cancellationToken);
         return Ok(new { message = "OTP challenge generated successfully.", phone = dto.Phone });
     }
 

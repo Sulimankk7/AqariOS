@@ -55,9 +55,10 @@ public interface IAuthService
     /// Generates and records an OTP challenge code for phone authentication.
     /// </summary>
     /// <param name="dto">OTP request payload.</param>
+    /// <param name="clientIp">Originating client IP address.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Generated OTP code string (for dev/SMS gateway dispatch).</returns>
-    Task<string> RequestOtpAsync(OtpRequestDto dto, CancellationToken cancellationToken = default);
+    Task<string> RequestOtpAsync(OtpRequestDto dto, string? clientIp = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Verifies an OTP code and authenticates the user.

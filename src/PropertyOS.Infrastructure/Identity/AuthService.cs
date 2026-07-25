@@ -187,6 +187,7 @@ public class AuthService : IAuthService
 
         var newTokenEntity = new RefreshToken
         {
+            Id = Guid.NewGuid(),
             UserId = user.Id,
             TokenHash = newHashedRefreshToken,
             FamilyId = tokenEntity.FamilyId,
@@ -197,6 +198,7 @@ public class AuthService : IAuthService
 
         tokenEntity.RevokedAt = DateTimeOffset.UtcNow;
         tokenEntity.RevokedReason = RevokeReason.Rotated;
+        tokenEntity.ReplacedByToken = newTokenEntity;
         tokenEntity.ReplacedByTokenId = newTokenEntity.Id;
 
         _dbContext.RefreshTokens.Add(newTokenEntity);
@@ -250,7 +252,7 @@ public class AuthService : IAuthService
     }
 
     /// <inheritdoc />
-    public async Task<string> RequestOtpAsync(OtpRequestDto dto, CancellationToken cancellationToken = default)
+    public async Task<string> RequestOtpAsync(OtpRequestDto dto, string? clientIp = null, CancellationToken cancellationToken = default)
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
 
@@ -270,7 +272,7 @@ public class AuthService : IAuthService
             ConsumedAt = null,
             FailedAttempts = 0,
             MaxAttempts = 3,
-            RequestedIp = ParseIpAddress("127.0.0.1")!,
+            RequestedIp = ParseIpAddress(clientIp),
             CreatedAt = DateTimeOffset.UtcNow
         };
 
@@ -302,10 +304,14 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("OTP code is invalid or has expired.");
         }
 
-        challenge.FailedAttempts++;
+        if (challenge.FailedAttempts >= challenge.MaxAttempts)
+        {
+            throw new UnauthorizedAccessException("OTP verification attempts exceeded. Please request a new OTP.");
+        }
 
         if (challenge.CodeHash != hashedCode)
         {
+            challenge.FailedAttempts++;
             await _dbContext.SaveChangesAsync(cancellationToken);
             throw new UnauthorizedAccessException("OTP code is invalid.");
         }

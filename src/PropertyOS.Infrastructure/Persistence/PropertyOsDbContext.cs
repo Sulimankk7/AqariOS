@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using PropertyOS.Domain.Companies;
 using PropertyOS.Domain.Properties;
 
+using PropertyOS.Application.Common.Interfaces;
+
 namespace PropertyOS.Infrastructure.Persistence;
 
 /// <summary>
@@ -19,7 +21,7 @@ namespace PropertyOS.Infrastructure.Persistence;
 ///   • No lazy loading proxies.
 ///   • New DbSets are added only as each module is implemented.
 /// </summary>
-public class PropertyOsDbContext : DbContext
+public class PropertyOsDbContext : DbContext, IApplicationDbContext
 {
     public PropertyOsDbContext(DbContextOptions<PropertyOsDbContext> options)
         : base(options)
@@ -202,5 +204,10 @@ public class PropertyOsDbContext : DbContext
         // classes in this assembly. This is the only call in OnModelCreating —
         // per the approved architecture, no configuration logic lives here.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PropertyOsDbContext).Assembly);
+    }
+
+    public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        return Database.BeginTransactionAsync(cancellationToken);
     }
 }

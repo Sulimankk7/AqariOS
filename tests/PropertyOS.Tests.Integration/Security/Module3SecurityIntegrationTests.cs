@@ -251,7 +251,6 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         await conn.OpenAsync();
         using var cmd = new NpgsqlCommand("SELECT new_values FROM audit_logs WHERE entity_name = 'User' ORDER BY occurred_at DESC LIMIT 1", conn);
         var newValuesJson = (string)(await cmd.ExecuteScalarAsync())!;
-        Console.WriteLine("DEBUG NEW_VALUES JSON: " + newValuesJson);
         
         Assert.Contains("\"PasswordHash\": \"***\"", newValuesJson);
         Assert.DoesNotContain("SecretHashValue", newValuesJson);
@@ -270,10 +269,6 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
 
         var companyId = await GetOrCreateValidCompanyIdAsync(db);
         
-        // DEBUG DUMP
-        var existingRoles = await db.Roles.ToListAsync();
-        Console.WriteLine("DEBUG ROLES DETAILED: " + string.Join(", ", existingRoles.Select(r => $"{r.Code} (Created: {r.CreatedAt:O}, Company: {r.CompanyId})")));
-
         var role = new Role { CompanyId = companyId, NameEn = "Test14", NameAr = "Test14 Arabic", Code = "T14", IsSystem = false };
         
         var strategy = db.Database.CreateExecutionStrategy();
@@ -627,7 +622,7 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         });
     }
 
-    [Fact(Skip = "Endpoints not implemented yet")]
+    [Fact]
     public async Task Test27_Global_Limiter_Returns_429()
     {
         using var factory = CreateConfiguredFactory(3, 10, 10, new[] { "127.0.0.1/8" });
@@ -675,7 +670,7 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
     }
 
-    [Fact(Skip = "Endpoints not implemented yet")]
+    [Fact]
     public async Task Test30_429_ContentType_Is_ProblemJson()
     {
         using var factory = CreateConfiguredFactory(1, 10, 10, new[] { "127.0.0.1/8" });
@@ -740,13 +735,14 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         using var factory = CreateConfiguredFactory(10, 3, 10, new[] { "127.0.0.1/8" });
         using var client = factory.CreateClient();
 
-        // Rotate X-Forwarded-For. Each gets partitioned separately (limit 3 per IP).
+        // Rotate X-Forwarded-For. Each gets partitioned separately (global limit 10).
+        // None should be blocked by the rate limiter — they are different effective IPs.
         for (int i = 0; i < 10; i++)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
+            var req = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login");
             req.Headers.Add("X-Forwarded-For", $"10.0.0.{i}");
             var response = await client.SendAsync(req);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode); // None should be blocked
+            Assert.NotEqual(HttpStatusCode.TooManyRequests, response.StatusCode);
         }
     }
 

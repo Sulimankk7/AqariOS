@@ -129,7 +129,8 @@ public class Building : ISoftDeletable
         string? internalCode = null,
         short? constructionYear = null,
         decimal? gpsLatitude = null,
-        decimal? gpsLongitude = null)
+        decimal? gpsLongitude = null,
+        Guid? id = null)
     {
         if (companyId == Guid.Empty)
             throw new ArgumentException("CompanyId must be a valid non-empty Guid.", nameof(companyId));
@@ -148,7 +149,7 @@ public class Building : ISoftDeletable
 
         return new Building
         {
-            Id = Guid.Empty,
+            Id = id.HasValue && id.Value != Guid.Empty ? id.Value : Guid.Empty,
             CompanyId = companyId,
             Name = name.Trim(),
             InternalCode = string.IsNullOrWhiteSpace(internalCode) ? null : internalCode.Trim(),
@@ -170,6 +171,36 @@ public class Building : ISoftDeletable
     // Mutation methods
     // ---------------------------------------------------------------------------
 
+    /// <summary>Updates core building details.</summary>
+    public void UpdateDetails(
+        string name,
+        string? internalCode,
+        BuildingType buildingType,
+        short? constructionYear,
+        decimal? gpsLatitude,
+        decimal? gpsLongitude,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Building name is required.", nameof(name));
+        bool latIsNull = gpsLatitude is null;
+        bool lonIsNull = gpsLongitude is null;
+        if (latIsNull != lonIsNull)
+            throw new ArgumentException(
+                "gps_latitude and gps_longitude must both be provided or both null.",
+                nameof(gpsLatitude));
+
+        Name = name.Trim();
+        InternalCode = string.IsNullOrWhiteSpace(internalCode) ? null : internalCode.Trim();
+        BuildingType = buildingType;
+        ConstructionYear = constructionYear;
+        GpsLatitude = gpsLatitude;
+        GpsLongitude = gpsLongitude;
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
+    }
+
     /// <summary>Deactivates the building (keeps it soft-visible for historical queries).</summary>
     public void Deactivate(DateTimeOffset updatedAt, Guid? updatedBy)
     {
@@ -189,9 +220,14 @@ public class Building : ISoftDeletable
         UpdatedBy = deletedBy;
     }
 
-    /// <summary>Attaches address (used by infrastructure layer during hydration).</summary>
-    internal void SetAddress(BuildingAddress address)
+    /// <summary>Attaches or updates the building address extension.</summary>
+    public void SetAddress(BuildingAddress address)
     {
+        if (address == null) throw new ArgumentNullException(nameof(address));
+        if (address.CompanyId != CompanyId)
+            throw new ArgumentException("Address CompanyId must match Building CompanyId.", nameof(address));
+        if (address.BuildingId != Id)
+            throw new ArgumentException("Address BuildingId must match Building Id.", nameof(address));
         Address = address;
     }
 }

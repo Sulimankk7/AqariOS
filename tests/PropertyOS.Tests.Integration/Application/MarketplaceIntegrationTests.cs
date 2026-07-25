@@ -216,6 +216,9 @@ public class MarketplaceIntegrationTests : IAsyncLifetime
             INSERT INTO company_settings (id, company_id, default_currency, timezone, rent_grace_period_days, late_fee_type, created_at, updated_at, default_language)
             VALUES (gen_random_uuid(), @companyId, 'JOD', 'Asia/Amman', 5, 'none'::late_fee_type_enum, now(), now(), 'en');
 
+            INSERT INTO users (id, full_name, email, password_hash, is_active, created_at, updated_at)
+            VALUES (@userId, 'Marketplace Test User', 'marketplace_admin@test.com', 'argon2id.test', true, now(), now());
+
             INSERT INTO buildings (id, company_id, name, building_type, total_floors, created_at, updated_at)
             VALUES (@buildingId, @companyId, 'Marketplace Plaza', 'residential'::building_type_enum, 5, now(), now());
 
@@ -231,6 +234,7 @@ public class MarketplaceIntegrationTests : IAsyncLifetime
         var floorId = Guid.NewGuid();
 
         cmd.Parameters.Add(new NpgsqlParameter("companyId", _companyId));
+        cmd.Parameters.Add(new NpgsqlParameter("userId", _userId));
         cmd.Parameters.Add(new NpgsqlParameter("buildingId", _buildingId));
         cmd.Parameters.Add(new NpgsqlParameter("floorId", floorId));
         cmd.Parameters.Add(new NpgsqlParameter("apartmentId", _apartmentId));

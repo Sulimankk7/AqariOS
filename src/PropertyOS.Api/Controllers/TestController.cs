@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PropertyOS.Domain.Identity.Entities;
 using PropertyOS.Infrastructure.Persistence;
 
@@ -40,9 +41,15 @@ public class TestController : ControllerBase
             IsActive = true
         };
 
-        _dbContext.Users.Add(user);
-        await _dbContext.SaveChangesAsync();
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await _dbContext.Database.BeginTransactionAsync();
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
 
-        return Ok(user.Id.ToString());
+            return Ok(user.Id.ToString());
+        });
     }
 }

@@ -176,4 +176,52 @@ public class AuthServiceUnitTests
         hashedRefreshToken.Should().NotBeNullOrWhiteSpace();
         hashedRefreshToken.Should().NotBe(rawRefreshToken);
     }
+
+    [Fact]
+    public void JwtTokenGenerator_Issued_Token_Should_Validate_Successfully_With_TokenValidationParameters()
+    {
+        // Arrange
+        var secret = "SuperSecretKeyForPropertyOSWith32CharsLength!";
+        var issuer = "PropertyOS";
+        var audience = "PropertyOS-Clients";
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new System.Collections.Generic.Dictionary<string, string?>
+            {
+                { "Jwt:Secret", secret },
+                { "Jwt:Issuer", issuer },
+                { "Jwt:Audience", audience },
+                { "Jwt:ExpiryMinutes", "15" }
+            })
+            .Build();
+
+        var generator = new PropertyOS.Infrastructure.Identity.JwtTokenGenerator(config);
+        var userId = Guid.NewGuid();
+        var companyId = Guid.NewGuid();
+
+        var (token, _) = generator.GenerateAccessToken(userId, companyId, new[] { "Admin" }, new[] { "read:all" });
+
+        var validationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(secret)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+
+        // Act
+        var principal = handler.ValidateToken(token, validationParameters, out var validatedToken);
+
+        // Assert
+        principal.Should().NotBeNull();
+        validatedToken.Should().NotBeNull();
+        principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value.Should().Be(userId.ToString());
+        principal.FindFirst("company_id")?.Value.Should().Be(companyId.ToString());
+    }
 }

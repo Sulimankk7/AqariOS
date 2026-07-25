@@ -105,16 +105,16 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
 
                     if (entry.State == EntityState.Added)
                     {
-                        newValues[propName] = isSensitive ? "***" : property.CurrentValue;
+                        newValues[propName] = isSensitive ? "***" : GetSafeAuditValue(property.CurrentValue);
                     }
                     else if (entry.State == EntityState.Deleted)
                     {
-                        previousValues[propName] = isSensitive ? "***" : property.OriginalValue;
+                        previousValues[propName] = isSensitive ? "***" : GetSafeAuditValue(property.OriginalValue);
                     }
                     else if (entry.State == EntityState.Modified && property.IsModified)
                     {
-                        previousValues[propName] = isSensitive ? "***" : property.OriginalValue;
-                        newValues[propName] = isSensitive ? "***" : property.CurrentValue;
+                        previousValues[propName] = isSensitive ? "***" : GetSafeAuditValue(property.OriginalValue);
+                        newValues[propName] = isSensitive ? "***" : GetSafeAuditValue(property.CurrentValue);
                     }
                 }
 
@@ -193,5 +193,55 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
     {
         _auditState.MarkCurrentFailed();
         await base.SaveChangesFailedAsync(eventData, cancellationToken);
+    }
+
+    public static object? GetSafeAuditValue(object? val)
+    {
+        if (val is null || val is DBNull)
+        {
+            return null;
+        }
+
+        switch (val)
+        {
+            case System.Net.IPAddress ip:
+                return ip.ToString();
+
+            case byte[] bytes:
+                return Convert.ToBase64String(bytes);
+
+            case Enum enumValue:
+                return enumValue.ToString();
+
+            case Guid guid:
+                return guid.ToString("D");
+
+            case DateTime dt:
+                return dt.ToString("o");
+
+            case DateTimeOffset dto:
+                return dto.ToString("o");
+
+            case TimeSpan ts:
+                return ts.ToString("c");
+
+            case string:
+            case bool:
+            case byte:
+            case sbyte:
+            case short:
+            case ushort:
+            case int:
+            case uint:
+            case long:
+            case ulong:
+            case float:
+            case double:
+            case decimal:
+                return val;
+
+            default:
+                return val.ToString();
+        }
     }
 }

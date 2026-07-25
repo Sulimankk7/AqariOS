@@ -58,6 +58,25 @@ public class ParkingSpot : ISoftDeletable
         };
     }
 
+    public void UpdateDetails(
+        string spotCode,
+        ParkingType parkingType,
+        string? locationDescription,
+        Guid? defaultApartmentId,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        if (string.IsNullOrWhiteSpace(spotCode))
+            throw new ArgumentException("Spot code is required.", nameof(spotCode));
+
+        SpotCode = spotCode.Trim();
+        ParkingType = parkingType;
+        LocationDescription = string.IsNullOrWhiteSpace(locationDescription) ? null : locationDescription.Trim();
+        DefaultApartmentId = defaultApartmentId;
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
+    }
+
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)
     {
         if (DeletedAt.HasValue) return;

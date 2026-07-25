@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="FluentAssertions" Version="8.10.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
@@ -26,6 +27,7 @@
     <ProjectReference Include="..\..\src\PropertyOS.Domain\PropertyOS.Domain.csproj" />
     <ProjectReference Include="..\..\src\PropertyOS.Application\PropertyOS.Application.csproj" />
     <ProjectReference Include="..\..\src\PropertyOS.Infrastructure\PropertyOS.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\PropertyOS.Api\PropertyOS.Api.csproj" />
   </ItemGroup>
 
 </Project>
