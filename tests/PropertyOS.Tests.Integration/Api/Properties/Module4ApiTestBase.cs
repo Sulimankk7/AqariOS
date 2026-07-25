@@ -30,6 +30,7 @@ public abstract class Module4ApiTestBase : IAsyncLifetime, IClassFixture<WebAppl
         Fixture = fixture;
         Factory = factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, configBuilder) =>
             {
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string?>

@@ -35,6 +35,7 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         _fixture = fixture;
         _factory = factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, configBuilder) =>
             {
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
@@ -594,6 +595,7 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
     {
         return _factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureServices(services =>
             {
             });

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,9 @@ namespace PropertyOS.Api.Controllers;
 /// <summary>
 /// Internal test controller for integration test mutation verification.
 /// </summary>
+[ApiVersion("1.0")]
 [ApiController]
+[Route("api/v{version:apiVersion}/test")]
 [Route("api/test")]
 [AllowAnonymous]
 public class TestController : ControllerBase

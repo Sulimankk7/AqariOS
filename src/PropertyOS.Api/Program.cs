@@ -97,10 +97,13 @@ if (!string.IsNullOrEmpty(connectionString))
 {
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
-    builder.Services.AddHangfireServer(options =>
+    if (!builder.Environment.IsEnvironment("Testing"))
     {
-        options.ShutdownTimeout = TimeSpan.FromMilliseconds(500);
-    });
+        builder.Services.AddHangfireServer(options =>
+        {
+            options.ShutdownTimeout = TimeSpan.FromMilliseconds(500);
+        });
+    }
 }
 
 // Configure Health Checks
