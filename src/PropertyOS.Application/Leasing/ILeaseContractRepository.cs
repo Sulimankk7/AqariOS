@@ -14,7 +14,9 @@ public interface ILeaseContractRepository
     Task<bool> HasOverlappingNonTerminalContractAsync(Guid apartmentId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
     Task<bool> HasOverlappingNonTerminalContractAsync(Guid apartmentId, DateTime startDate, DateTime endDate, Guid excludeContractId, CancellationToken cancellationToken = default);
     Task<bool> HasSignedContractDocumentAsync(Guid leaseContractId, CancellationToken cancellationToken = default);
+    Task<bool> HasDocumentAsync(Guid leaseContractId, Guid fileId, CancellationToken cancellationToken = default);
     Task<bool> HasSuccessorContractAsync(Guid priorContractId, CancellationToken cancellationToken = default);
+    Task AddDocumentAsync(ContractDocument document, CancellationToken cancellationToken = default);
     Task AddStatusHistoryAsync(ContractStatusHistory statusHistory, CancellationToken cancellationToken = default);
     Task AddTerminationAsync(ContractTermination termination, CancellationToken cancellationToken = default);
     /// <summary>

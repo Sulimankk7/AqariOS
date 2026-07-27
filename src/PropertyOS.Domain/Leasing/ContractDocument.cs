@@ -22,6 +22,32 @@ public class ContractDocument : ISoftDeletable
     public Guid? DeletedBy { get; private set; }
 
     private ContractDocument() { }
+
+    public static ContractDocument Create(
+        Guid companyId,
+        Guid leaseContractId,
+        Guid fileId,
+        ContractDocumentType documentType,
+        string? description = null,
+        Guid? uploadedBy = null,
+        DateTimeOffset? createdAt = null,
+        Guid? id = null)
+    {
+        var now = createdAt ?? DateTimeOffset.UtcNow;
+        return new ContractDocument
+        {
+            Id = id ?? Guid.CreateVersion7(),
+            CompanyId = companyId,
+            LeaseContractId = leaseContractId,
+            FileId = fileId,
+            DocumentType = documentType,
+            Description = description,
+            UploadedBy = uploadedBy,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+    }
+
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)
     {
         if (DeletedAt.HasValue) return;

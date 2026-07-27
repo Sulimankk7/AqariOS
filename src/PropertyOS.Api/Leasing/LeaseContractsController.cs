@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PropertyOS.Api.Models.Leasing;
 using PropertyOS.Application.Leasing.Commands.ActivateLeaseContract;
+using PropertyOS.Application.Leasing.Commands.AttachContractDocument;
 using PropertyOS.Application.Leasing.Commands.CreateLeaseContract;
 using PropertyOS.Application.Leasing.Commands.RenewLeaseContract;
 using PropertyOS.Application.Leasing.Commands.TerminateLeaseContract;
@@ -116,6 +117,37 @@ public class LeaseContractsController : ControllerBase
 
         await _mediator.Send(command, cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Attaches an already-confirmed file storage record to a lease contract as a contract document.
+    /// </summary>
+    /// <param name="id">Lease contract unique identifier.</param>
+    /// <param name="request">Document attachment parameters.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The ID of the created contract document.</returns>
+    [HttpPost("api/v{version:apiVersion}/leasing/contracts/{id:guid}/documents")]
+    [Authorize(Policy = LeasingPermissions.Create)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AttachDocument(
+        [FromRoute] Guid id,
+        [FromBody] AttachContractDocumentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new AttachContractDocumentCommand(
+            LeaseContractId: id,
+            FileId: request.FileId,
+            DocumentType: request.DocumentType,
+            Description: request.Description
+        );
+
+        var documentId = await _mediator.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id }, documentId);
     }
 
     /// <summary>

@@ -82,11 +82,24 @@ public class LeaseContractRepository : ILeaseContractRepository
             cancellationToken);
     }
 
+    public Task<bool> HasDocumentAsync(Guid leaseContractId, Guid fileId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.ContractDocuments.AnyAsync(
+            d => d.LeaseContractId == leaseContractId
+                 && d.FileId == fileId,
+            cancellationToken);
+    }
+
     public Task<bool> HasSuccessorContractAsync(Guid priorContractId, CancellationToken cancellationToken = default)
     {
         return _dbContext.LeaseContracts.AnyAsync(
             c => c.PriorContractId == priorContractId,
             cancellationToken);
+    }
+
+    public async Task AddDocumentAsync(ContractDocument document, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.ContractDocuments.AddAsync(document, cancellationToken);
     }
 
     public async Task AddStatusHistoryAsync(ContractStatusHistory statusHistory, CancellationToken cancellationToken = default)
