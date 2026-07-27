@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NSubstitute;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents;
 using PropertyOS.Application.Documents.Commands.CreateBuildingDocument;
@@ -67,6 +68,99 @@ public class BuildingDocumentCommandTests
         result.DocumentName.Should().Be("Building Policy 2026");
         result.BuildingId.Should().Be(BuildingId);
         await _documentRepository.Received(1).AddAsync(Arg.Any<BuildingDocument>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CreateBuildingDocument_MissingCategory_ThrowsNotFoundException()
+    {
+        _categoryRepository.GetByIdAsync(CategoryId, CompanyId, Arg.Any<CancellationToken>()).Returns((DocumentCategory?)null);
+
+        var handler = new CreateBuildingDocumentCommandHandler(
+            _tenantContext,
+            _currentUserContext,
+            _documentRepository,
+            _categoryRepository,
+            _fileRepository);
+
+        var command = new CreateBuildingDocumentCommand(
+            BuildingId: BuildingId,
+            CategoryId: CategoryId,
+            FileId: FileId,
+            DocumentName: "Building Policy 2026",
+            Description: null,
+            IssueDate: null,
+            ExpiryDate: null,
+            IsConfidential: false);
+
+        var act = () => handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task CreateBuildingDocument_FileAlreadyAttached_ThrowsConflictException()
+    {
+        var category = DocumentCategory.Create(CompanyId, "Insurance", null, DateTimeOffset.UtcNow, UserId);
+
+        _categoryRepository.GetByIdAsync(CategoryId, CompanyId, Arg.Any<CancellationToken>()).Returns(category);
+        _fileRepository.ExistsAsync(FileId, CompanyId, Arg.Any<CancellationToken>()).Returns(true);
+        _documentRepository.ExistsByBuildingAndFileAsync(BuildingId, FileId, Arg.Any<CancellationToken>()).Returns(true);
+
+        var handler = new CreateBuildingDocumentCommandHandler(
+            _tenantContext,
+            _currentUserContext,
+            _documentRepository,
+            _categoryRepository,
+            _fileRepository);
+
+        var command = new CreateBuildingDocumentCommand(
+            BuildingId: BuildingId,
+            CategoryId: CategoryId,
+            FileId: FileId,
+            DocumentName: "Building Policy 2026",
+            Description: null,
+            IssueDate: null,
+            ExpiryDate: null,
+            IsConfidential: false);
+
+        var act = () => handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ConflictException>();
+    }
+
+    [Fact]
+    public async Task ReplaceBuildingDocument_MissingNewFile_ThrowsNotFoundException()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var today = DateOnly.FromDateTime(now.DateTime);
+
+        var oldDoc = BuildingDocument.Create(
+            CompanyId, BuildingId, CategoryId, FileId, "Old Name", null, null, null, false, UserId, now, UserId, today);
+
+        var newFileId = Guid.NewGuid();
+
+        _documentRepository.GetByIdAsync(oldDoc.Id, CompanyId, Arg.Any<CancellationToken>()).Returns(oldDoc);
+        _fileRepository.ExistsAsync(newFileId, CompanyId, Arg.Any<CancellationToken>()).Returns(false);
+
+        var handler = new ReplaceBuildingDocumentCommandHandler(
+            _tenantContext,
+            _currentUserContext,
+            _documentRepository,
+            _categoryRepository,
+            _fileRepository);
+
+        var command = new ReplaceBuildingDocumentCommand(
+            ExistingDocumentId: oldDoc.Id,
+            NewFileId: newFileId,
+            NewDocumentName: null,
+            NewDescription: null,
+            NewIssueDate: null,
+            NewExpiryDate: null,
+            NewIsConfidential: null);
+
+        var act = () => handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]

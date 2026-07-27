@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 using PropertyOS.Domain.Financials;
@@ -37,7 +38,7 @@ public class CreateExpenseCommandHandler : IRequestHandler<CreateExpenseCommand,
         {
             var buildingExists = await _expenseRepository.BuildingExistsAsync(request.BuildingId.Value, companyId, cancellationToken);
             if (!buildingExists)
-                throw new KeyNotFoundException($"Building with ID {request.BuildingId.Value} was not found.");
+                throw new NotFoundException($"Building with ID {request.BuildingId.Value} was not found.");
         }
 
         var expense = Expense.Create(
@@ -58,29 +59,34 @@ public class CreateExpenseCommandHandler : IRequestHandler<CreateExpenseCommand,
 
         if (request.Receipts != null && request.Receipts.Count > 0)
         {
-            // NOTE: At this point the expense has Id = Guid.Empty because the DB has not assigned
-            // it yet. EF Core uses ValueGeneratedOnAdd with uuid_generate_v7() (server-side default).
-            // When AddAsync is called, EF attaches the entity in the Added state; the DB assigns
-            // the UUID on INSERT. The child ExpenseReceipt rows share the same DbContext tracking
-            // graph and their expense_id FK is populated by EF's relationship fix-up on SaveChanges.
-            // Therefore receipt attachment at this point is safe — EF will correctly populate
-            // the FK when it materialises the INSERT for expense + owned receipts together.
+            // NOTE: receipts are attached BEFORE AddAsync(expense): DbSet.Add marks the whole
+            // reachable graph (root + receipts) as Added, which is required because all IDs are
+            // client-generated UUIDv7 — navigation discovery after the root is tracked would
+            // mistake set-key children for existing rows (see IExpenseRepository.AddReceiptAsync).
             foreach (var receiptDto in request.Receipts)
             {
                 // Single atomic round-trip per receipt: lock row, evaluate reset policy, increment, format.
                 var receiptNumber = await _sequenceRepository.ReserveAndFormatNextReceiptNumberAsync(
                     companyId, cancellationToken);
 
-                expense.AttachReceipt(
-                    fileId: receiptDto.FileId,
-                    receiptNumber: receiptNumber,
-                    amount: receiptDto.Amount,
-                    issuedAt: receiptDto.IssuedAt,
-                    uploadedBy: _currentUserContext.UserId,
-                    description: receiptDto.Description,
-                    now: DateTimeOffset.UtcNow,
-                    createdBy: _currentUserContext.UserId
-                );
+                try
+                {
+                    expense.AttachReceipt(
+                        fileId: receiptDto.FileId,
+                        receiptNumber: receiptNumber,
+                        amount: receiptDto.Amount,
+                        issuedAt: receiptDto.IssuedAt,
+                        uploadedBy: _currentUserContext.UserId,
+                        description: receiptDto.Description,
+                        now: DateTimeOffset.UtcNow,
+                        createdBy: _currentUserContext.UserId
+                    );
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Domain rule: the same file cannot be attached twice to one expense
+                    throw new BusinessRuleException(ex.Message, "EXPENSE_RECEIPT_DUPLICATE_FILE");
+                }
             }
         }
 

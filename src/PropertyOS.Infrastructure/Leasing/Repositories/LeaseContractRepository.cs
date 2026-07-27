@@ -82,6 +82,13 @@ public class LeaseContractRepository : ILeaseContractRepository
             cancellationToken);
     }
 
+    public Task<bool> HasSuccessorContractAsync(Guid priorContractId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.LeaseContracts.AnyAsync(
+            c => c.PriorContractId == priorContractId,
+            cancellationToken);
+    }
+
     public async Task AddStatusHistoryAsync(ContractStatusHistory statusHistory, CancellationToken cancellationToken = default)
     {
         await _dbContext.ContractStatusHistory.AddAsync(statusHistory, cancellationToken);
@@ -92,10 +99,42 @@ public class LeaseContractRepository : ILeaseContractRepository
         await _dbContext.ContractTerminations.AddAsync(termination, cancellationToken);
     }
 
-    public async Task<LeaseContractDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<List<Guid>> GetActiveContractIdsExpiringOnOrBeforeAsync(DateOnly asOfDate, int batchSize, Guid? afterId, CancellationToken cancellationToken = default)
     {
+        // Keyset cursor over Id: the job advances afterId with the last returned Id per
+        // batch and skips poison ids client-side.
+        return _dbContext.LeaseContracts
+            .AsNoTracking()
+            .Where(c => c.Status == PropertyOS.Domain.Leasing.Enums.ContractStatus.Active
+                        && c.EndDate <= asOfDate
+                        && (afterId == null || c.Id.CompareTo(afterId.Value) > 0))
+            .OrderBy(c => c.Id)
+            .Take(batchSize)
+            .Select(c => c.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<List<Guid>> GetActiveContractIdsAsync(int batchSize, Guid? afterId, CancellationToken cancellationToken = default)
+    {
+        // Keyset cursor over Id: the job advances afterId with the last returned Id per
+        // batch and skips poison ids client-side.
+        return _dbContext.LeaseContracts
+            .AsNoTracking()
+            .Where(c => c.Status == PropertyOS.Domain.Leasing.Enums.ContractStatus.Active
+                        && (afterId == null || c.Id.CompareTo(afterId.Value) > 0))
+            .OrderBy(c => c.Id)
+            .Take(batchSize)
+            .Select(c => c.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<LeaseContractDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        // Tenant scoping on the aggregate root: cross-tenant ids fall through to null (404),
+        // and the child queries below only run for a contract proven to belong to companyId.
         var contractDto = await _dbContext.LeaseContracts
             .AsNoTracking()
+            .Where(c => c.CompanyId == companyId)
             .ProjectToType<LeaseContractDetailDto>()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
@@ -125,33 +164,42 @@ public class LeaseContractRepository : ILeaseContractRepository
         return contractDto;
     }
 
-    public Task<List<LeaseContractDto>> GetHistoryByApartmentIdAsync(Guid apartmentId, CancellationToken cancellationToken = default)
+    public Task<List<LeaseContractDto>> GetHistoryByApartmentIdAsync(Guid apartmentId, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
     {
         return _dbContext.LeaseContracts
             .AsNoTracking()
-            .Where(c => c.ApartmentId == apartmentId)
+            .Where(c => c.ApartmentId == apartmentId && c.CompanyId == companyId)
             .OrderByDescending(c => c.StartDate)
+            .ThenBy(c => c.Id)
+            .Take(Math.Clamp(pageSize, 1, 200))
             .ProjectToType<LeaseContractDto>()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<LeaseContractDto>> GetHistoryByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    public Task<List<LeaseContractDto>> GetHistoryByTenantIdAsync(Guid tenantId, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
     {
         return _dbContext.LeaseContracts
             .AsNoTracking()
-            .Where(c => c.TenantId == tenantId)
+            .Where(c => c.TenantId == tenantId && c.CompanyId == companyId)
             .OrderByDescending(c => c.StartDate)
+            .ThenBy(c => c.Id)
+            .Take(Math.Clamp(pageSize, 1, 200))
             .ProjectToType<LeaseContractDto>()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<LeaseContractDto>> SearchContractsAsync(string searchTerm, CancellationToken cancellationToken = default)
+    public Task<List<LeaseContractDto>> SearchContractsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
     {
+        var effectivePageSize = Math.Clamp(pageSize, 1, 200);
+
         if (string.IsNullOrWhiteSpace(searchTerm))
         {
             return _dbContext.LeaseContracts
                 .AsNoTracking()
+                .Where(c => c.CompanyId == companyId)
                 .OrderByDescending(c => c.CreatedAt)
+                .ThenBy(c => c.Id)
+                .Take(effectivePageSize)
                 .ProjectToType<LeaseContractDto>()
                 .ToListAsync(cancellationToken);
         }
@@ -160,21 +208,25 @@ public class LeaseContractRepository : ILeaseContractRepository
 
         return _dbContext.LeaseContracts
             .AsNoTracking()
-            .Where(c => EF.Functions.ILike(c.ContractNumber, $"%{normalizedSearch}%") ||
-                        (c.ExternalRegistrationRef != null && EF.Functions.ILike(c.ExternalRegistrationRef, $"%{normalizedSearch}%")))
+            .Where(c => c.CompanyId == companyId &&
+                        (EF.Functions.ILike(c.ContractNumber, $"%{normalizedSearch}%") ||
+                         (c.ExternalRegistrationRef != null && EF.Functions.ILike(c.ExternalRegistrationRef, $"%{normalizedSearch}%"))))
             .OrderByDescending(c => c.CreatedAt)
+            .ThenBy(c => c.Id)
+            .Take(effectivePageSize)
             .ProjectToType<LeaseContractDto>()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<LeaseContractDto>> GetExpiringLeasesAsync(int daysAhead, CancellationToken cancellationToken = default)
+    public Task<List<LeaseContractDto>> GetExpiringLeasesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var limitDate = today.AddDays(daysAhead);
 
         return _dbContext.LeaseContracts
             .AsNoTracking()
-            .Where(c => c.Status == PropertyOS.Domain.Leasing.Enums.ContractStatus.Active
+            .Where(c => c.CompanyId == companyId
+                        && c.Status == PropertyOS.Domain.Leasing.Enums.ContractStatus.Active
                         && c.EndDate >= today
                         && c.EndDate <= limitDate)
             .OrderBy(c => c.EndDate)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -26,18 +25,11 @@ public class GetCompanyNotificationsQueryHandler : IRequestHandler<GetCompanyNot
     {
         var companyId = _tenantContext.CompanyId ?? throw new InvalidOperationException("Tenant context is required.");
 
-        var notifications = await _notificationRepository.GetCompanyNotificationsAsync(companyId, cancellationToken);
-
-        return notifications.Select(n => new NotificationDto(
-            n.Id,
-            n.RecipientUserId,
-            n.Subject,
-            n.Body,
-            n.NotificationType,
-            n.Priority,
-            n.Status,
-            n.CreatedAt,
-            n.ReadAt
-        )).ToList();
+        return await _notificationRepository.GetCompanyNotificationsAsync(
+            companyId,
+            request.PageSize,
+            request.LastSeenCreatedAt,
+            request.LastSeenId,
+            cancellationToken);
     }
 }

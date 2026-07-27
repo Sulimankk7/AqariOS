@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Notifications;
 
@@ -34,7 +35,7 @@ public class CreateNotificationCommandHandler : IRequestHandler<CreateNotificati
         {
             var template = await _templateRepository.GetByIdAsync(request.TemplateId.Value, companyId, cancellationToken);
             if (template == null)
-                throw new KeyNotFoundException($"Template '{request.TemplateId}' not found.");
+                throw new NotFoundException($"Template '{request.TemplateId}' not found.");
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -52,10 +53,18 @@ public class CreateNotificationCommandHandler : IRequestHandler<CreateNotificati
         );
         foreach (var channel in request.Channels)
         {
-            notification.AddDeliveryChannel(
-                channel: channel,
-                createdAt: now
-            );
+            try
+            {
+                notification.AddDeliveryChannel(
+                    channel: channel,
+                    createdAt: now
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Domain rule: the same delivery channel cannot be added twice
+                throw new BusinessRuleException(ex.Message, "NOTIFICATION_DELIVERY_CHANNEL_DUPLICATE");
+            }
         }
 
         await _notificationRepository.AddAsync(notification, cancellationToken);

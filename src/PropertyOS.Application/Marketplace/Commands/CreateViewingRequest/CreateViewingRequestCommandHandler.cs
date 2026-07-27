@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Common.ValueObjects;
 using PropertyOS.Domain.Marketplace;
@@ -27,7 +28,7 @@ public class CreateViewingRequestCommandHandler : IRequestHandler<CreateViewingR
         // 1. Verify listing existence and resolve CompanyId server-side (do not trust client)
         var companyId = await _repository.GetListingCompanyIdAsync(request.ListingId, cancellationToken);
         if (companyId == null)
-            throw new KeyNotFoundException($"MarketplaceListing with ID {request.ListingId} was not found.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.ListingId} was not found.");
 
         // 2. Validate and normalize phone number to E.164
         var phoneNumber = new PhoneNumber(request.PhoneNumber);

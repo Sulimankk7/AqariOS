@@ -1,13 +1,13 @@
 using MediatR;
 
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Leasing;
-using PropertyOS.Domain.Properties;
 
 
 namespace PropertyOS.Application.Leasing.Commands.CreateLeaseContract;
 
-public class CreateLeaseContractCommandHandler : IRequestHandler<CreateLeaseContractCommand, Unit>
+public class CreateLeaseContractCommandHandler : IRequestHandler<CreateLeaseContractCommand, Guid>
 {
     private readonly ILeasingReferenceRepository _referenceRepository;
     private readonly ILeaseContractRepository _leaseContractRepository;
@@ -26,23 +26,23 @@ public class CreateLeaseContractCommandHandler : IRequestHandler<CreateLeaseCont
         _currentUserContext = currentUserContext;
     }
 
-    public async Task<Unit> Handle(CreateLeaseContractCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateLeaseContractCommand request, CancellationToken cancellationToken)
     {
         var companyId = _tenantContext.CompanyId ?? throw new InvalidOperationException("Tenant context is required.");
-        
+
         // 1. Verify Apartment and get BuildingId
         var buildingId = await _referenceRepository.GetApartmentBuildingIdAsync(request.ApartmentId, companyId, cancellationToken);
         if (buildingId == null)
-            throw new KeyNotFoundException($"Apartment with ID {request.ApartmentId} was not found.");
+            throw new NotFoundException($"Apartment with ID {request.ApartmentId} was not found.");
 
         // 2. Verify Tenant exists
         var tenantExists = await _referenceRepository.TenantExistsAsync(request.TenantId, companyId, cancellationToken);
         if (!tenantExists)
-            throw new KeyNotFoundException($"Tenant with ID {request.TenantId} was not found.");
+            throw new NotFoundException($"Tenant with ID {request.TenantId} was not found.");
 
         // 3. Overlap validation
         if (await _leaseContractRepository.HasOverlappingNonTerminalContractAsync(request.ApartmentId, request.StartDate, request.EndDate, cancellationToken))
-            throw new InvalidOperationException("An overlapping draft, pending, or active contract already exists for this apartment.");
+            throw new ConflictException("An overlapping draft, pending, or active contract already exists for this apartment.");
 
         // 4. Generate contract number is now passed via command
         var contractNumber = request.ContractNumber;
@@ -69,8 +69,20 @@ public class CreateLeaseContractCommandHandler : IRequestHandler<CreateLeaseCont
         );
 
         await _leaseContractRepository.AddAsync(contract, cancellationToken);
+
+        var history = ContractStatusHistory.Create(
+            companyId: companyId,
+            leaseContractId: contract.Id,
+            newStatus: contract.Status,
+            changedAt: DateTimeOffset.UtcNow,
+            previousStatus: null,
+            changedBy: _currentUserContext.UserId,
+            reason: "Initial contract creation"
+        );
+        await _leaseContractRepository.AddStatusHistoryAsync(history, cancellationToken);
+
         // Note: SaveChanges is owned by TransactionBehavior
 
-        return Unit.Value;
+        return contract.Id;
     }
 }

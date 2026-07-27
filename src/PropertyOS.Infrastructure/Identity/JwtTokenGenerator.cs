@@ -30,7 +30,9 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
         var section = configuration.GetSection("Jwt");
-        _secret = section["Secret"] ?? "PropertyOS-Secret-Signing-Key-Minimum-32-Bytes-Length!";
+        _secret = section["Secret"]
+            ?? throw new InvalidOperationException(
+                "Jwt:Secret is not configured. Set a unique secret of at least 32 bytes via configuration (e.g. appsettings.Local.json or environment variables).");
         _issuer = section["Issuer"] ?? "PropertyOS";
         _audience = section["Audience"] ?? "PropertyOS-Clients";
         _expiryMinutes = int.TryParse(section["ExpiryMinutes"], out int exp) ? exp : 15;

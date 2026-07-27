@@ -95,6 +95,15 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Detail = unauthorizedException.Message;
                 break;
 
+            case DbUpdateConcurrencyException:
+                // Optimistic-concurrency conflict (xmin token): the row changed under the caller.
+                statusCode = StatusCodes.Status409Conflict;
+                problemDetails.Status = statusCode;
+                problemDetails.Title = "Concurrency Conflict";
+                problemDetails.Detail = "The resource was modified by another operation. Reload it and retry.";
+                problemDetails.Extensions["code"] = "CONCURRENCY_CONFLICT";
+                break;
+
             case DbUpdateException dbUpdateException when dbUpdateException.InnerException is Npgsql.PostgresException pgEx:
                 // 23505 is the PostgreSQL error code for unique_violation
                 if (pgEx.SqlState == "23505")
@@ -112,6 +121,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                     {
                         problemDetails.Detail = "Phone number already exists.";
                         problemDetails.Extensions["code"] = "PHONE_ALREADY_EXISTS";
+                    }
+                    else if (pgEx.ConstraintName == "uq_tenants_company_national_id")
+                    {
+                        problemDetails.Detail = "A tenant with this national ID already exists.";
+                        problemDetails.Extensions["code"] = "TENANT_NATIONAL_ID_ALREADY_EXISTS";
                     }
                     else
                     {

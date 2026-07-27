@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Leasing;
 using PropertyOS.Domain.Financials;
@@ -31,10 +32,10 @@ public class GenerateScheduledInstallmentsCommandHandler : IRequestHandler<Gener
     {
         var contract = await _leaseContractRepository.GetByIdAsync(request.LeaseContractId, cancellationToken);
         if (contract == null)
-            throw new KeyNotFoundException($"LeaseContract with ID {request.LeaseContractId} was not found.");
+            throw new NotFoundException($"LeaseContract with ID {request.LeaseContractId} was not found.");
 
         if (contract.Status != ContractStatus.Active)
-            throw new InvalidOperationException("Installments can only be generated for active contracts.");
+            throw new BusinessRuleException("Installments can only be generated for active contracts.", "INSTALLMENTS_CONTRACT_NOT_ACTIVE");
 
         int intervalMonths = contract.PaymentFrequency switch
         {
@@ -42,8 +43,14 @@ public class GenerateScheduledInstallmentsCommandHandler : IRequestHandler<Gener
             PaymentFrequency.Quarterly => 3,
             PaymentFrequency.SemiAnnual => 6,
             PaymentFrequency.Annual => 12,
-            _ => throw new InvalidOperationException($"Unsupported payment frequency: {contract.PaymentFrequency}")
+            _ => throw new BusinessRuleException($"Unsupported payment frequency: {contract.PaymentFrequency}", "INSTALLMENTS_UNSUPPORTED_FREQUENCY")
         };
+
+        // Single round trip: fetch all existing installment periods once and diff in
+        // memory (previously one EXISTS probe per billing period — 13 queries for an
+        // annual monthly contract).
+        var existingPeriods = new HashSet<BillingPeriod>(
+            await _rentPaymentRepository.GetScheduledInstallmentPeriodsAsync(contract.Id, cancellationToken));
 
         var currentStart = contract.StartDate;
         var termEnd = contract.EndDate.AddDays(1); // Exclusive end boundary
@@ -62,11 +69,7 @@ public class GenerateScheduledInstallmentsCommandHandler : IRequestHandler<Gener
             }
 
             // Check if a scheduled installment already exists for this contract and period
-            var exists = await _rentPaymentRepository.HasScheduledInstallmentAsync(
-                contract.Id,
-                periodStart,
-                periodEnd,
-                cancellationToken);
+            var exists = existingPeriods.Contains(new BillingPeriod(periodStart, periodEnd));
 
             if (!exists)
             {
@@ -84,6 +87,9 @@ public class GenerateScheduledInstallmentsCommandHandler : IRequestHandler<Gener
                     decimal expectedDays = expectedEnd.DayNumber - periodStart.DayNumber;
                     amountDue = contract.MonthlyRentAmount * intervalMonths * (actualDays / expectedDays);
                 }
+
+                // Storage is numeric(12,3): round explicitly at computation time instead of relying on DB truncation.
+                amountDue = Math.Round(amountDue, 3, MidpointRounding.AwayFromZero);
 
                 // Compute due date (payment_due_day of the starting month)
                 var dueDate = new DateOnly(periodStart.Year, periodStart.Month, contract.PaymentDueDay);

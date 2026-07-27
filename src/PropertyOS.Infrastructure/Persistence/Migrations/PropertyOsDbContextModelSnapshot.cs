@@ -18,7 +18,7 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.17")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "allocation_status_enum", new[] { "active", "reversed" });
@@ -1469,7 +1469,7 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasColumnName("amount_due");
 
                     b.Property<decimal>("AmountPaid")
-                        .ValueGeneratedOnAddOrUpdate()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(12,3)")
                         .HasDefaultValue(0m)
                         .HasColumnName("amount_paid");
@@ -1525,7 +1525,7 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasColumnName("due_date");
 
                     b.Property<int>("DueDateStatus")
-                        .ValueGeneratedOnAddOrUpdate()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("due_date_status_enum")
                         .HasColumnName("due_date_status")
                         .HasDefaultValueSql("'pending'");

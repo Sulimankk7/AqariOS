@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Maintenance;
 using PropertyOS.Application.Maintenance.Commands.AddMaintenanceAttachment;
@@ -27,6 +28,8 @@ public class MaintenanceCommandHandlerTests
     {
         public List<MaintenanceRequest> Requests { get; } = new();
         public List<MaintenanceStatusHistory> StatusHistories { get; } = new();
+        public List<MaintenanceRequestAttachment> AddedAttachments { get; } = new();
+        public List<MaintenanceRequestComment> AddedComments { get; } = new();
         public HashSet<Guid> ExistentBuildings { get; } = new();
         public HashSet<Guid> ExistentApartments { get; } = new();
         public HashSet<Guid> ExistentTenants { get; } = new();
@@ -45,6 +48,18 @@ public class MaintenanceCommandHandlerTests
         public Task AddStatusHistoryAsync(MaintenanceStatusHistory history, CancellationToken cancellationToken = default)
         {
             StatusHistories.Add(history);
+            return Task.CompletedTask;
+        }
+
+        public Task AddAttachmentAsync(MaintenanceRequestAttachment attachment, CancellationToken cancellationToken = default)
+        {
+            AddedAttachments.Add(attachment);
+            return Task.CompletedTask;
+        }
+
+        public Task AddCommentAsync(MaintenanceRequestComment comment, CancellationToken cancellationToken = default)
+        {
+            AddedComments.Add(comment);
             return Task.CompletedTask;
         }
 
@@ -120,6 +135,7 @@ public class MaintenanceCommandHandlerTests
         // Assert
         Assert.Single(repo.Requests);
         var created = repo.Requests.First();
+        Assert.NotEqual(Guid.Empty, resultId); // client-generated UUIDv7, available before SaveChanges
         Assert.Equal(resultId, created.Id);
         Assert.Equal(tenantCtx.CompanyId, created.CompanyId);
         Assert.Equal(buildingId, created.BuildingId);
@@ -131,7 +147,7 @@ public class MaintenanceCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CreateRequest_WithNonExistentBuilding_ThrowsKeyNotFoundException()
+    public async Task Handle_CreateRequest_WithNonExistentBuilding_ThrowsNotFoundException()
     {
         // Arrange
         var repo = new FakeMaintenanceRequestRepository();
@@ -152,7 +168,7 @@ public class MaintenanceCommandHandlerTests
             RequestDate: DateOnly.FromDateTime(DateTime.UtcNow));
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(command, CancellationToken.None));
     }
 
@@ -292,5 +308,256 @@ public class MaintenanceCommandHandlerTests
         // Verify children cascade soft delete
         Assert.NotNull(attachment.DeletedAt);
         Assert.NotNull(comment.DeletedAt);
+    }
+
+    [Fact]
+    public async Task Handle_UpdateStatus_WithInvalidTransition_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var request = MaintenanceRequest.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: null,
+            tenantId: null,
+            title: "Ticket",
+            description: "Description",
+            category: MaintenanceCategory.Other,
+            priority: MaintenancePriority.Medium,
+            requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            now: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId);
+        repo.Requests.Add(request);
+
+        var handler = new UpdateMaintenanceRequestStatusCommandHandler(repo, tenantCtx, userCtx);
+
+        // Open → Closed is NOT allowed by the domain transition graph
+        var command = new UpdateMaintenanceRequestStatusCommand(
+            Id: request.Id,
+            NewStatus: MaintenanceStatus.Closed);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            handler.Handle(command, CancellationToken.None));
+        Assert.Equal("MAINTENANCE_INVALID_TRANSITION", ex.Code);
+        Assert.Empty(repo.StatusHistories);
+    }
+
+    [Fact]
+    public async Task Handle_UpdateStatus_WithMissingRequest_ThrowsNotFoundException()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var handler = new UpdateMaintenanceRequestStatusCommandHandler(repo, new FakeTenantContext(), new FakeCurrentUserContext());
+
+        var command = new UpdateMaintenanceRequestStatusCommand(
+            Id: Guid.NewGuid(),
+            NewStatus: MaintenanceStatus.InProgress);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_AddComment_Succeeds_AndTracksCommentExplicitlyAsAdded()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var request = MaintenanceRequest.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: null,
+            tenantId: null,
+            title: "Ticket",
+            description: "Description",
+            category: MaintenanceCategory.Other,
+            priority: MaintenancePriority.Medium,
+            requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            now: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId);
+        repo.Requests.Add(request);
+
+        var handler = new AddMaintenanceCommentCommandHandler(repo, tenantCtx, userCtx);
+        var command = new AddMaintenanceCommentCommand(request.Id, "Technician called the tenant.");
+
+        // Act
+        var resultId = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.NotEqual(Guid.Empty, resultId); // client-generated UUIDv7, available before SaveChanges
+        var added = Assert.Single(repo.AddedComments); // explicitly tracked as Added
+        Assert.Equal(resultId, added.Id);
+        Assert.Equal("Technician called the tenant.", added.CommentText);
+    }
+
+    [Fact]
+    public async Task Handle_AddComment_OnDeletedRequest_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var request = MaintenanceRequest.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: null,
+            tenantId: null,
+            title: "Ticket",
+            description: "Description",
+            category: MaintenanceCategory.Other,
+            priority: MaintenancePriority.Medium,
+            requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            now: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId);
+        request.SoftDelete(DateTimeOffset.UtcNow, userCtx.UserId);
+        repo.Requests.Add(request);
+
+        var handler = new AddMaintenanceCommentCommandHandler(repo, tenantCtx, userCtx);
+        var command = new AddMaintenanceCommentCommand(request.Id, "Comment text");
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            handler.Handle(command, CancellationToken.None));
+        Assert.Equal("MAINTENANCE_COMMENT_ADD_INVALID_STATE", ex.Code);
+        Assert.Empty(repo.AddedComments);
+    }
+
+    [Fact]
+    public async Task Handle_AddAttachment_Succeeds_AndTracksAttachmentExplicitlyAsAdded()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var request = MaintenanceRequest.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: null,
+            tenantId: null,
+            title: "Ticket",
+            description: "Description",
+            category: MaintenanceCategory.Other,
+            priority: MaintenancePriority.Medium,
+            requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            now: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId);
+        repo.Requests.Add(request);
+
+        var handler = new AddMaintenanceAttachmentCommandHandler(repo, tenantCtx, userCtx);
+        var command = new AddMaintenanceAttachmentCommand(request.Id, Guid.NewGuid(), "Before photo");
+
+        // Act
+        var resultId = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.NotEqual(Guid.Empty, resultId); // client-generated UUIDv7, available before SaveChanges
+        var added = Assert.Single(repo.AddedAttachments); // explicitly tracked as Added
+        Assert.Equal(resultId, added.Id);
+        Assert.Equal("Before photo", added.Description);
+    }
+
+    [Fact]
+    public async Task Handle_AddAttachment_WithDuplicateActiveFile_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var request = MaintenanceRequest.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: null,
+            tenantId: null,
+            title: "Ticket",
+            description: "Description",
+            category: MaintenanceCategory.Other,
+            priority: MaintenancePriority.Medium,
+            requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            now: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId);
+        var fileId = Guid.NewGuid();
+        request.AddAttachment(fileId, userCtx.UserId, "Photo 1", DateTimeOffset.UtcNow, userCtx.UserId);
+        repo.Requests.Add(request);
+
+        var handler = new AddMaintenanceAttachmentCommandHandler(repo, tenantCtx, userCtx);
+        var command = new AddMaintenanceAttachmentCommand(request.Id, fileId, "Photo 1 duplicate");
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            handler.Handle(command, CancellationToken.None));
+        Assert.Equal("MAINTENANCE_ATTACHMENT_ADD_INVALID_STATE", ex.Code);
+        Assert.Empty(repo.AddedAttachments);
+    }
+
+    [Fact]
+    public async Task Handle_EditComment_WithUnknownComment_ThrowsNotFoundException()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var request = MaintenanceRequest.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: null,
+            tenantId: null,
+            title: "Ticket",
+            description: "Description",
+            category: MaintenanceCategory.Other,
+            priority: MaintenancePriority.Medium,
+            requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            now: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId);
+        repo.Requests.Add(request);
+
+        var handler = new EditMaintenanceCommentCommandHandler(repo, tenantCtx, userCtx);
+        var command = new EditMaintenanceCommentCommand(request.Id, Guid.NewGuid(), "Corrected text");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            handler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_DeleteRequest_AlreadyDeleted_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        var repo = new FakeMaintenanceRequestRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var request = MaintenanceRequest.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: null,
+            tenantId: null,
+            title: "Ticket",
+            description: "Description",
+            category: MaintenanceCategory.Other,
+            priority: MaintenancePriority.Medium,
+            requestDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            now: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId);
+        request.SoftDelete(DateTimeOffset.UtcNow, userCtx.UserId);
+        repo.Requests.Add(request);
+
+        var handler = new DeleteMaintenanceRequestCommandHandler(repo, tenantCtx, userCtx);
+        var command = new DeleteMaintenanceRequestCommand(request.Id);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            handler.Handle(command, CancellationToken.None));
+        Assert.Equal("MAINTENANCE_REQUEST_ALREADY_DELETED", ex.Code);
     }
 }

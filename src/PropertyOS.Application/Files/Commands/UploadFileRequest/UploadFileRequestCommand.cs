@@ -1,5 +1,5 @@
-using MediatR;
 using System;
+using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Files.Commands.UploadFileRequest;
 
@@ -9,7 +9,7 @@ public record UploadFileRequestCommand(
     string Filename,
     string MimeType,
     long SizeBytes
-) : IRequest<UploadFileRequestResponse>;
+) : ICommand<UploadFileRequestResponse>;
 
 public record UploadFileRequestResponse(
     Guid FileId,

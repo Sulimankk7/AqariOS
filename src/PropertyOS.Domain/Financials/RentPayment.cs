@@ -81,7 +81,9 @@ public class RentPayment : ISoftDeletable
 
         return new RentPayment
         {
-            Id = Guid.Empty,
+            // Client-generated UUIDv7 (uniform platform pattern): the ID must exist before
+            // TransactionBehavior's SaveChanges so child rows and command return values can use it.
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             LeaseContractId = leaseContractId,
             TenantId = tenantId,
@@ -137,7 +139,12 @@ public class RentPayment : ISoftDeletable
         UpdatedBy = updatedBy;
     }
 
-    public void IssueReceipt(string receiptNumber, DateTimeOffset issuedAt, Guid? issuedBy, string? notes = null)
+    /// <summary>
+    /// Issues the receipt and returns it. Callers persisting through EF MUST explicitly add
+    /// the returned receipt to the context (repository AddReceiptAsync): it carries a
+    /// client-generated ID, so navigation-only discovery would mistake it for an existing row.
+    /// </summary>
+    public RentPaymentReceipt IssueReceipt(string receiptNumber, DateTimeOffset issuedAt, Guid? issuedBy, string? notes = null)
     {
         if (DueDateStatus != DueDateStatus.Paid)
             throw new InvalidOperationException("Cannot issue a receipt for a payment that is not fully paid.");
@@ -164,6 +171,8 @@ public class RentPayment : ISoftDeletable
         ReceiptNumber = receiptNumber;
         UpdatedAt = issuedAt;
         UpdatedBy = issuedBy;
+
+        return Receipt;
     }
 
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)

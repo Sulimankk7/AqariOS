@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 using PropertyOS.Domain.Financials;
@@ -29,7 +30,7 @@ public class CreateEfawateercomTransactionCommandHandler : IRequestHandler<Creat
     {
         var rentPayment = await _rentPaymentRepository.GetByIdAsync(request.RentPaymentId, cancellationToken);
         if (rentPayment == null)
-            throw new KeyNotFoundException($"RentPayment with ID {request.RentPaymentId} was not found.");
+            throw new NotFoundException($"RentPayment with ID {request.RentPaymentId} was not found.");
 
         var transaction = EfawateercomTransaction.Create(
             companyId: rentPayment.CompanyId,

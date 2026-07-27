@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 using PropertyOS.Application.Financials.Commands.ReceiveEfawateercomCallback;
@@ -35,7 +36,7 @@ public class PollEfawateercomTransactionStatusCommandHandler
             request.ExternalTransactionId, cancellationToken);
 
         if (localTransaction == null)
-            throw new KeyNotFoundException(
+            throw new NotFoundException(
                 $"eFAWATEERcom transaction with external ID '{request.ExternalTransactionId}' was not found.");
 
         // If already in a terminal state, polling is a no-op.

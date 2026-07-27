@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 
@@ -25,7 +26,7 @@ public class DeleteExpenseCommandHandler : IRequestHandler<DeleteExpenseCommand,
     {
         var expense = await _expenseRepository.GetByIdAsync(request.Id, cancellationToken);
         if (expense == null)
-            throw new KeyNotFoundException($"Expense with ID {request.Id} was not found.");
+            throw new NotFoundException($"Expense with ID {request.Id} was not found.");
 
         expense.SoftDelete(DateTimeOffset.UtcNow, _currentUserContext.UserId);
 

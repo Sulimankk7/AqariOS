@@ -1,5 +1,5 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Maintenance.Enums;
 
 namespace PropertyOS.Application.Maintenance.Commands.UpdateMaintenanceRequest;
@@ -14,4 +14,4 @@ public record UpdateMaintenanceRequestCommand(
     MaintenanceCategory Category,
     MaintenancePriority Priority,
     string? InternalNotes
-) : IRequest<MediatR.Unit>;
+) : ICommand;

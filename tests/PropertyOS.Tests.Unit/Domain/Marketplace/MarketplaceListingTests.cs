@@ -83,7 +83,7 @@ public class MarketplaceListingTests
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]
-    public void Create_WithBlankTitle_ThrowsArgumentException(string invalidTitle)
+    public void Create_WithBlankTitle_ThrowsArgumentException(string? invalidTitle)
     {
         // Act & Assert
         Assert.Throws<ArgumentException>(() => MarketplaceListing.Create(

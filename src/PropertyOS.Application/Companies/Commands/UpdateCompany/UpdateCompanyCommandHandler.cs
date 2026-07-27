@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Companies.Commands.UpdateCompany;
@@ -25,9 +25,14 @@ public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand,
 
     public async Task<Unit> Handle(UpdateCompanyCommand request, CancellationToken cancellationToken)
     {
+        // Tenant scoping: a company may only update its own profile. Cross-tenant
+        // requests are masked as 404; null CompanyId is fail-closed.
+        if (!_tenantContext.IsPlatformAdmin && _tenantContext.CompanyId != request.Id)
+            throw new NotFoundException($"Company with ID {request.Id} was not found.");
+
         var company = await _companyRepository.GetByIdAsync(request.Id, cancellationToken);
         if (company == null)
-            throw new KeyNotFoundException($"Company with ID {request.Id} was not found.");
+            throw new NotFoundException($"Company with ID {request.Id} was not found.");
 
         company.UpdateProfile(
             request.LegalName,

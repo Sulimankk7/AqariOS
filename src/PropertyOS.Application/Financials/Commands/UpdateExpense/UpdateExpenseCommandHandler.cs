@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 
@@ -30,13 +31,13 @@ public class UpdateExpenseCommandHandler : IRequestHandler<UpdateExpenseCommand,
 
         var expense = await _expenseRepository.GetByIdAsync(request.Id, cancellationToken);
         if (expense == null)
-            throw new KeyNotFoundException($"Expense with ID {request.Id} was not found.");
+            throw new NotFoundException($"Expense with ID {request.Id} was not found.");
 
         if (request.BuildingId.HasValue && request.BuildingId.Value != Guid.Empty)
         {
             var buildingExists = await _expenseRepository.BuildingExistsAsync(request.BuildingId.Value, companyId, cancellationToken);
             if (!buildingExists)
-                throw new KeyNotFoundException($"Building with ID {request.BuildingId.Value} was not found.");
+                throw new NotFoundException($"Building with ID {request.BuildingId.Value} was not found.");
         }
 
         expense.UpdateDetails(

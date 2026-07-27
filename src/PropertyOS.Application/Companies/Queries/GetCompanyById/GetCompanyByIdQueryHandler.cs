@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Companies.Queries.Common;
 
@@ -21,10 +21,16 @@ public class GetCompanyByIdQueryHandler : IRequestHandler<GetCompanyByIdQuery, C
 
     public async Task<CompanyDetailDto?> Handle(GetCompanyByIdQuery request, CancellationToken cancellationToken)
     {
+        // Tenant scoping: a company may only read its own record. Cross-tenant requests
+        // are masked as 404 so the existence of other tenants is never disclosed.
+        // Null CompanyId is fail-closed (denied) unless the caller is the platform admin.
+        if (!_tenantContext.IsPlatformAdmin && _tenantContext.CompanyId != request.Id)
+            throw new NotFoundException($"Company with ID {request.Id} was not found.");
+
         var company = await _companyRepository.GetDetailByIdAsync(request.Id, cancellationToken);
         if (company == null)
-            throw new KeyNotFoundException($"Company with ID {request.Id} was not found.");
-            
+            throw new NotFoundException($"Company with ID {request.Id} was not found.");
+
         return company;
     }
 }

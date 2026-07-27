@@ -1,5 +1,5 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 
 namespace PropertyOS.Application.Documents.Commands.UpdateBuildingDocument;
@@ -11,4 +11,4 @@ public record UpdateBuildingDocumentCommand(
     DateOnly? IssueDate,
     DateOnly? ExpiryDate,
     bool IsConfidential
-) : IRequest<BuildingDocumentDto>;
+) : ICommand<BuildingDocumentDto>;

@@ -93,42 +93,90 @@ public class PermissionCatalogSeeder : IPermissionCatalogSeeder
             }
 
             // 2. Reconcile SYSTEM / COMPANY_ADMIN Role Grants
-            var activePermissions = await _dbContext.Permissions
-                .Where(p => !p.IsDeprecated)
-                .ToListAsync(cancellationToken);
-
-            var activePermissionIds = activePermissions.Select(p => p.Id).ToHashSet();
-
-            var adminRoles = await _dbContext.Roles
-                .Include(r => r.RolePermissions)
-                .Where(r => r.Code == "COMPANY_ADMIN" && r.CompanyId != null && r.DeletedAt == null)
-                .ToListAsync(cancellationToken);
-
-            int grantedCount = 0;
-            foreach (var role in adminRoles)
+            //
+            // Set-based reconciliation: a single INSERT ... SELECT anti-join grants every
+            // active (non-deprecated) permission to every live, company-scoped
+            // COMPANY_ADMIN role that does not already hold it. This replaces the former
+            // O(companies x permissions) tracked-entity loop, which materialized every
+            // role-permission row into the change tracker on every startup.
+            //
+            // Semantics preserved exactly:
+            //   - roles:        code = 'COMPANY_ADMIN', company_id IS NOT NULL, not soft-deleted
+            //   - permissions:  is_deprecated = false
+            //   - only missing (role_id, permission_id) pairs are inserted
+            //   - granted_at = the same 'now' captured for the catalog sync; granted_by stays NULL
+            //   - id falls back to the column default (uuid_generate_v7()), matching Guid.CreateVersion7()
+            // ON CONFLICT DO NOTHING makes the statement race-safe against concurrent
+            // seeders under the uq_role_permissions_role_permission unique index.
+            int grantedCount;
+            if (_dbContext.Database.IsRelational())
             {
-                var existingRolePermIds = role.RolePermissions.Select(rp => rp.PermissionId).ToHashSet();
+                // Explicit transaction so TenantSessionInterceptor observes the same
+                // transaction-started semantics as the previous SaveChangesAsync path.
+                await using var reconcileTx = await _dbContext.BeginTransactionAsync(cancellationToken);
+                grantedCount = await _dbContext.Database.ExecuteSqlRawAsync(
+                    """
+                    INSERT INTO role_permissions (role_id, permission_id, granted_at)
+                    SELECT r.id, p.id, {0}
+                    FROM roles r
+                    CROSS JOIN permissions p
+                    WHERE r.code = 'COMPANY_ADMIN'
+                      AND r.company_id IS NOT NULL
+                      AND r.deleted_at IS NULL
+                      AND p.is_deprecated = false
+                      AND NOT EXISTS (
+                          SELECT 1 FROM role_permissions rp
+                          WHERE rp.role_id = r.id AND rp.permission_id = p.id)
+                    ON CONFLICT DO NOTHING
+                    """,
+                    new object[] { now },
+                    cancellationToken);
+                await reconcileTx.CommitAsync(cancellationToken);
+            }
+            else
+            {
+                // Non-relational provider (in-memory test double): raw SQL is unavailable,
+                // so fall back to the tracked-entity reconciliation with identical semantics.
+                var activePermissionIds = await _dbContext.Permissions
+                    .Where(p => !p.IsDeprecated)
+                    .Select(p => p.Id)
+                    .ToListAsync(cancellationToken);
 
-                foreach (var permId in activePermissionIds)
+                var adminRoles = await _dbContext.Roles
+                    .Include(r => r.RolePermissions)
+                    .Where(r => r.Code == "COMPANY_ADMIN" && r.CompanyId != null && r.DeletedAt == null)
+                    .ToListAsync(cancellationToken);
+
+                grantedCount = 0;
+                foreach (var role in adminRoles)
                 {
-                    if (!existingRolePermIds.Contains(permId))
+                    var existingRolePermIds = role.RolePermissions.Select(rp => rp.PermissionId).ToHashSet();
+
+                    foreach (var permId in activePermissionIds)
                     {
-                        _dbContext.RolePermissions.Add(new RolePermission
+                        if (!existingRolePermIds.Contains(permId))
                         {
-                            Id = Guid.CreateVersion7(),
-                            RoleId = role.Id,
-                            PermissionId = permId,
-                            GrantedAt = now
-                        });
-                        grantedCount++;
+                            _dbContext.RolePermissions.Add(new RolePermission
+                            {
+                                Id = Guid.CreateVersion7(),
+                                RoleId = role.Id,
+                                PermissionId = permId,
+                                GrantedAt = now
+                            });
+                            grantedCount++;
+                        }
                     }
+                }
+
+                if (grantedCount > 0)
+                {
+                    await _dbContext.SaveChangesAsync(cancellationToken);
                 }
             }
 
             if (grantedCount > 0)
             {
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Reconciled COMPANY_ADMIN role grants: {GrantedCount} new role-permission grants added across {RoleCount} admin roles.", grantedCount, adminRoles.Count);
+                _logger.LogInformation("Reconciled COMPANY_ADMIN role grants: {GrantedCount} new role-permission grants added.", grantedCount);
             }
 
             _logger.LogInformation("Platform RBAC Permission Catalog synchronization completed successfully.");

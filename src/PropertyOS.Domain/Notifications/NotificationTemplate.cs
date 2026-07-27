@@ -46,7 +46,9 @@ public class NotificationTemplate : ISoftDeletable
 
         return new NotificationTemplate
         {
-            Id = Guid.Empty,
+            // Client-generated UUIDv7 (uniform platform pattern): the ID must exist before
+            // TransactionBehavior's SaveChanges so the command return value can use it.
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             TemplateName = templateName.Trim(),
             NotificationType = notificationType,

@@ -36,11 +36,16 @@ public class ExpenseRepository : IExpenseRepository
         await _dbContext.Expenses.AddAsync(expense, cancellationToken);
     }
 
-    public Task<List<Expense>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default)
+    public async Task AddReceiptAsync(ExpenseReceipt receipt, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Set<ExpenseReceipt>().AddAsync(receipt, cancellationToken);
+    }
+
+    public Task<List<Expense>> GetByBuildingIdAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Expenses
             .Include(e => e.Receipts)
-            .Where(e => e.BuildingId == buildingId && e.DeletedAt == null)
+            .Where(e => e.BuildingId == buildingId && e.CompanyId == companyId && e.DeletedAt == null)
             .OrderByDescending(e => e.ExpenseDate)
             .ToListAsync(cancellationToken);
     }

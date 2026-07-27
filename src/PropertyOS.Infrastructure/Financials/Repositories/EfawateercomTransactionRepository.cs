@@ -65,6 +65,31 @@ public class EfawateercomTransactionRepository : IEfawateercomTransactionReposit
         await _dbContext.EfawateercomTransactions.AddAsync(transaction, cancellationToken);
     }
 
+    public Task<List<Guid>> GetStaleNonTerminalTransactionIdsAsync(DateTimeOffset olderThan, int batchSize, Guid? afterId, CancellationToken cancellationToken = default)
+    {
+        // Non-terminal (Pending/Sent) transactions whose gateway request is older than
+        // the cutoff. Soft-deleted rows are excluded. Keyset sweep cursor: Id > afterId,
+        // ordered by Id ascending — the caller advances the cursor per batch.
+        var query = _dbContext.EfawateercomTransactions
+            .AsNoTracking()
+            .Where(t => (t.TransactionStatus == PropertyOS.Domain.Financials.Enums.EfawateercomStatus.Pending
+                         || t.TransactionStatus == PropertyOS.Domain.Financials.Enums.EfawateercomStatus.Sent)
+                        && t.RequestTime < olderThan
+                        && t.DeletedAt == null);
+
+        if (afterId.HasValue)
+        {
+            var cursor = afterId.Value;
+            query = query.Where(t => t.Id.CompareTo(cursor) > 0);
+        }
+
+        return query
+            .OrderBy(t => t.Id)
+            .Take(batchSize)
+            .Select(t => t.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     // ── Read-side (projections) ──────────────────────────────────────────────
 
     public Task<EfawateercomTransactionDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default)

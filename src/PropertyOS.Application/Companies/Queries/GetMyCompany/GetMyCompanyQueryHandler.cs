@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Companies.Queries.Common;
 
@@ -21,12 +21,12 @@ public class GetMyCompanyQueryHandler : IRequestHandler<GetMyCompanyQuery, Compa
 
     public async Task<CompanyDetailDto?> Handle(GetMyCompanyQuery request, CancellationToken cancellationToken)
     {
-        var companyId = _tenantContext.CompanyId ?? throw new InvalidOperationException("Tenant context is required.");
-        
+        var companyId = _tenantContext.CompanyId ?? throw new UnauthorizedAccessException("Tenant context is required.");
+
         var company = await _companyRepository.GetDetailByIdAsync(companyId, cancellationToken);
         if (company == null)
-            throw new KeyNotFoundException($"Company with ID {companyId} was not found.");
-            
+            throw new NotFoundException($"Company with ID {companyId} was not found.");
+
         return company;
     }
 }

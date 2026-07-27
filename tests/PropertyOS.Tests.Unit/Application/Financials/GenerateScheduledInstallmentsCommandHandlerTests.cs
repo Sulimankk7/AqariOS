@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials.Commands.GenerateScheduledInstallments;
 using PropertyOS.Application.Financials.Queries.Common;
@@ -44,12 +45,15 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
         public Task<bool> HasOverlappingNonTerminalContractAsync(Guid apartmentId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> HasOverlappingNonTerminalContractAsync(Guid apartmentId, DateTime startDate, DateTime endDate, Guid excludeContractId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> HasSignedContractDocumentAsync(Guid leaseContractId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<bool> HasSuccessorContractAsync(Guid priorContractId, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public Task AddTerminationAsync(ContractTermination termination, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<LeaseContractDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> GetHistoryByApartmentIdAsync(Guid apartmentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> GetHistoryByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> SearchContractsAsync(string searchTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> GetExpiringLeasesAsync(int daysAhead, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<Guid>> GetActiveContractIdsExpiringOnOrBeforeAsync(DateOnly asOfDate, int batchSize, Guid? afterId, CancellationToken cancellationToken = default) => Task.FromResult(new List<Guid>());
+        public Task<List<Guid>> GetActiveContractIdsAsync(int batchSize, Guid? afterId, CancellationToken cancellationToken = default) => Task.FromResult(new List<Guid>());
+        public Task<LeaseContractDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> GetHistoryByApartmentIdAsync(Guid apartmentId, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> GetHistoryByTenantIdAsync(Guid tenantId, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> SearchContractsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> GetExpiringLeasesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private class FakeRentPaymentRepository : IRentPaymentRepository
@@ -68,11 +72,30 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
             return Task.CompletedTask;
         }
 
+        public int RentGracePeriodDays { get; set; } = 0;
+        public Task<int> GetRentGracePeriodDaysAsync(Guid companyId, CancellationToken cancellationToken = default)
+            => Task.FromResult(RentGracePeriodDays);
+
+        public Task<List<RentPayment>> GetByIdsForUpdateAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+            => Task.FromResult(Payments.Where(p => ids.Contains(p.Id)).OrderBy(p => p.Id).ToList());
+
+        public Task AddReceiptAsync(RentPaymentReceipt receipt, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task AddRangeAsync(IEnumerable<RentPayment> rentPayments, CancellationToken cancellationToken = default)
         {
             Payments.AddRange(rentPayments);
             return Task.CompletedTask;
         }
+
+            public Task<List<BillingPeriod>> GetScheduledInstallmentPeriodsAsync(Guid leaseContractId, CancellationToken cancellationToken = default)
+            => Task.FromResult(Payments
+                .Where(p => p.LeaseContractId == leaseContractId
+                            && p.PaymentPurpose == PaymentPurpose.ScheduledInstallment
+                            && p.BillingPeriodStart != null && p.BillingPeriodEnd != null
+                            && p.DeletedAt == null)
+                .Select(p => new BillingPeriod(p.BillingPeriodStart!.Value, p.BillingPeriodEnd!.Value))
+                .ToList());
 
         public Task<bool> HasScheduledInstallmentAsync(Guid leaseContractId, DateOnly start, DateOnly end, CancellationToken cancellationToken = default)
         {
@@ -84,6 +107,7 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
             return Task.FromResult(exists);
         }
 
+        public Task<List<Guid>> GetOverdueCandidateIdsAsync(DateOnly asOfDate, int batchSize, Guid? afterId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<ChequeDetails?> LoadChequeAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AddChequeAsync(ChequeDetails cheque, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<PaymentAllocation?> LoadAllocationAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -91,15 +115,15 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
         public Task<List<PaymentAllocation>> GetAllocationsByObligationIdAsync(Guid obligationId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<PaymentAllocation>> GetAllocationsByReceivingIdAsync(Guid receivingId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
-        public Task<RentPaymentDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private class FakeCurrentUserContext : ICurrentUserContext
@@ -138,7 +162,7 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_MissingContract_ThrowsKeyNotFoundException()
+    public async Task Handle_MissingContract_ThrowsNotFoundException()
     {
         var contractRepo = new FakeLeaseContractRepository();
         var paymentRepo = new FakeRentPaymentRepository();
@@ -146,11 +170,11 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
 
         var command = new GenerateScheduledInstallmentsCommand(Guid.NewGuid());
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_InactiveContract_ThrowsInvalidOperationException()
+    public async Task Handle_InactiveContract_ThrowsBusinessRuleException()
     {
         var contractRepo = new FakeLeaseContractRepository();
         var paymentRepo = new FakeRentPaymentRepository();
@@ -165,7 +189,8 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
 
         var command = new GenerateScheduledInstallmentsCommand(contract.Id);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
+        Assert.Equal("INSTALLMENTS_CONTRACT_NOT_ACTIVE", ex.Code);
     }
 
     [Fact]
@@ -256,10 +281,10 @@ public class GenerateScheduledInstallmentsCommandHandlerTests
         // Exact pro-rate logic check:
         // actualDays = 2027-04-01 - 2027-01-01 = 90 days
         // expectedDays = 2028-01-01 - 2027-01-01 = 365 days
-        // expectedAmount = 1000 * 12 * (90.0 / 365.0) = 2958.904... JOD
+        // expectedAmount = 1000 * 12 * (90.0 / 365.0) = 2958.904... JOD, rounded to numeric(12,3)
         decimal actualDays = new DateOnly(2027, 4, 1).DayNumber - new DateOnly(2027, 1, 1).DayNumber;
         decimal expectedDays = new DateOnly(2028, 1, 1).DayNumber - new DateOnly(2027, 1, 1).DayNumber;
-        decimal expectedAmount = 1000m * 12 * (actualDays / expectedDays);
+        decimal expectedAmount = Math.Round(1000m * 12 * (actualDays / expectedDays), 3, MidpointRounding.AwayFromZero);
 
         Assert.Equal(expectedAmount, second.AmountDue);
     }

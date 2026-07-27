@@ -1,5 +1,5 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Notifications.Enums;
 
 namespace PropertyOS.Application.Notifications.Commands.UpdateNotificationTemplate;
@@ -11,4 +11,4 @@ public record UpdateNotificationTemplateCommand(
     string Body,
     NotificationType NotificationType,
     bool IsActive
-) : IRequest;
+) : ICommand;

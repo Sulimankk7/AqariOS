@@ -73,7 +73,11 @@ public class Tenant : ISoftDeletable
 
         return new Tenant
         {
-            Id = Guid.Empty,
+            // Client-generated UUIDv7 (uniform platform pattern): the ID must exist before
+            // TransactionBehavior's SaveChanges so child rows and command return values can use it.
+            // The column default uuid_generate_v7() remains as a fallback for rows created
+            // outside this factory.
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             Name = name.Trim(),
             NationalId = nationalId.Trim(),
@@ -86,6 +90,37 @@ public class Tenant : ISoftDeletable
             CreatedBy = createdBy,
             UpdatedBy = createdBy
         };
+    }
+
+    /// <summary>
+    /// Updates the tenant's personal details. National-ID uniqueness within the company
+    /// is an application/database concern (uq_tenants_company_national_id), not enforced here.
+    /// </summary>
+    public void UpdateDetails(
+        string name,
+        string nationalId,
+        string phone,
+        string? occupation,
+        string? employer,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        if (DeletedAt.HasValue)
+            throw new InvalidOperationException("Cannot update a deleted tenant.");
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Name is required.", nameof(name));
+        if (string.IsNullOrWhiteSpace(nationalId))
+            throw new ArgumentException("NationalId is required.", nameof(nationalId));
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new ArgumentException("Phone is required.", nameof(phone));
+
+        Name = name.Trim();
+        NationalId = nationalId.Trim();
+        Phone = phone.Trim();
+        Occupation = string.IsNullOrWhiteSpace(occupation) ? null : occupation.Trim();
+        Employer = string.IsNullOrWhiteSpace(employer) ? null : employer.Trim();
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
     }
 
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)

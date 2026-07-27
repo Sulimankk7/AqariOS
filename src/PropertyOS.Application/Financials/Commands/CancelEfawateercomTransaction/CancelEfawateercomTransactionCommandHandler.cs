@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 using PropertyOS.Domain.Financials.Enums;
@@ -27,7 +28,7 @@ public class CancelEfawateercomTransactionCommandHandler : IRequestHandler<Cance
         // FOR UPDATE serializes this against concurrent callbacks, expiry, or duplicate cancel calls.
         var transaction = await _transactionRepository.GetByIdForUpdateAsync(request.TransactionId, cancellationToken);
         if (transaction == null)
-            throw new KeyNotFoundException($"eFAWATEERcom transaction with ID '{request.TransactionId}' was not found.");
+            throw new NotFoundException($"eFAWATEERcom transaction with ID '{request.TransactionId}' was not found.");
 
         // Idempotency: already-terminal transactions cannot be further transitioned.
         if (transaction.TransactionStatus == EfawateercomStatus.Success  ||
@@ -39,15 +40,23 @@ public class CancelEfawateercomTransactionCommandHandler : IRequestHandler<Cance
         }
 
         // Transition to Cancelled. Domain enforces invariants (non-terminal source state).
-        transaction.UpdateStatus(
-            status: EfawateercomStatus.Cancelled,
-            responseTime: DateTimeOffset.UtcNow,
-            responseCode: "OPERATOR_CANCEL",
-            responseMessage: request.Reason ?? "Transaction cancelled by operator.",
-            rawResponse: null,
-            now: DateTimeOffset.UtcNow,
-            updatedBy: _currentUserContext.UserId
-        );
+        try
+        {
+            transaction.UpdateStatus(
+                status: EfawateercomStatus.Cancelled,
+                responseTime: DateTimeOffset.UtcNow,
+                responseCode: "OPERATOR_CANCEL",
+                responseMessage: request.Reason ?? "Transaction cancelled by operator.",
+                rawResponse: null,
+                now: DateTimeOffset.UtcNow,
+                updatedBy: _currentUserContext.UserId
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Domain state-machine violation (terminal status cannot transition)
+            throw new BusinessRuleException(ex.Message, "EFAWATEERCOM_INVALID_TRANSITION");
+        }
 
         // TransactionBehavior owns SaveChangesAsync and COMMIT.
         return Unit.Value;

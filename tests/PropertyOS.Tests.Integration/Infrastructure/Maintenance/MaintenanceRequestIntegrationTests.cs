@@ -219,7 +219,10 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
         await ctx.SaveChangesAsync();
 
         var fileId = fileStorage.Id;
-        request.AddAttachment(fileId, null, "Photo 1", DateTimeOffset.UtcNow, null);
+        // Client-generated child IDs: navigation discovery on a tracked parent would mark
+        // the new attachment Modified, so it must be explicitly Added (mirrors the handlers).
+        var firstAttachment = request.AddAttachment(fileId, null, "Photo 1", DateTimeOffset.UtcNow, null);
+        ctx.MaintenanceRequestAttachments.Add(firstAttachment);
         await ctx.SaveChangesAsync();
 
         // Bypass domain duplicate check to insert a duplicate active attachment directly via DbContext
@@ -279,6 +282,8 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
 
             var attA = reqA.AddAttachment(fsA.Id, null, "Pic A", DateTimeOffset.UtcNow, null);
             var commA = reqA.AddComment("Context A", DateTimeOffset.UtcNow, null);
+            adminCtx.MaintenanceRequestAttachments.Add(attA);
+            adminCtx.MaintenanceRequestComments.Add(commA);
             var histA = reqA.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(histA);
 
@@ -287,6 +292,8 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
 
             var attB = reqB.AddAttachment(fsB.Id, null, "Pic B", DateTimeOffset.UtcNow, null);
             var commB = reqB.AddComment("Context B", DateTimeOffset.UtcNow, null);
+            adminCtx.MaintenanceRequestAttachments.Add(attB);
+            adminCtx.MaintenanceRequestComments.Add(commB);
             var histB = reqB.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(histB);
 
@@ -301,25 +308,25 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
 
             var queries = new PropertyOS.Infrastructure.Maintenance.Repositories.MaintenanceQueries(tenantCtx);
 
-            var list = await queries.GetRequestsAsync(new MaintenanceRequestFilterOptions());
+            var list = await queries.GetRequestsAsync(new MaintenanceRequestFilterOptions(), companyA);
             Assert.Single(list);
             Assert.Equal(requestAId, list[0].Id);
 
-            var detail = await queries.GetDetailByIdAsync(requestAId);
+            var detail = await queries.GetDetailByIdAsync(requestAId, companyA);
             Assert.NotNull(detail);
             Assert.Equal(companyA, detail.CompanyId);
 
             // Cross-tenant IDOR guard check: Tenant A requesting Tenant B's request ID should return null
-            var detailB = await queries.GetDetailByIdAsync(requestBId);
+            var detailB = await queries.GetDetailByIdAsync(requestBId, companyA);
             Assert.Null(detailB);
 
-            var attachments = await queries.GetAttachmentsAsync(requestAId);
+            var attachments = await queries.GetAttachmentsAsync(requestAId, companyA);
             Assert.Single(attachments);
 
-            var comments = await queries.GetCommentsAsync(requestAId);
+            var comments = await queries.GetCommentsAsync(requestAId, companyA);
             Assert.Single(comments);
 
-            var history = await queries.GetStatusHistoryAsync(requestAId);
+            var history = await queries.GetStatusHistoryAsync(requestAId, companyA);
             Assert.Equal(2, history.Count); // Open -> InProgress
 
             await tenantCtx.Database.RollbackTransactionAsync();
@@ -405,6 +412,8 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
 
             var att = req.AddAttachment(fs.Id, null, "Pic", DateTimeOffset.UtcNow, null);
             var comm = req.AddComment("Comment text", DateTimeOffset.UtcNow, null);
+            adminCtx.MaintenanceRequestAttachments.Add(att);
+            adminCtx.MaintenanceRequestComments.Add(comm);
             var hist = req.UpdateStatus(MaintenanceStatus.InProgress, DateTimeOffset.UtcNow, null);
             adminCtx.MaintenanceStatusHistory.Add(hist);
 
@@ -421,18 +430,18 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             await tenantCtx.Database.BeginTransactionAsync();
             var queries = new PropertyOS.Infrastructure.Maintenance.Repositories.MaintenanceQueries(tenantCtx);
 
-            var list = await queries.GetRequestsAsync(new MaintenanceRequestFilterOptions());
+            var list = await queries.GetRequestsAsync(new MaintenanceRequestFilterOptions(), companyId);
             Assert.Single(list);
 
-            var detail = await queries.GetDetailByIdAsync(requestId);
+            var detail = await queries.GetDetailByIdAsync(requestId, companyId);
             Assert.NotNull(detail);
             Assert.Equal(1, detail.AttachmentCount);
             Assert.Equal(1, detail.CommentCount);
 
-            var attachments = await queries.GetAttachmentsAsync(requestId);
+            var attachments = await queries.GetAttachmentsAsync(requestId, companyId);
             Assert.Single(attachments);
 
-            var comments = await queries.GetCommentsAsync(requestId);
+            var comments = await queries.GetCommentsAsync(requestId, companyId);
             Assert.Single(comments);
 
             await tenantCtx.Database.RollbackTransactionAsync();
@@ -456,20 +465,20 @@ public class MaintenanceRequestIntegrationTests : IAsyncLifetime
             await tenantCtx.Database.BeginTransactionAsync();
             var queries = new PropertyOS.Infrastructure.Maintenance.Repositories.MaintenanceQueries(tenantCtx);
 
-            var list = await queries.GetRequestsAsync(new MaintenanceRequestFilterOptions());
+            var list = await queries.GetRequestsAsync(new MaintenanceRequestFilterOptions(), companyId);
             Assert.Empty(list);
 
-            var detail = await queries.GetDetailByIdAsync(requestId);
+            var detail = await queries.GetDetailByIdAsync(requestId, companyId);
             Assert.Null(detail);
 
-            var attachments = await queries.GetAttachmentsAsync(requestId);
+            var attachments = await queries.GetAttachmentsAsync(requestId, companyId);
             Assert.Empty(attachments);
 
-            var comments = await queries.GetCommentsAsync(requestId);
+            var comments = await queries.GetCommentsAsync(requestId, companyId);
             Assert.Empty(comments);
 
             // Important: Timeline status history is append-only, and remains queryable even after request soft-delete
-            var history = await queries.GetStatusHistoryAsync(requestId);
+            var history = await queries.GetStatusHistoryAsync(requestId, companyId);
             Assert.Equal(2, history.Count); // Open -> InProgress history logs must survive!
 
             await tenantCtx.Database.RollbackTransactionAsync();

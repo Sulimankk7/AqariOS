@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Financials;
 using PropertyOS.Domain.Financials.Enums;
@@ -27,71 +28,93 @@ public class RecordChequeStatusChangeCommandHandler : IRequestHandler<RecordCheq
     {
         var cheque = await _rentPaymentRepository.LoadChequeAsync(request.ChequeId, cancellationToken);
         if (cheque == null)
-            throw new KeyNotFoundException($"ChequeDetails with ID {request.ChequeId} was not found.");
+            throw new NotFoundException($"ChequeDetails with ID {request.ChequeId} was not found.");
 
-        switch (request.NewStatus)
+        try
         {
-            case ChequeStatus.Received:
-                cheque.Receive(request.ActionDate, DateTimeOffset.UtcNow, _currentUserContext.UserId);
-                break;
-            case ChequeStatus.Deposited:
-                cheque.Deposit(request.ActionDate, DateTimeOffset.UtcNow, _currentUserContext.UserId);
-                break;
-            case ChequeStatus.Cleared:
-                cheque.Clear(request.ActionDate, DateTimeOffset.UtcNow, _currentUserContext.UserId);
-                break;
-            case ChequeStatus.Bounced:
-                if (string.IsNullOrWhiteSpace(request.BounceReason))
-                    throw new InvalidOperationException("Bounce reason is required when status is Bounced.");
-                cheque.Bounce(request.ActionDate, request.BounceReason, request.BounceFeeCharged, DateTimeOffset.UtcNow, _currentUserContext.UserId);
-                break;
-            case ChequeStatus.Cancelled:
-                if (string.IsNullOrWhiteSpace(request.CancellationReason))
-                    throw new InvalidOperationException("Cancellation reason is required when status is Cancelled.");
-                cheque.Cancel(request.CancellationReason, request.ReplacementChequeId, DateTimeOffset.UtcNow, _currentUserContext.UserId);
-                break;
-            default:
-                throw new InvalidOperationException($"Unsupported status transition: {request.NewStatus}");
+            switch (request.NewStatus)
+            {
+                case ChequeStatus.Received:
+                    cheque.Receive(request.ActionDate, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+                    break;
+                case ChequeStatus.Deposited:
+                    cheque.Deposit(request.ActionDate, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+                    break;
+                case ChequeStatus.Cleared:
+                    cheque.Clear(request.ActionDate, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+                    break;
+                case ChequeStatus.Bounced:
+                    if (string.IsNullOrWhiteSpace(request.BounceReason))
+                        throw new BusinessRuleException("Bounce reason is required when status is Bounced.", "CHEQUE_BOUNCE_REASON_REQUIRED");
+                    cheque.Bounce(request.ActionDate, request.BounceReason, request.BounceFeeCharged, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+                    break;
+                case ChequeStatus.Cancelled:
+                    if (string.IsNullOrWhiteSpace(request.CancellationReason))
+                        throw new BusinessRuleException("Cancellation reason is required when status is Cancelled.", "CHEQUE_CANCEL_REASON_REQUIRED");
+                    cheque.Cancel(request.CancellationReason, request.ReplacementChequeId, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+                    break;
+                default:
+                    throw new BusinessRuleException($"Unsupported status transition: {request.NewStatus}", "CHEQUE_UNSUPPORTED_TRANSITION");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Domain state-machine violation (e.g. Clear before Deposit)
+            throw new BusinessRuleException(ex.Message, "CHEQUE_INVALID_TRANSITION");
         }
 
-        // If the cheque bounced or was cancelled, we must reverse all active allocations originating from this cheque's parent payment
+        // If the cheque bounced or was cancelled, reverse all active allocations originating
+        // from this cheque's parent payment — a single multi-table transaction.
         if (request.NewStatus == ChequeStatus.Bounced || request.NewStatus == ChequeStatus.Cancelled)
         {
             var allocations = await _rentPaymentRepository.GetAllocationsByReceivingIdAsync(cheque.RentPaymentId, cancellationToken);
-            foreach (var allocation in allocations.Where(a => a.AllocationStatus == AllocationStatus.Active))
+            var activeAllocations = allocations.Where(a => a.AllocationStatus == AllocationStatus.Active).ToList();
+
+            if (activeAllocations.Count > 0)
             {
+                // Shared locking protocol: lock the parent payment and every affected
+                // obligation row (sorted FOR UPDATE) before recomputing settlement sums,
+                // then RE-READ the allocation set — it is stable once the payment rows are
+                // locked because all allocation writers acquire these locks first.
+                var lockIds = activeAllocations
+                    .Select(a => a.ObligationPaymentId)
+                    .Append(cheque.RentPaymentId)
+                    .Distinct()
+                    .ToList();
+                var lockedPayments = await _rentPaymentRepository.GetByIdsForUpdateAsync(lockIds, cancellationToken);
+                var paymentsById = lockedPayments.ToDictionary(p => p.Id);
+
+                allocations = await _rentPaymentRepository.GetAllocationsByReceivingIdAsync(cheque.RentPaymentId, cancellationToken);
+                activeAllocations = allocations.Where(a => a.AllocationStatus == AllocationStatus.Active).ToList();
+
                 var reason = request.NewStatus == ChequeStatus.Bounced
                     ? $"Cheque Bounced: Cheque {cheque.ChequeNumber} bounced on {request.ActionDate}."
                     : $"Cheque Cancelled: Cheque {cheque.ChequeNumber} cancelled on {request.ActionDate}.";
 
-                allocation.Reverse(reason, DateTimeOffset.UtcNow, _currentUserContext.UserId);
-
-                // Recompute parent obligation aggregate synchronization
-                var obligation = await _rentPaymentRepository.GetByIdAsync(allocation.ObligationPaymentId, cancellationToken);
-                if (obligation != null)
+                foreach (var allocation in activeAllocations)
                 {
-                    var obligationAllocations = await _rentPaymentRepository.GetAllocationsByObligationIdAsync(obligation.Id, cancellationToken);
+                    allocation.Reverse(reason, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+                }
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var graceDays = await _rentPaymentRepository.GetRentGracePeriodDaysAsync(cheque.CompanyId, cancellationToken);
+                foreach (var obligationId in activeAllocations.Select(a => a.ObligationPaymentId).Distinct())
+                {
+                    if (!paymentsById.TryGetValue(obligationId, out var obligation))
+                        continue;
+
+                    // Cancelled is sticky (doc §6.1): never revived by a bounce recompute.
+                    if (obligation.DueDateStatus == DueDateStatus.Cancelled)
+                        continue;
+
+                    // In-memory reversals above are visible here: EF identity resolution
+                    // returns the same tracked allocation instances.
+                    var obligationAllocations = await _rentPaymentRepository.GetAllocationsByObligationIdAsync(obligationId, cancellationToken);
                     decimal updatedObligationPaid = obligationAllocations
-                        .Where(a => a.AllocationStatus == AllocationStatus.Active && a.Id != allocation.Id)
+                        .Where(a => a.AllocationStatus == AllocationStatus.Active)
                         .Sum(a => a.AllocatedAmount);
 
-                    var status = DueDateStatus.Pending;
-                    if (updatedObligationPaid >= obligation.AmountDue)
-                    {
-                        status = DueDateStatus.Paid;
-                    }
-                    else if (updatedObligationPaid > 0)
-                    {
-                        status = DueDateStatus.PartiallyPaid;
-                    }
-                    else
-                    {
-                        if (obligation.DueDate.HasValue && DateOnly.FromDateTime(DateTime.UtcNow) > obligation.DueDate.Value)
-                        {
-                            status = DueDateStatus.Late;
-                        }
-                    }
-
+                    var status = AllocationSettlement.DeriveStatus(updatedObligationPaid, obligation.AmountDue, obligation.DueDate, today, graceDays);
                     obligation.UpdateAllocationSync(updatedObligationPaid, status, DateTimeOffset.UtcNow, _currentUserContext.UserId);
                 }
             }

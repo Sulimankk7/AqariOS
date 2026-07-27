@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Files;
 using PropertyOS.Application.Files.Options;
@@ -51,13 +51,13 @@ public class GetDocumentDownloadUrlQueryHandler : IRequestHandler<GetDocumentDow
 
         if (document == null)
         {
-            throw new KeyNotFoundException($"Building document with ID '{request.DocumentId}' was not found.");
+            throw new NotFoundException($"Building document with ID '{request.DocumentId}' was not found.");
         }
 
         var fileStorage = await _fileRepository.GetByIdAsync(document.FileId, cancellationToken);
         if (fileStorage == null)
         {
-            throw new InvalidOperationException($"Associated file storage record '{document.FileId}' was not found.");
+            throw new NotFoundException($"Associated file storage record '{document.FileId}' was not found.");
         }
 
         var downloadUrl = await _storageProvider.GeneratePreSignedDownloadUrlAsync(

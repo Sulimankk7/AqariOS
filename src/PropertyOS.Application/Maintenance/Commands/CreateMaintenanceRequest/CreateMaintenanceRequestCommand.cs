@@ -1,5 +1,5 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Maintenance.Enums;
 
 namespace PropertyOS.Application.Maintenance.Commands.CreateMaintenanceRequest;
@@ -13,4 +13,4 @@ public record CreateMaintenanceRequestCommand(
     MaintenanceCategory Category,
     MaintenancePriority Priority,
     DateOnly RequestDate
-) : IRequest<Guid>;
+) : ICommand<Guid>;

@@ -1,5 +1,5 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 
 namespace PropertyOS.Application.Documents.Commands.ReplaceBuildingDocument;
@@ -12,4 +12,4 @@ public record ReplaceBuildingDocumentCommand(
     DateOnly? NewIssueDate,
     DateOnly? NewExpiryDate,
     bool? NewIsConfidential
-) : IRequest<BuildingDocumentDto>;
+) : ICommand<BuildingDocumentDto>;

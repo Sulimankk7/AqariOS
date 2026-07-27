@@ -17,4 +17,4 @@ public record CreateLeaseContractCommand(
     PropertyOS.Domain.Leasing.Enums.LegalRegime LegalRegime = PropertyOS.Domain.Leasing.Enums.LegalRegime.Standard,
     PropertyOS.Domain.Leasing.Enums.TenantType TenantType = PropertyOS.Domain.Leasing.Enums.TenantType.Personal,
     string? Notes = null
-) : ICommand;
+) : ICommand<Guid>;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Leasing;
 using PropertyOS.Application.Leasing.Commands.ActivateLeaseContract;
@@ -44,13 +45,16 @@ public class ActivateLeaseContractCommandHandlerTests
         public Task<bool> HasOverlappingNonTerminalContractAsync(Guid apartmentId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default) => Task.FromResult(HasOverlappingContract);
         public Task<bool> HasOverlappingNonTerminalContractAsync(Guid apartmentId, DateTime startDate, DateTime endDate, Guid excludeContractId, CancellationToken cancellationToken = default) => Task.FromResult(HasOverlappingContract);
         public Task<bool> HasSignedContractDocumentAsync(Guid leaseContractId, CancellationToken cancellationToken = default) => Task.FromResult(HasSignedDocument);
+        public Task<bool> HasSuccessorContractAsync(Guid priorContractId, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<List<Guid>> GetActiveContractIdsExpiringOnOrBeforeAsync(DateOnly asOfDate, int batchSize, Guid? afterId, CancellationToken cancellationToken = default) => Task.FromResult(new List<Guid>());
+        public Task<List<Guid>> GetActiveContractIdsAsync(int batchSize, Guid? afterId, CancellationToken cancellationToken = default) => Task.FromResult(new List<Guid>());
         public Task AddTerminationAsync(ContractTermination termination, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
-        public Task<LeaseContractDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> GetHistoryByApartmentIdAsync(Guid apartmentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> GetHistoryByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> SearchContractsAsync(string searchTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<LeaseContractDto>> GetExpiringLeasesAsync(int daysAhead, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<LeaseContractDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> GetHistoryByApartmentIdAsync(Guid apartmentId, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> GetHistoryByTenantIdAsync(Guid tenantId, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> SearchContractsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<LeaseContractDto>> GetExpiringLeasesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private class FakeCurrentUserContext : ICurrentUserContext { public Guid? UserId { get; set; } = Guid.NewGuid(); }
@@ -84,13 +88,13 @@ public class ActivateLeaseContractCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_MissingContract_ThrowsKeyNotFoundException()
+    public async Task Handle_MissingContract_ThrowsNotFoundException()
     {
         var repo = new FakeLeaseContractRepository();
         var handler = new ActivateLeaseContractCommandHandler(repo, new FakeCurrentUserContext());
         var command = new ActivateLeaseContractCommand(Guid.NewGuid());
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Theory]
@@ -120,17 +124,17 @@ public class ActivateLeaseContractCommandHandlerTests
     [InlineData(ContractStatus.Terminated)]
     [InlineData(ContractStatus.Cancelled)]
     [InlineData(ContractStatus.Superseded)]
-    public async Task Handle_InvalidSourceState_ThrowsInvalidOperationException(ContractStatus initialStatus)
+    public async Task Handle_InvalidSourceState_ThrowsBusinessRuleException(ContractStatus initialStatus)
     {
         var repo = new FakeLeaseContractRepository { ContractToReturn = CreateContract(initialStatus) };
         var handler = new ActivateLeaseContractCommandHandler(repo, new FakeCurrentUserContext());
         var command = new ActivateLeaseContractCommand(repo.ContractToReturn.Id);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_NoSignedDocument_ThrowsInvalidOperationException()
+    public async Task Handle_NoSignedDocument_ThrowsBusinessRuleException()
     {
         var repo = new FakeLeaseContractRepository
         {
@@ -140,24 +144,24 @@ public class ActivateLeaseContractCommandHandlerTests
         var handler = new ActivateLeaseContractCommandHandler(repo, new FakeCurrentUserContext());
         var command = new ActivateLeaseContractCommand(repo.ContractToReturn.Id);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
         Assert.Equal("A signed contract document is required before activation.", ex.Message);
     }
 
     [Fact]
-    public async Task Handle_FutureStartDate_ThrowsInvalidOperationException()
+    public async Task Handle_FutureStartDate_ThrowsBusinessRuleException()
     {
         var futureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1));
         var repo = new FakeLeaseContractRepository { ContractToReturn = CreateContract(ContractStatus.Draft, futureDate) };
         var handler = new ActivateLeaseContractCommandHandler(repo, new FakeCurrentUserContext());
         var command = new ActivateLeaseContractCommand(repo.ContractToReturn.Id);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
         Assert.Equal("Cannot activate a contract before its start date.", ex.Message);
     }
 
     [Fact]
-    public async Task Handle_OverlappingContract_ThrowsInvalidOperationException()
+    public async Task Handle_OverlappingContract_ThrowsConflictException()
     {
         var repo = new FakeLeaseContractRepository
         {
@@ -167,12 +171,12 @@ public class ActivateLeaseContractCommandHandlerTests
         var handler = new ActivateLeaseContractCommandHandler(repo, new FakeCurrentUserContext());
         var command = new ActivateLeaseContractCommand(repo.ContractToReturn.Id);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(command, CancellationToken.None));
         Assert.Equal("An overlapping draft, pending, or active contract already exists for this apartment.", ex.Message);
     }
 
     [Fact]
-    public async Task Handle_ActiveContractExists_ThrowsInvalidOperationException()
+    public async Task Handle_ActiveContractExists_ThrowsConflictException()
     {
         var repo = new FakeLeaseContractRepository
         {
@@ -182,12 +186,12 @@ public class ActivateLeaseContractCommandHandlerTests
         var handler = new ActivateLeaseContractCommandHandler(repo, new FakeCurrentUserContext());
         var command = new ActivateLeaseContractCommand(repo.ContractToReturn.Id);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(command, CancellationToken.None));
         Assert.Equal("An active contract already exists for this apartment.", ex.Message);
     }
 
     [Fact]
-    public async Task Handle_PriorContractNotFound_ThrowsKeyNotFoundException()
+    public async Task Handle_PriorContractNotFound_ThrowsNotFoundException()
     {
         var priorId = Guid.NewGuid();
         var repo = new FakeLeaseContractRepository
@@ -197,7 +201,7 @@ public class ActivateLeaseContractCommandHandlerTests
         var handler = new ActivateLeaseContractCommandHandler(repo, new FakeCurrentUserContext());
         var command = new ActivateLeaseContractCommand(repo.ContractToReturn.Id);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]
@@ -230,5 +234,23 @@ public class ActivateLeaseContractCommandHandlerTests
         Assert.Equal(contract.Id, history.LeaseContractId);
         Assert.Equal(ContractStatus.Draft, history.PreviousStatus);
         Assert.Equal(ContractStatus.Active, history.NewStatus);
+    }
+
+    private class FakeTenantContext : ITenantContext
+    {
+        public Guid? CompanyId { get; set; } = Guid.NewGuid();
+        public bool IsPlatformAdmin { get; set; } = false;
+    }
+
+    [Fact]
+    public async Task Handle_CrossTenantContract_ThrowsNotFoundException()
+    {
+        var contract = CreateContract(ContractStatus.Draft);
+        var repo = new FakeLeaseContractRepository { ContractToReturn = contract };
+        var tenantCtx = new FakeTenantContext { CompanyId = Guid.NewGuid() }; // Different company ID
+        var handler = new ActivateLeaseContractCommandHandler(repo, null!, tenantCtx, new FakeCurrentUserContext());
+        var command = new ActivateLeaseContractCommand(contract.Id);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
     }
 }

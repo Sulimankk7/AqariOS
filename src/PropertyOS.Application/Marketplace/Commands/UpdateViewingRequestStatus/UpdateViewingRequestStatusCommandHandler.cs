@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Marketplace.Commands.UpdateViewingRequestStatus;
@@ -30,15 +31,22 @@ public class UpdateViewingRequestStatusCommandHandler : IRequestHandler<UpdateVi
 
         var viewingRequest = await _repository.GetByIdAsync(request.Id, cancellationToken);
         if (viewingRequest == null)
-            throw new KeyNotFoundException($"ViewingRequest with ID {request.Id} was not found.");
+            throw new NotFoundException($"ViewingRequest with ID {request.Id} was not found.");
 
         if (viewingRequest.CompanyId != companyId)
-            throw new UnauthorizedAccessException("Viewing request does not belong to the current company context.");
+            throw new NotFoundException($"ViewingRequest with ID {request.Id} was not found.");
 
         var now = DateTimeOffset.UtcNow;
         var userId = _currentUserContext.UserId;
 
-        viewingRequest.UpdateStatus(request.Status, request.StaffNotes, now, userId);
+        try
+        {
+            viewingRequest.UpdateStatus(request.Status, request.StaffNotes, now, userId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message);
+        }
 
         return Unit.Value;
     }

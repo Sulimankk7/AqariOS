@@ -141,8 +141,26 @@ public class AuthService : IAuthService
 
         var hashedToken = _jwtTokenGenerator.HashRefreshToken(refreshToken);
 
-        var tokenEntity = await _dbContext.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.TokenHash == hashedToken, cancellationToken);
+        // ROTATION RACE PROTECTION:
+        // Concurrent refreshes presenting the SAME token must serialize. We open an explicit
+        // transaction and acquire a row-level lock (SELECT ... FOR UPDATE) on the refresh-token
+        // row before validating/rotating it (mirrors EfawateercomTransactionRepository.
+        // GetByIdForUpdateAsync — RefreshToken does not map xmin, so no ", xmin" projection).
+        // The losing caller blocks on the lock until the winner commits, then re-reads the row
+        // and observes RevokedAt set — which routes it into the reuse/theft-detection path below.
+        // The in-memory provider (unit tests) supports neither transactions nor FromSqlRaw,
+        // so both are applied only when the underlying provider is relational.
+        var isRelational = _dbContext.Database.IsRelational();
+        await using var transaction = isRelational
+            ? await _dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+
+        var tokenEntity = isRelational
+            ? await _dbContext.RefreshTokens
+                .FromSqlRaw("SELECT * FROM refresh_tokens WHERE token_hash = {0} FOR UPDATE", hashedToken)
+                .FirstOrDefaultAsync(cancellationToken)
+            : await _dbContext.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.TokenHash == hashedToken, cancellationToken);
 
         if (tokenEntity == null)
         {
@@ -164,6 +182,13 @@ public class AuthService : IAuthService
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // The family revocation must survive the throw below — commit before throwing.
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
             throw new UnauthorizedAccessException("Session revoked due to security violation. Please log in again.");
         }
 
@@ -207,6 +232,11 @@ public class AuthService : IAuthService
         var (accessToken, expiresIn) = _jwtTokenGenerator.GenerateAccessToken(user.Id, companyId, roles, permissions);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (transaction != null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
 
         return new LoginResponseDto
         {

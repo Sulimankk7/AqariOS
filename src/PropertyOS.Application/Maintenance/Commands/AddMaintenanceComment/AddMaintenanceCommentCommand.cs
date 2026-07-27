@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
+using PropertyOS.Domain.Maintenance;
 
 namespace PropertyOS.Application.Maintenance.Commands.AddMaintenanceComment;
 
 public record AddMaintenanceCommentCommand(
     Guid RequestId,
     string CommentText
-) : IRequest<Guid>;
+) : ICommand<Guid>;
 
 public class AddMaintenanceCommentCommandHandler : IRequestHandler<AddMaintenanceCommentCommand, Guid>
 {
@@ -34,12 +36,25 @@ public class AddMaintenanceCommentCommandHandler : IRequestHandler<AddMaintenanc
             ?? throw new InvalidOperationException("Tenant context is required.");
 
         var maintenanceRequest = await _repository.GetByIdAsync(request.RequestId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Maintenance request '{request.RequestId}' was not found.");
+            ?? throw new NotFoundException($"Maintenance request '{request.RequestId}' was not found.");
 
-        var comment = maintenanceRequest.AddComment(
-            commentText: request.CommentText,
-            now: DateTimeOffset.UtcNow,
-            createdBy: _currentUserContext.UserId);
+        MaintenanceRequestComment comment;
+        try
+        {
+            comment = maintenanceRequest.AddComment(
+                commentText: request.CommentText,
+                now: DateTimeOffset.UtcNow,
+                createdBy: _currentUserContext.UserId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Domain rule: comments cannot be added to a deleted maintenance request
+            throw new BusinessRuleException(ex.Message, "MAINTENANCE_COMMENT_ADD_INVALID_STATE");
+        }
+
+        // Explicit Add: the comment carries a client-generated ID and its parent request is
+        // already tracked, so navigation discovery alone would mark it Modified, not Added.
+        await _repository.AddCommentAsync(comment, cancellationToken);
 
         return comment.Id;
     }

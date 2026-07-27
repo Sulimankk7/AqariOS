@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 
@@ -40,7 +40,7 @@ public class GetBuildingDocumentByIdQueryHandler : IRequestHandler<GetBuildingDo
 
         if (document == null)
         {
-            throw new KeyNotFoundException($"Building document with ID '{request.Id}' was not found.");
+            throw new NotFoundException($"Building document with ID '{request.Id}' was not found.");
         }
 
         return document;

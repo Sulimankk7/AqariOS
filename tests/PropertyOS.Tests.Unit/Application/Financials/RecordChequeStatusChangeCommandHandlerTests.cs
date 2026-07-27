@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials.Commands.RecordChequeStatusChange;
 using PropertyOS.Application.Financials;
@@ -47,21 +48,35 @@ public class RecordChequeStatusChangeCommandHandlerTests
         }
 
         public Task AddAsync(RentPayment rentPayment, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public int RentGracePeriodDays { get; set; } = 0;
+        public Task<int> GetRentGracePeriodDaysAsync(Guid companyId, CancellationToken cancellationToken = default)
+            => Task.FromResult(RentGracePeriodDays);
+
+        public Task<List<RentPayment>> GetByIdsForUpdateAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+            => Task.FromResult(Payments.Values.Where(p => ids.Contains(p.Id)).OrderBy(p => p.Id).ToList());
+
+        public Task AddReceiptAsync(RentPaymentReceipt receipt, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task AddRangeAsync(IEnumerable<RentPayment> rentPayments, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+            public Task<List<BillingPeriod>> GetScheduledInstallmentPeriodsAsync(Guid leaseContractId, CancellationToken cancellationToken = default)
+            => Task.FromResult(new List<BillingPeriod>());
+
         public Task<bool> HasScheduledInstallmentAsync(Guid leaseContractId, DateOnly start, DateOnly end, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<Guid>> GetOverdueCandidateIdsAsync(DateOnly asOfDate, int batchSize, Guid? afterId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AddChequeAsync(ChequeDetails cheque, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<PaymentAllocation?> LoadAllocationAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AddAllocationAsync(PaymentAllocation allocation, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
-        public Task<RentPaymentDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private class FakeCurrentUserContext : ICurrentUserContext
@@ -222,11 +237,11 @@ public class RecordChequeStatusChangeCommandHandlerTests
 
         // Target obligation should be synchronized back to Late/0 paid
         Assert.Equal(0m, obligation.AmountPaid);
-        Assert.Equal(DueDateStatus.Late, obligation.DueDateStatus);
+        Assert.Equal(DueDateStatus.OverdueUnpaid, obligation.DueDateStatus);
     }
 
     [Fact]
-    public async Task Handle_InvalidStateTransition_ThrowsInvalidOperationException()
+    public async Task Handle_InvalidStateTransition_ThrowsBusinessRuleException()
     {
         var repo = new FakeRentPaymentRepository();
         var handler = new RecordChequeStatusChangeCommandHandler(repo, new FakeCurrentUserContext());
@@ -238,6 +253,6 @@ public class RecordChequeStatusChangeCommandHandlerTests
         // Try to clear without depositing first
         var cmdClear = new RecordChequeStatusChangeCommand(chequeId, ChequeStatus.Cleared, new DateOnly(2026, 1, 10));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(cmdClear, CancellationToken.None));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(cmdClear, CancellationToken.None));
     }
 }

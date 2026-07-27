@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Files.Options;
 using PropertyOS.Application.Files.Services;
@@ -31,7 +32,14 @@ public class UploadFileRequestCommandHandler : IRequestHandler<UploadFileRequest
     {
         var companyId = _tenantContext.CompanyId ?? throw new InvalidOperationException("Tenant context is required.");
 
-        _validationService.ValidateFile(request.Filename, request.MimeType, request.SizeBytes, null!);
+        try
+        {
+            _validationService.ValidateFile(request.Filename, request.MimeType, request.SizeBytes, null!);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new BusinessRuleException(ex.Message, "FILE_VALIDATION_FAILED");
+        }
 
         var sanitized = _validationService.SanitizeFilename(request.Filename);
         var fileId = Guid.CreateVersion7();

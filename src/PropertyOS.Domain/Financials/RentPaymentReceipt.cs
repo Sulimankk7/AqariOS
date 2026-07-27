@@ -58,7 +58,9 @@ public class RentPaymentReceipt : ISoftDeletable
 
         return new RentPaymentReceipt
         {
-            Id = Guid.Empty,
+            // Client-generated UUIDv7 (uniform platform pattern): the ID must exist before
+            // TransactionBehavior's SaveChanges so child rows and command return values can use it.
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             RentPaymentId = rentPaymentId,
             ReceiptNumber = receiptNumber.Trim(),

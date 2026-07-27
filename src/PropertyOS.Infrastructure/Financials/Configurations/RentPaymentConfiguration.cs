@@ -72,11 +72,14 @@ internal sealed class RentPaymentConfiguration : IEntityTypeConfiguration<RentPa
             .HasColumnType("numeric(12,3)")
             .IsRequired();
 
+        // App-maintained settlement cache: written transactionally by the allocation
+        // handlers under the FOR UPDATE protocol. Deliberately NOT ValueGeneratedOnAddOrUpdate —
+        // that would make EF silently drop every UPDATE to this column (there is no DB
+        // maintenance trigger; integrity is backstopped by trg_payment_allocations_enforce_limits).
         builder.Property(p => p.AmountPaid)
             .HasColumnName("amount_paid")
             .HasColumnType("numeric(12,3)")
             .HasDefaultValue(0m)
-            .ValueGeneratedOnAddOrUpdate()
             .IsRequired();
 
         builder.Property(p => p.Currency)
@@ -109,11 +112,11 @@ internal sealed class RentPaymentConfiguration : IEntityTypeConfiguration<RentPa
             .HasMaxLength(50)
             .IsRequired(false);
 
+        // App-maintained (see AmountPaid note above); also written by RentPayment.Cancel.
         builder.Property(p => p.DueDateStatus)
             .HasColumnName("due_date_status")
             .HasColumnType("due_date_status_enum")
             .HasDefaultValueSql("'pending'")
-            .ValueGeneratedOnAddOrUpdate()
             .IsRequired();
 
         builder.Property(p => p.Notes)

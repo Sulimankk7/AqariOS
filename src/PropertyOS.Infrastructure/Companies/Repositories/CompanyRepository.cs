@@ -50,4 +50,13 @@ public class CompanyRepository : ICompanyRepository
             .Include(c => c.Settings)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
+
+    public Task<System.Collections.Generic.List<Guid>> GetActiveCompanyIdsAsync(CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Companies
+            .AsNoTracking()
+            .Where(c => c.IsActive && c.DeletedAt == null)
+            .Select(c => c.Id)
+            .ToListAsync(cancellationToken);
+    }
 }

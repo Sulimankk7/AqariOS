@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Notifications;
 
@@ -29,7 +30,7 @@ public class CreateNotificationTemplateCommandHandler : IRequestHandler<CreateNo
 
         var exists = await _templateRepository.ExistsByNameAsync(request.TemplateName, companyId, cancellationToken);
         if (exists)
-            throw new InvalidOperationException($"A template with name '{request.TemplateName}' already exists.");
+            throw new ConflictException($"A template with name '{request.TemplateName}' already exists.");
 
         var now = DateTimeOffset.UtcNow;
         var template = NotificationTemplate.Create(

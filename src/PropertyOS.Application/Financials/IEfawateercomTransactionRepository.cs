@@ -30,6 +30,16 @@ public interface IEfawateercomTransactionRepository
 
     Task AddAsync(Domain.Financials.EfawateercomTransaction transaction, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Enumerates the IDs of non-deleted transactions still in a non-terminal state
+    /// (Pending or Sent) whose RequestTime is older than the given cutoff. Keyset sweep
+    /// contract: ordered by Id ascending, limited to batchSize, returning only IDs
+    /// strictly greater than <paramref name="afterId"/> (null = start of sweep). The
+    /// caller advances the cursor with the last returned ID per batch; poison IDs are
+    /// skipped client-side.
+    /// </summary>
+    Task<List<Guid>> GetStaleNonTerminalTransactionIdsAsync(DateTimeOffset olderThan, int batchSize, Guid? afterId, CancellationToken cancellationToken = default);
+
     // Read-side projections
     Task<EfawateercomTransactionDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<EfawateercomTransactionDto>> GetTransactionsAsync(EfawateercomTransactionFilterOptions filter, CancellationToken cancellationToken = default);

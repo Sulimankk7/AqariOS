@@ -258,7 +258,7 @@ public class CommandPipelineTransactionTests : IAsyncLifetime
         var nonExistentTenantId = Guid.NewGuid();
         var command = new CreateLeaseContractCommand(seed.ApartmentId, nonExistentTenantId, "LC-FAIL", new DateTime(2025,1,1), new DateTime(2026,1,1), 100, 100, PaymentFrequency.Monthly, 1);
         
-        await Assert.ThrowsAsync<System.Collections.Generic.KeyNotFoundException>(() => mediator.Send(command));
+        await Assert.ThrowsAsync<PropertyOS.Application.Common.Exceptions.NotFoundException>(() => mediator.Send(command));
 
         var count = await _fixture.Context.LeaseContracts.CountAsync();
         Assert.Equal(0, count);

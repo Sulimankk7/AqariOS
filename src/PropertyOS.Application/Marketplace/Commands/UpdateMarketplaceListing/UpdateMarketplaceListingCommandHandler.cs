@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Common.ValueObjects;
 
@@ -31,29 +32,36 @@ public class UpdateMarketplaceListingCommandHandler : IRequestHandler<UpdateMark
 
         var listing = await _repository.GetByIdAsync(request.Id, cancellationToken);
         if (listing == null)
-            throw new KeyNotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
 
         // Tenant boundary check
         if (listing.CompanyId != companyId)
-            throw new UnauthorizedAccessException("Listing does not belong to the current company context.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
 
         var contactPhone = new PhoneNumber(request.ContactPhone);
         var contactWhatsapp = !string.IsNullOrWhiteSpace(request.ContactWhatsapp)
             ? new PhoneNumber(request.ContactWhatsapp)
             : null;
 
-        listing.UpdateDetails(
-            listingTitle: request.Title,
-            listingDescription: request.Description,
-            monthlyRent: request.MonthlyRent,
-            securityDeposit: request.SecurityDeposit,
-            currency: request.Currency,
-            contactPhone: contactPhone,
-            contactWhatsapp: contactWhatsapp,
-            expirationDate: request.ExpirationDate,
-            isFeatured: request.IsFeatured,
-            now: DateTimeOffset.UtcNow,
-            updatedBy: _currentUserContext.UserId);
+        try
+        {
+            listing.UpdateDetails(
+                listingTitle: request.Title,
+                listingDescription: request.Description,
+                monthlyRent: request.MonthlyRent,
+                securityDeposit: request.SecurityDeposit,
+                currency: request.Currency,
+                contactPhone: contactPhone,
+                contactWhatsapp: contactWhatsapp,
+                expirationDate: request.ExpirationDate,
+                isFeatured: request.IsFeatured,
+                now: DateTimeOffset.UtcNow,
+                updatedBy: _currentUserContext.UserId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message);
+        }
 
         return Unit.Value;
     }

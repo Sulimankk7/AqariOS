@@ -37,6 +37,16 @@ public class MaintenanceRequestRepository : IMaintenanceRequestRepository
         await _context.MaintenanceStatusHistory.AddAsync(history, cancellationToken);
     }
 
+    public async Task AddAttachmentAsync(MaintenanceRequestAttachment attachment, CancellationToken cancellationToken = default)
+    {
+        await _context.MaintenanceRequestAttachments.AddAsync(attachment, cancellationToken);
+    }
+
+    public async Task AddCommentAsync(MaintenanceRequestComment comment, CancellationToken cancellationToken = default)
+    {
+        await _context.MaintenanceRequestComments.AddAsync(comment, cancellationToken);
+    }
+
     public Task<bool> BuildingExistsAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default)
     {
         return _context.Buildings

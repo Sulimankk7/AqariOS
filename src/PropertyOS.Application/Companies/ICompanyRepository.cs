@@ -12,4 +12,5 @@ public interface ICompanyRepository
     Task<CompanyDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CompanySettingsDto?> GetSettingsByIdAsync(Guid companyId, CancellationToken cancellationToken = default);
     Task<Company?> GetWithSettingsByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<System.Collections.Generic.List<Guid>> GetActiveCompanyIdsAsync(CancellationToken cancellationToken = default);
 }

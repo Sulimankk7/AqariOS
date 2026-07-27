@@ -1,5 +1,5 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Maintenance.Commands.AddMaintenanceAttachment;
 
@@ -13,4 +13,4 @@ public record AddMaintenanceAttachmentCommand(
     /// or bulk import scenarios.
     /// </summary>
     Guid? UploadedBy = null
-) : IRequest<Guid>;
+) : ICommand<Guid>;

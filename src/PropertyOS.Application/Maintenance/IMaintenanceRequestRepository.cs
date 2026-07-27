@@ -30,6 +30,22 @@ public interface IMaintenanceRequestRepository
     /// </summary>
     Task AddStatusHistoryAsync(MaintenanceStatusHistory history, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Explicitly tracks an attachment created by MaintenanceRequest.AddAttachment on an
+    /// already-tracked request as Added. Required because attachments carry client-generated
+    /// IDs: navigation-only discovery would track them as Modified (assumed existing) and
+    /// the save would fail.
+    /// </summary>
+    Task AddAttachmentAsync(MaintenanceRequestAttachment attachment, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Explicitly tracks a comment created by MaintenanceRequest.AddComment on an
+    /// already-tracked request as Added. Required because comments carry client-generated
+    /// IDs: navigation-only discovery would track them as Modified (assumed existing) and
+    /// the save would fail.
+    /// </summary>
+    Task AddCommentAsync(MaintenanceRequestComment comment, CancellationToken cancellationToken = default);
+
     // -------------------------------------------------------------------------
     // Reference existence checks (guards in command handlers)
     // -------------------------------------------------------------------------

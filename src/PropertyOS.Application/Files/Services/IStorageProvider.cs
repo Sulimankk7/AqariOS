@@ -16,5 +16,9 @@ public interface IStorageProvider
     Task<string> GeneratePreSignedDownloadUrlAsync(string storageKey, string filename, int expirationMinutes, CancellationToken cancellationToken = default);
     Task<string> GeneratePreSignedUploadUrlAsync(string storageKey, int expirationMinutes, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(string storageKey, CancellationToken cancellationToken = default);
+
+    /// <summary>Actual stored object size in bytes — used to verify client-declared sizes.</summary>
+    Task<long> GetSizeAsync(string storageKey, CancellationToken cancellationToken = default);
+
     Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default);
 }

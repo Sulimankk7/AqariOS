@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Documents.Commands.DeleteBuildingDocument;
@@ -31,11 +31,18 @@ public class DeleteBuildingDocumentCommandHandler : IRequestHandler<DeleteBuildi
         var document = await _documentRepository.GetByIdAsync(request.Id, companyId, cancellationToken);
         if (document == null)
         {
-            throw new KeyNotFoundException($"Building document with ID '{request.Id}' was not found.");
+            throw new NotFoundException($"Building document with ID '{request.Id}' was not found.");
         }
 
         var now = DateTimeOffset.UtcNow;
-        document.SoftDelete(now, userId);
+        try
+        {
+            document.SoftDelete(now, userId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message, "DOCUMENT_INVALID_STATE");
+        }
 
         return Unit.Value;
     }

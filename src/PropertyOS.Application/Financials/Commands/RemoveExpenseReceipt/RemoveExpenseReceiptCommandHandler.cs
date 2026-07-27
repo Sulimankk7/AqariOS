@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 
@@ -25,9 +26,17 @@ public class RemoveExpenseReceiptCommandHandler : IRequestHandler<RemoveExpenseR
     {
         var expense = await _expenseRepository.GetByIdAsync(request.ExpenseId, cancellationToken);
         if (expense == null)
-            throw new KeyNotFoundException($"Expense with ID {request.ExpenseId} was not found.");
+            throw new NotFoundException($"Expense with ID {request.ExpenseId} was not found.");
 
-        expense.RemoveReceipt(request.ReceiptId, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        try
+        {
+            expense.RemoveReceipt(request.ReceiptId, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            // Domain lookup miss: receipt does not exist (or is already soft-deleted) on this expense
+            throw new NotFoundException(ex.Message);
+        }
 
         return Unit.Value;
     }

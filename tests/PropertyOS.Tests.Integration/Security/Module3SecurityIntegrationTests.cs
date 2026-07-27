@@ -590,6 +590,27 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
     // RATE LIMITING TESTS (27-34)
     // ============================================================
 
+    /// <summary>
+    /// Prepends middleware (before UseForwardedHeaders) that stamps every request with a
+    /// loopback RemoteIpAddress, so KnownNetworks trust evaluation and IP partitioning
+    /// behave as they would behind a real socket.
+    /// </summary>
+    private sealed class FakeRemoteIpStartupFilter : Microsoft.AspNetCore.Hosting.IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+        {
+            return app =>
+            {
+                app.Use(async (context, nextMiddleware) =>
+                {
+                    context.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback;
+                    await nextMiddleware();
+                });
+                next(app);
+            };
+        }
+    }
+
     private WebApplicationFactory<Program> CreateConfiguredFactory(
         int globalLimit, int loginLimit, int otpLimit, string[] knownNetworks)
     {
@@ -598,6 +619,9 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
             builder.UseEnvironment("Testing");
             builder.ConfigureServices(services =>
             {
+                // TestServer leaves Connection.RemoteIpAddress null; the forwarded-headers
+                // trust check and IP-partitioned limiters need a real client socket address.
+                services.AddSingleton<Microsoft.AspNetCore.Hosting.IStartupFilter>(new FakeRemoteIpStartupFilter());
             });
             builder.ConfigureAppConfiguration((context, configBuilder) =>
             {
@@ -640,35 +664,41 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
     }
 
-    [Fact(Skip = "Endpoints not implemented yet")]
+    [Fact]
     public async Task Test28_Login_Limiter_Stricter_Than_Global()
     {
+        // Global allows 10/min; the login policy allows only 3/min for the same client.
         using var factory = CreateConfiguredFactory(10, 3, 10, new[] { "127.0.0.1/8" });
         using var client = factory.CreateClient();
 
         for (int i = 0; i < 3; i++)
         {
-            var response = await client.PostAsync("/api/auth/login", null);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var response = await client.PostAsync("/api/v1/auth/login",
+                new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            Assert.NotEqual(HttpStatusCode.TooManyRequests, response.StatusCode);
         }
 
-        var blocked = await client.PostAsync("/api/auth/login", null);
+        var blocked = await client.PostAsync("/api/v1/auth/login",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
     }
 
-    [Fact(Skip = "Endpoints not implemented yet")]
+    [Fact]
     public async Task Test29_OtpRequest_Limiter_Independently_Enforced()
     {
+        // OTP issuance has its own 2/min window regardless of the laxer global/login limits.
         using var factory = CreateConfiguredFactory(10, 10, 2, new[] { "127.0.0.1/8" });
         using var client = factory.CreateClient();
 
         for (int i = 0; i < 2; i++)
         {
-            var response = await client.PostAsync("/api/auth/otp", null);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var response = await client.PostAsync("/api/v1/auth/otp/request",
+                new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            Assert.NotEqual(HttpStatusCode.TooManyRequests, response.StatusCode);
         }
 
-        var blocked = await client.PostAsync("/api/auth/otp", null);
+        var blocked = await client.PostAsync("/api/v1/auth/otp/request",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
     }
 
@@ -697,7 +727,7 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         Assert.Contains("RATE_LIMIT_EXCEEDED", body);
     }
 
-    [Fact(Skip = "Endpoints not implemented yet")]
+    [Fact]
     public async Task Test32_RetryAfter_Exists()
     {
         using var factory = CreateConfiguredFactory(1, 10, 10, new[] { "127.0.0.1/8" });
@@ -708,23 +738,30 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         Assert.True(blocked.Headers.Contains("Retry-After"));
     }
 
-    [Fact(Skip = "Endpoints not implemented yet")]
+    [Fact]
     public async Task Test33_Untrusted_XForwardedFor_Cannot_Rotate_PartitionKey()
     {
-        // 127.0.0.1 is NOT in KnownNetworks, so X-Forwarded-For should be ignored.
+        // The test client's socket is NOT in KnownNetworks, so X-Forwarded-For must be
+        // ignored: forging a fresh client IP per request cannot rotate the rate-limit
+        // partition, and the shared partition exhausts after 3 login attempts.
         using var factory = CreateConfiguredFactory(10, 3, 10, new[] { "192.168.1.0/24" });
         using var client = factory.CreateClient();
 
         for (int i = 0; i < 3; i++)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
+            var req = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login")
+            {
+                Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
+            };
             req.Headers.Add("X-Forwarded-For", $"10.0.0.{i}");
             var response = await client.SendAsync(req);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.NotEqual(HttpStatusCode.TooManyRequests, response.StatusCode);
         }
 
-        // 4th request from same local socket (untrusted proxy) will be blocked
-        var reqBlocked = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
+        var reqBlocked = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login")
+        {
+            Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
+        };
         reqBlocked.Headers.Add("X-Forwarded-For", "10.0.0.99");
         var blocked = await client.SendAsync(reqBlocked);
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);

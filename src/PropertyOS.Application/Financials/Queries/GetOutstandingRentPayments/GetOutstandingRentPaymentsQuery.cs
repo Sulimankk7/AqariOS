@@ -4,4 +4,4 @@ using PropertyOS.Application.Financials.Queries.Common;
 
 namespace PropertyOS.Application.Financials.Queries.GetOutstandingRentPayments;
 
-public record GetOutstandingRentPaymentsQuery() : IRequest<List<RentPaymentDto>>;
+public record GetOutstandingRentPaymentsQuery(int PageSize = 50) : IRequest<List<RentPaymentDto>>;

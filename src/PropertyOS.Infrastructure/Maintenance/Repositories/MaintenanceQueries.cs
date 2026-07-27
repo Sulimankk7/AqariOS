@@ -19,11 +19,12 @@ public class MaintenanceQueries : IMaintenanceQueries
         _context = context;
     }
 
-    public async Task<MaintenanceRequestDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<MaintenanceRequestDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default)
     {
+        // Tenant scoping + soft-delete: cross-tenant or deleted ids fall through to null (404).
         return await _context.MaintenanceRequests
             .AsNoTracking()
-            .Where(r => r.Id == id)
+            .Where(r => r.Id == id && r.CompanyId == companyId && r.DeletedAt == null)
             .Select(r => new MaintenanceRequestDetailDto(
                 r.Id,
                 r.CompanyId,
@@ -50,10 +51,13 @@ public class MaintenanceQueries : IMaintenanceQueries
 
     public async Task<List<MaintenanceRequestSummaryDto>> GetRequestsAsync(
         MaintenanceRequestFilterOptions filter,
+        Guid companyId,
         CancellationToken cancellationToken = default)
     {
+        // Tenant scoping + soft-delete apply before any optional filter.
         var query = _context.MaintenanceRequests
-            .AsNoTracking();
+            .AsNoTracking()
+            .Where(r => r.CompanyId == companyId && r.DeletedAt == null);
 
         // ── Apply filters (combined via AND) ─────────────────────────────────
 
@@ -104,8 +108,8 @@ public class MaintenanceQueries : IMaintenanceQueries
         // Apply sort: request_date DESC, id ASC
         query = query.OrderByDescending(r => r.RequestDate).ThenBy(r => r.Id);
 
-        // Limit results to page size
-        var pageSize = filter.PageSize > 0 ? filter.PageSize : 50;
+        // Limit results to page size (clamped 1..200; record default is 50)
+        var pageSize = Math.Clamp(filter.PageSize, 1, 200);
         query = query.Take(pageSize);
 
         // Project directly to DTO to avoid loading whole entities into memory
@@ -128,11 +132,11 @@ public class MaintenanceQueries : IMaintenanceQueries
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<MaintenanceAttachmentDto>> GetAttachmentsAsync(Guid requestId, CancellationToken cancellationToken = default)
+    public Task<List<MaintenanceAttachmentDto>> GetAttachmentsAsync(Guid requestId, Guid companyId, CancellationToken cancellationToken = default)
     {
         return _context.MaintenanceRequestAttachments
             .AsNoTracking()
-            .Where(a => a.MaintenanceRequestId == requestId)
+            .Where(a => a.MaintenanceRequestId == requestId && a.CompanyId == companyId && a.DeletedAt == null)
             .Select(a => new MaintenanceAttachmentDto(
                 a.Id,
                 a.FileId,       // Nullable — no file_id FK until File module (Module 10) is implemented
@@ -144,11 +148,11 @@ public class MaintenanceQueries : IMaintenanceQueries
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<MaintenanceCommentDto>> GetCommentsAsync(Guid requestId, CancellationToken cancellationToken = default)
+    public Task<List<MaintenanceCommentDto>> GetCommentsAsync(Guid requestId, Guid companyId, CancellationToken cancellationToken = default)
     {
         return _context.MaintenanceRequestComments
             .AsNoTracking()
-            .Where(c => c.MaintenanceRequestId == requestId)
+            .Where(c => c.MaintenanceRequestId == requestId && c.CompanyId == companyId && c.DeletedAt == null)
             .OrderByDescending(c => c.CreatedAt)
             .Select(c => new MaintenanceCommentDto(
                 c.Id,
@@ -161,11 +165,11 @@ public class MaintenanceQueries : IMaintenanceQueries
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<MaintenanceStatusHistoryDto>> GetStatusHistoryAsync(Guid requestId, CancellationToken cancellationToken = default)
+    public Task<List<MaintenanceStatusHistoryDto>> GetStatusHistoryAsync(Guid requestId, Guid companyId, CancellationToken cancellationToken = default)
     {
         return _context.MaintenanceStatusHistory
             .AsNoTracking()
-            .Where(h => h.MaintenanceRequestId == requestId)
+            .Where(h => h.MaintenanceRequestId == requestId && h.CompanyId == companyId)
             .OrderByDescending(h => h.ChangedAt)
             .Select(h => new MaintenanceStatusHistoryDto(
                 h.Id,

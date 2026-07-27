@@ -30,6 +30,9 @@ public class NotificationDelivery
     {
         return new NotificationDelivery
         {
+            // Deliberately DB-generated: delivery IDs are never returned pre-save, and an unset
+            // key keeps navigation discovery tracking the child as Added (deliveries are only
+            // created on a new Notification root before the root itself is added).
             Id = Guid.Empty,
             CompanyId = companyId,
             NotificationId = notificationId,

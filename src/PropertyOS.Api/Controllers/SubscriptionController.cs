@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PropertyOS.Application.Common.Exceptions;
+using PropertyOS.Application.Companies.Security;
 using PropertyOS.Application.DTOs.Subscriptions;
 using PropertyOS.Application.Subscriptions;
 
@@ -124,7 +125,7 @@ public class SubscriptionController : ControllerBase
     /// <response code="409">If an active subscription already exists for the company.</response>
     /// <response code="500">If an internal server error occurs.</response>
     [HttpPost("subscribe")]
-    [Authorize]
+    [Authorize(Policy = CompaniesPermissions.Manage)]
     [ProducesResponseType(typeof(UserSubscriptionDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -180,7 +181,7 @@ public class SubscriptionController : ControllerBase
     /// <response code="409">If a concurrent edit collision occurs.</response>
     /// <response code="500">If an internal server error occurs.</response>
     [HttpPut("change-plan")]
-    [Authorize]
+    [Authorize(Policy = CompaniesPermissions.Manage)]
     [ProducesResponseType(typeof(UserSubscriptionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -235,7 +236,7 @@ public class SubscriptionController : ControllerBase
     /// <response code="409">If a concurrent state change occurs.</response>
     /// <response code="500">If an internal server error occurs.</response>
     [HttpPost("cancel")]
-    [Authorize]
+    [Authorize(Policy = CompaniesPermissions.Manage)]
     [ProducesResponseType(typeof(UserSubscriptionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

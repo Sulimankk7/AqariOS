@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Documents.Commands.DeleteDocumentCategory;
@@ -31,17 +31,24 @@ public class DeleteDocumentCategoryCommandHandler : IRequestHandler<DeleteDocume
         var category = await _categoryRepository.GetByIdAsync(request.Id, companyId, cancellationToken);
         if (category == null)
         {
-            throw new KeyNotFoundException($"Document category with ID '{request.Id}' was not found.");
+            throw new NotFoundException($"Document category with ID '{request.Id}' was not found.");
         }
 
         var inUse = await _categoryRepository.IsCategoryInUseAsync(request.Id, companyId, cancellationToken);
         if (inUse)
         {
-            throw new InvalidOperationException($"Cannot delete category '{category.Name}' because it is currently referenced by one or more building documents.");
+            throw new BusinessRuleException($"Cannot delete category '{category.Name}' because it is currently referenced by one or more building documents.", "DOCUMENT_CATEGORY_IN_USE");
         }
 
         var now = DateTimeOffset.UtcNow;
-        category.SoftDelete(now, userId);
+        try
+        {
+            category.SoftDelete(now, userId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message, "DOCUMENT_CATEGORY_INVALID_STATE");
+        }
 
         return Unit.Value;
     }

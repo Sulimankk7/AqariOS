@@ -6,6 +6,8 @@ public class GetOutstandingRentPaymentsQueryValidator : AbstractValidator<GetOut
 {
     public GetOutstandingRentPaymentsQueryValidator()
     {
-        // No request inputs to validate structural constraint, always valid.
+        RuleFor(x => x.PageSize)
+            .GreaterThanOrEqualTo(1).WithMessage("PageSize must be greater than or equal to 1.")
+            .LessThanOrEqualTo(200).WithMessage("PageSize must be less than or equal to 200.");
     }
 }

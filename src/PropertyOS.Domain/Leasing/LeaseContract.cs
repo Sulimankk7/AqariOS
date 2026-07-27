@@ -68,7 +68,11 @@ public class LeaseContract : ISoftDeletable
     {
         return new LeaseContract
         {
-            Id = Guid.Empty,
+            // Client-generated UUIDv7 (same pattern as MarketplaceListing): the ID must be
+            // known before TransactionBehavior's SaveChanges so that status-history rows can
+            // reference it and create endpoints can return it. The column default
+            // uuid_generate_v7() remains as a fallback for rows created outside this factory.
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             BuildingId = buildingId,
             ApartmentId = apartmentId,
@@ -90,6 +94,53 @@ public class LeaseContract : ISoftDeletable
             CreatedBy = createdBy,
             UpdatedBy = createdBy
         };
+    }
+
+    public void UpdateDraftTerms(
+        Guid apartmentId,
+        Guid buildingId,
+        Guid tenantId,
+        DateOnly startDate,
+        DateOnly endDate,
+        decimal monthlyRentAmount,
+        decimal securityDepositAmount,
+        PaymentFrequency paymentFrequency,
+        short paymentDueDay,
+        LegalRegime legalRegime,
+        TenantType tenantType,
+        string? notes,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        if (Status != ContractStatus.Draft)
+            throw new InvalidOperationException($"Cannot update contract terms when contract is in {Status} status. Only Draft contracts can be edited.");
+
+        if (endDate <= startDate)
+            throw new InvalidOperationException("EndDate must be strictly greater than StartDate.");
+
+        if (monthlyRentAmount <= 0)
+            throw new InvalidOperationException("MonthlyRentAmount must be greater than zero.");
+
+        if (securityDepositAmount < 0)
+            throw new InvalidOperationException("SecurityDepositAmount cannot be negative.");
+
+        if (paymentDueDay < 1 || paymentDueDay > 28)
+            throw new InvalidOperationException("PaymentDueDay must be between 1 and 28.");
+
+        ApartmentId = apartmentId;
+        BuildingId = buildingId;
+        TenantId = tenantId;
+        StartDate = startDate;
+        EndDate = endDate;
+        MonthlyRentAmount = monthlyRentAmount;
+        SecurityDepositAmount = securityDepositAmount;
+        PaymentFrequency = paymentFrequency;
+        PaymentDueDay = paymentDueDay;
+        LegalRegime = legalRegime;
+        TenantType = tenantType;
+        Notes = notes;
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
     }
 
     public void SetPriorContractId(Guid priorContractId)
@@ -123,6 +174,16 @@ public class LeaseContract : ISoftDeletable
             throw new InvalidOperationException($"Cannot terminate a contract in {Status} status. Only Active contracts can be terminated.");
 
         Status = ContractStatus.Terminated;
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
+    }
+
+    public void Expire(DateTimeOffset updatedAt, Guid? updatedBy)
+    {
+        if (Status != ContractStatus.Active)
+            throw new InvalidOperationException($"Cannot expire a contract in {Status} status. Only Active contracts can be expired.");
+
+        Status = ContractStatus.Expired;
         UpdatedAt = updatedAt;
         UpdatedBy = updatedBy;
     }

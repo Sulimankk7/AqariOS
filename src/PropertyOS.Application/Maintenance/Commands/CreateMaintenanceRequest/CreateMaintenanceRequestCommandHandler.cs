@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Maintenance;
 using PropertyOS.Domain.Maintenance.Enums;
@@ -34,20 +35,20 @@ public class CreateMaintenanceRequestCommandHandler : IRequestHandler<CreateMain
 
         var buildingExists = await _repository.BuildingExistsAsync(request.BuildingId, companyId, cancellationToken);
         if (!buildingExists)
-            throw new KeyNotFoundException($"Building '{request.BuildingId}' was not found.");
+            throw new NotFoundException($"Building '{request.BuildingId}' was not found.");
 
         if (request.ApartmentId.HasValue)
         {
             var apartmentExists = await _repository.ApartmentExistsAsync(request.ApartmentId.Value, companyId, cancellationToken);
             if (!apartmentExists)
-                throw new KeyNotFoundException($"Apartment '{request.ApartmentId.Value}' was not found.");
+                throw new NotFoundException($"Apartment '{request.ApartmentId.Value}' was not found.");
         }
 
         if (request.TenantId.HasValue)
         {
             var tenantExists = await _repository.TenantExistsAsync(request.TenantId.Value, companyId, cancellationToken);
             if (!tenantExists)
-                throw new KeyNotFoundException($"Tenant '{request.TenantId.Value}' was not found.");
+                throw new NotFoundException($"Tenant '{request.TenantId.Value}' was not found.");
         }
 
         var now = DateTimeOffset.UtcNow;

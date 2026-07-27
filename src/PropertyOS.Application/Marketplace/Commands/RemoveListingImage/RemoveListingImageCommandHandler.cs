@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Marketplace.Commands.RemoveListingImage;
@@ -30,12 +31,23 @@ public class RemoveListingImageCommandHandler : IRequestHandler<RemoveListingIma
 
         var listing = await _repository.GetByIdAsync(request.ListingId, cancellationToken);
         if (listing == null)
-            throw new KeyNotFoundException($"MarketplaceListing with ID {request.ListingId} was not found.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.ListingId} was not found.");
 
         if (listing.CompanyId != companyId)
-            throw new UnauthorizedAccessException("Listing does not belong to the current company context.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.ListingId} was not found.");
 
-        listing.RemoveImage(request.ImageId, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        try
+        {
+            listing.RemoveImage(request.ImageId, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            throw new NotFoundException(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message);
+        }
 
         return Unit.Value;
     }

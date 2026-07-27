@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 
@@ -31,17 +32,24 @@ public class UpdateDocumentCategoryCommandHandler : IRequestHandler<UpdateDocume
         var category = await _categoryRepository.GetByIdAsync(request.Id, companyId, cancellationToken);
         if (category == null)
         {
-            throw new KeyNotFoundException($"Document category with ID '{request.Id}' was not found.");
+            throw new NotFoundException($"Document category with ID '{request.Id}' was not found.");
         }
 
         var nameExists = await _categoryRepository.ExistsByNameAsync(companyId, request.Name, request.Id, cancellationToken);
         if (nameExists)
         {
-            throw new InvalidOperationException($"Another document category named '{request.Name}' already exists within this company.");
+            throw new ConflictException($"Another document category named '{request.Name}' already exists within this company.");
         }
 
         var now = DateTimeOffset.UtcNow;
-        category.UpdateDetails(request.Name, request.Description, now, userId);
+        try
+        {
+            category.UpdateDetails(request.Name, request.Description, now, userId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message, "DOCUMENT_CATEGORY_INVALID_STATE");
+        }
 
         return new DocumentCategoryDto(
             Id: category.Id,

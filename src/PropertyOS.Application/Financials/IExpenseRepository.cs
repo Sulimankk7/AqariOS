@@ -11,7 +11,15 @@ public interface IExpenseRepository
 {
     Task<Domain.Financials.Expense?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddAsync(Domain.Financials.Expense expense, CancellationToken cancellationToken = default);
-    Task<List<Domain.Financials.Expense>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Explicitly tracks a receipt created by Expense.AttachReceipt on an already-tracked
+    /// expense as Added. Required because receipts carry client-generated IDs: navigation-only
+    /// discovery would track them as Modified (assumed existing) and the save would fail.
+    /// (Not needed when receipts are attached before AddAsync of a new expense root.)
+    /// </summary>
+    Task AddReceiptAsync(Domain.Financials.ExpenseReceipt receipt, CancellationToken cancellationToken = default);
+    Task<List<Domain.Financials.Expense>> GetByBuildingIdAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default);
     Task<bool> BuildingExistsAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default);
 
     // Read-side projections

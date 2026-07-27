@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Properties;
 
@@ -34,26 +35,33 @@ public class PublishMarketplaceListingCommandHandler : IRequestHandler<PublishMa
 
         var listing = await _repository.GetByIdAsync(request.Id, cancellationToken);
         if (listing == null)
-            throw new KeyNotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
 
         if (listing.CompanyId != companyId)
-            throw new UnauthorizedAccessException("Listing does not belong to the current company context.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
 
         // 1. Uniqueness Guard: One apartment can have only one active published listing at a time
         var activeListing = await _repository.GetActiveListingByApartmentIdAsync(listing.ApartmentId, cancellationToken);
         if (activeListing != null && activeListing.Id != listing.Id)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Apartment '{listing.ApartmentId}' already has an active published listing (ID: {activeListing.Id}).");
         }
 
         // 2. Load apartment to validate active and vacant invariants
         var apartment = await _apartmentRepository.GetByIdAsync(listing.ApartmentId, companyId, cancellationToken);
         if (apartment == null)
-            throw new KeyNotFoundException($"Apartment '{listing.ApartmentId}' was not found.");
+            throw new NotFoundException($"Apartment '{listing.ApartmentId}' was not found.");
 
         // 3. Delegate publish transition to the aggregate root (checks occupancy, images, pricing, phone)
-        listing.Publish(apartment, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        try
+        {
+            listing.Publish(apartment, DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message);
+        }
 
         return Unit.Value;
     }

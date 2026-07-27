@@ -10,6 +10,12 @@ public class FileStorageOptions
     public int PreSignedUrlExpirationMinutes { get; set; } = 5;
     public string StorageBasePath { get; set; } = "storage";
 
+    /// <summary>
+    /// HMAC key for signed upload/download URLs. No default on purpose: file URL
+    /// generation and verification fail closed until a 32+ byte secret is configured.
+    /// </summary>
+    public string? UrlSigningSecret { get; set; }
+
     public Dictionary<string, string[]> AllowedExtensionsToMimeTypes { get; set; } = new()
     {
         { ".pdf", new[] { "application/pdf" } },

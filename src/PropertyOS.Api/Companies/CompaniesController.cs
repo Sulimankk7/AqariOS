@@ -13,13 +13,13 @@ using PropertyOS.Application.Companies.Queries.Common;
 using PropertyOS.Application.Companies.Queries.GetCompanyById;
 using PropertyOS.Application.Companies.Queries.GetCompanySettings;
 using PropertyOS.Application.Companies.Queries.GetMyCompany;
+using PropertyOS.Application.Companies.Security;
 
 namespace PropertyOS.Api.Companies;
 
 [ApiVersion("1.0")]
 [ApiController]
 [Route("api/v{version:apiVersion}/companies")]
-[Route("api/companies")]
 [Authorize]
 [Tags("Companies")]
 public sealed class CompaniesController : ControllerBase
@@ -42,10 +42,9 @@ public sealed class CompaniesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CompanyDetailDto>> GetMyCompany(CancellationToken cancellationToken)
     {
+        // The handler throws NotFoundException when the company is missing;
+        // GlobalExceptionHandler maps it to a 404 ProblemDetails response.
         var result = await _mediator.Send(new GetMyCompanyQuery(), cancellationToken);
-        if (result == null)
-            return NotFound();
-
         return Ok(result);
     }
 
@@ -64,9 +63,6 @@ public sealed class CompaniesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetCompanyByIdQuery(companyId), cancellationToken);
-        if (result == null)
-            return NotFound();
-
         return Ok(result);
     }
 
@@ -74,6 +70,7 @@ public sealed class CompaniesController : ControllerBase
     /// Update company profile.
     /// </summary>
     [HttpPut("{companyId:guid}")]
+    [Authorize(Policy = CompaniesPermissions.Manage)]
     [EndpointSummary("Update company profile")]
     [EndpointDescription("Updates basic profile information of a company (Legal Name, Display Name, Primary Phone, Primary Email).")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -112,9 +109,6 @@ public sealed class CompaniesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetCompanySettingsQuery(companyId), cancellationToken);
-        if (result == null)
-            return NotFound();
-
         return Ok(result);
     }
 
@@ -122,6 +116,7 @@ public sealed class CompaniesController : ControllerBase
     /// Update company settings.
     /// </summary>
     [HttpPut("{companyId:guid}/settings")]
+    [Authorize(Policy = CompaniesPermissions.Manage)]
     [EndpointSummary("Update company settings")]
     [EndpointDescription("Updates operational settings for a company including late fee policies, grace periods, and fiscal year start month.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

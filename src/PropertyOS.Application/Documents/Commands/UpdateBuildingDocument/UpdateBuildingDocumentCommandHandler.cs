@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 using PropertyOS.Application.Files;
@@ -38,22 +39,29 @@ public class UpdateBuildingDocumentCommandHandler : IRequestHandler<UpdateBuildi
         var document = await _documentRepository.GetByIdAsync(request.Id, companyId, cancellationToken);
         if (document == null)
         {
-            throw new KeyNotFoundException($"Building document with ID '{request.Id}' was not found.");
+            throw new NotFoundException($"Building document with ID '{request.Id}' was not found.");
         }
 
         var now = DateTimeOffset.UtcNow;
         var today = DateOnly.FromDateTime(now.DateTime);
 
-        document.UpdateDetails(
-            newName: request.DocumentName,
-            newDescription: request.Description,
-            newIssueDate: request.IssueDate,
-            newExpiryDate: request.ExpiryDate,
-            newIsConfidential: request.IsConfidential,
-            now: now,
-            updatedBy: userId,
-            currentDate: today
-        );
+        try
+        {
+            document.UpdateDetails(
+                newName: request.DocumentName,
+                newDescription: request.Description,
+                newIssueDate: request.IssueDate,
+                newExpiryDate: request.ExpiryDate,
+                newIsConfidential: request.IsConfidential,
+                now: now,
+                updatedBy: userId,
+                currentDate: today
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message, "DOCUMENT_INVALID_STATE");
+        }
 
         var category = await _categoryRepository.GetByIdAsync(document.CategoryId, companyId, cancellationToken);
         var fileStorage = await _fileRepository.GetByIdAsync(document.FileId, cancellationToken);

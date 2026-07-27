@@ -34,7 +34,8 @@ public class FileStorage : ISoftDeletable
         long sizeBytes,
         string storageKey,
         DateTimeOffset now,
-        Guid? createdBy)
+        Guid? createdBy,
+        Guid? id = null)
     {
         if (companyId == Guid.Empty)
             throw new ArgumentException("Company ID must be specified.", nameof(companyId));
@@ -53,7 +54,9 @@ public class FileStorage : ISoftDeletable
 
         return new FileStorage
         {
-            Id = Guid.CreateVersion7(),
+            // Caller-supplied id keeps the upload-request FileId (embedded in the storage
+            // key) identical to the persisted row's Id; generated otherwise.
+            Id = id ?? Guid.CreateVersion7(),
             CompanyId = companyId,
             UploadedBy = uploadedBy,
             OriginalFilename = originalFilename.Trim(),

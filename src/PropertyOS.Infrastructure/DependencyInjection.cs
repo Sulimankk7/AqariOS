@@ -124,7 +124,14 @@ public static class DependencyInjection
         // -----------------------------------------------------------------------
         // Module 3 — Security / Identity / Auth Context Providers & Services
         // -----------------------------------------------------------------------
-        services.AddScoped<ITenantContext, PropertyOS.Infrastructure.Identity.ClaimsPrincipalTenantContext>();
+        services.AddScoped<PropertyOS.Infrastructure.Identity.ClaimsPrincipalTenantContext>();
+        services.AddScoped<PropertyOS.Infrastructure.Identity.BackgroundTenantContext>(sp =>
+            new PropertyOS.Infrastructure.Identity.BackgroundTenantContext(
+                sp.GetRequiredService<PropertyOS.Infrastructure.Identity.ClaimsPrincipalTenantContext>()));
+        services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<PropertyOS.Infrastructure.Identity.BackgroundTenantContext>());
+        services.AddScoped<PropertyOS.Infrastructure.Identity.ISystemTenantContextSetter>(sp => sp.GetRequiredService<PropertyOS.Infrastructure.Identity.BackgroundTenantContext>());
+        services.AddSingleton<PropertyOS.Application.Common.Interfaces.IBusinessClock, PropertyOS.Infrastructure.Common.Clock.JordanBusinessClock>();
+
         services.AddScoped<ICurrentUserContext, PropertyOS.Infrastructure.Identity.ClaimsPrincipalCurrentUserContext>();
         services.AddScoped<PropertyOS.Application.Identity.IPasswordHasher, PropertyOS.Infrastructure.Identity.PasswordHasher>();
         services.AddScoped<PropertyOS.Application.Identity.IJwtTokenGenerator, PropertyOS.Infrastructure.Identity.JwtTokenGenerator>();
@@ -140,6 +147,33 @@ public static class DependencyInjection
         services.AddScoped<TenantSessionInterceptor>();
         services.AddScoped<PropertyOS.Application.Companies.ICompanyRepository, PropertyOS.Infrastructure.Companies.Repositories.CompanyRepository>();
         services.AddScoped<ILeaseContractRepository, LeaseContractRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddTransient<PropertyOS.Infrastructure.Leasing.Jobs.ExpireLeaseContractsJob>();
+
+        // Module 11 — notification delivery dispatch pipeline
+        services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.InAppChannelProvider>();
+        services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.NullEmailChannelProvider>();
+        services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.NullSmsChannelProvider>();
+        services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.NullWhatsAppChannelProvider>();
+        services.AddTransient<PropertyOS.Infrastructure.Notifications.Jobs.DispatchNotificationsJob>();
+
+        // Financials background jobs (multi-tenant sweeps; Hangfire-activated)
+        services.AddTransient<PropertyOS.Infrastructure.Financials.Jobs.GenerateScheduledInstallmentsJob>();
+        services.AddTransient<PropertyOS.Infrastructure.Financials.Jobs.MarkOverdueRentPaymentsJob>();
+        // Staleness window from config (Financials:Efawateercom:StaleAfterMinutes);
+        // falls back to the job's compile-time default (60 minutes).
+        services.AddTransient(sp =>
+        {
+            var configuredWindow = configuration["Financials:Efawateercom:StaleAfterMinutes"];
+            var staleAfterMinutes = int.TryParse(configuredWindow, out var minutes) && minutes > 0
+                ? minutes
+                : PropertyOS.Infrastructure.Financials.Jobs.ExpireStaleEfawateercomTransactionsJob.DefaultStaleAfterMinutes;
+            return new PropertyOS.Infrastructure.Financials.Jobs.ExpireStaleEfawateercomTransactionsJob(
+                sp,
+                sp.GetRequiredService<IBusinessClock>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<PropertyOS.Infrastructure.Financials.Jobs.ExpireStaleEfawateercomTransactionsJob>>(),
+                staleAfterMinutes);
+        });
         services.AddScoped<ILeasingReferenceRepository, LeasingReferenceRepository>();
         services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
         services.AddScoped<IExpenseRepository, ExpenseRepository>();
@@ -159,6 +193,7 @@ public static class DependencyInjection
         services.Configure<PropertyOS.Application.Files.Options.FileStorageOptions>(configuration.GetSection(PropertyOS.Application.Files.Options.FileStorageOptions.SectionName));
         services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PropertyOS.Application.Files.Options.FileStorageOptions>>().Value);
         services.AddScoped<PropertyOS.Application.Files.IFileStorageRepository, PropertyOS.Infrastructure.Files.Repositories.FileStorageRepository>();
+        services.AddSingleton<PropertyOS.Application.Files.Services.IFileUrlSigner, PropertyOS.Infrastructure.Files.Services.HmacFileUrlSigner>();
         services.AddScoped<PropertyOS.Application.Files.Services.IStorageProvider, PropertyOS.Infrastructure.Files.Services.PhysicalFileStorageProvider>();
         services.AddScoped<PropertyOS.Application.Documents.IDocumentCategoryRepository, PropertyOS.Infrastructure.Documents.Repositories.DocumentCategoryRepository>();
         services.AddScoped<PropertyOS.Application.Documents.IBuildingDocumentRepository, PropertyOS.Infrastructure.Documents.Repositories.BuildingDocumentRepository>();

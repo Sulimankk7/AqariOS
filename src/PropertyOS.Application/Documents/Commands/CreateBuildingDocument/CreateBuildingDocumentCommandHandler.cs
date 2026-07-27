@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 using PropertyOS.Application.Files;
@@ -40,21 +41,21 @@ public class CreateBuildingDocumentCommandHandler : IRequestHandler<CreateBuildi
         var category = await _categoryRepository.GetByIdAsync(request.CategoryId, companyId, cancellationToken);
         if (category == null)
         {
-            throw new KeyNotFoundException($"Document category with ID '{request.CategoryId}' was not found.");
+            throw new NotFoundException($"Document category with ID '{request.CategoryId}' was not found.");
         }
 
         // Verify file exists in file_storage
         var fileExists = await _fileRepository.ExistsAsync(request.FileId, companyId, cancellationToken);
         if (!fileExists)
         {
-            throw new InvalidOperationException($"File storage record with ID '{request.FileId}' was not found in file_storage.");
+            throw new NotFoundException($"File storage record with ID '{request.FileId}' was not found in file_storage.");
         }
 
         // Verify file is not attached twice to the same building
         var alreadyAttached = await _documentRepository.ExistsByBuildingAndFileAsync(request.BuildingId, request.FileId, cancellationToken);
         if (alreadyAttached)
         {
-            throw new InvalidOperationException($"File '{request.FileId}' is already attached to building '{request.BuildingId}'.");
+            throw new ConflictException($"File '{request.FileId}' is already attached to building '{request.BuildingId}'.");
         }
 
         var fileStorage = await _fileRepository.GetByIdAsync(request.FileId, cancellationToken);

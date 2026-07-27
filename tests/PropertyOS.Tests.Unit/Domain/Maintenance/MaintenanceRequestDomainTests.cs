@@ -36,6 +36,7 @@ public class MaintenanceRequestDomainTests
             createdBy: userId);
 
         // Assert
+        Assert.NotEqual(Guid.Empty, request.Id); // client-generated UUIDv7, available before SaveChanges
         Assert.Equal(companyId, request.CompanyId);
         Assert.Equal(buildingId, request.BuildingId);
         Assert.Equal(apartmentId, request.ApartmentId);
@@ -54,7 +55,7 @@ public class MaintenanceRequestDomainTests
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]
-    public void Create_WithBlankTitle_ThrowsArgumentException(string invalidTitle)
+    public void Create_WithBlankTitle_ThrowsArgumentException(string? invalidTitle)
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => MaintenanceRequest.Create(
@@ -195,6 +196,23 @@ public class MaintenanceRequestDomainTests
             description: "Photo 1 duplicate",
             now: DateTimeOffset.UtcNow,
             createdBy: Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void ChildCreation_AssignsClientGeneratedIds()
+    {
+        // Arrange
+        var request = CreateTestRequest();
+
+        // Act
+        var attachment = request.AddAttachment(Guid.NewGuid(), Guid.NewGuid(), "Evidence", DateTimeOffset.UtcNow, Guid.NewGuid());
+        var comment = request.AddComment("Important context", DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        // Assert — children carry client-generated UUIDv7 keys so command handlers
+        // can return them before TransactionBehavior's SaveChanges runs.
+        Assert.NotEqual(Guid.Empty, attachment.Id);
+        Assert.NotEqual(Guid.Empty, comment.Id);
+        Assert.NotEqual(attachment.Id, comment.Id);
     }
 
     [Fact]

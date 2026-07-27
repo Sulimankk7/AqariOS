@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials.Commands.RecordPaymentAllocation;
 using PropertyOS.Application.Financials;
@@ -33,8 +34,22 @@ public class RecordPaymentAllocationCommandHandlerTests
             return Task.CompletedTask;
         }
 
+        public int RentGracePeriodDays { get; set; } = 0;
+        public Task<int> GetRentGracePeriodDaysAsync(Guid companyId, CancellationToken cancellationToken = default)
+            => Task.FromResult(RentGracePeriodDays);
+
+        public Task<List<RentPayment>> GetByIdsForUpdateAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+            => Task.FromResult(Payments.Values.Where(p => ids.Contains(p.Id)).OrderBy(p => p.Id).ToList());
+
+        public Task AddReceiptAsync(RentPaymentReceipt receipt, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task AddRangeAsync(IEnumerable<RentPayment> rentPayments, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+            public Task<List<BillingPeriod>> GetScheduledInstallmentPeriodsAsync(Guid leaseContractId, CancellationToken cancellationToken = default)
+            => Task.FromResult(new List<BillingPeriod>());
+
         public Task<bool> HasScheduledInstallmentAsync(Guid leaseContractId, DateOnly start, DateOnly end, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<Guid>> GetOverdueCandidateIdsAsync(DateOnly asOfDate, int batchSize, Guid? afterId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<ChequeDetails?> LoadChequeAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AddChequeAsync(ChequeDetails cheque, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<PaymentAllocation?> LoadAllocationAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -57,15 +72,15 @@ public class RecordPaymentAllocationCommandHandlerTests
             return Task.FromResult(res);
         }
 
-        public Task<RentPaymentDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private class FakeCurrentUserContext : ICurrentUserContext
@@ -130,9 +145,10 @@ public class RecordPaymentAllocationCommandHandlerTests
         Assert.Equal(400m, alloc.AllocatedAmount);
         Assert.Equal(AllocationStatus.Active, alloc.AllocationStatus);
 
-        // Target obligation should be synchronized in-memory
+        // Target obligation should be synchronized in-memory. Doc §6.1 matrix: a partial
+        // payment past the grace-adjusted due date derives Late (fake grace = 0 days).
         Assert.Equal(400m, obligation.AmountPaid);
-        Assert.Equal(DueDateStatus.PartiallyPaid, obligation.DueDateStatus);
+        Assert.Equal(DueDateStatus.Late, obligation.DueDateStatus);
     }
 
     [Fact]
@@ -162,7 +178,7 @@ public class RecordPaymentAllocationCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_SelfAllocation_ThrowsInvalidOperationException()
+    public async Task Handle_SelfAllocation_ThrowsBusinessRuleException()
     {
         var repo = new FakeRentPaymentRepository();
         var handler = new RecordPaymentAllocationCommandHandler(repo, new FakeCurrentUserContext());
@@ -177,11 +193,11 @@ public class RecordPaymentAllocationCommandHandlerTests
             AllocationDate: new DateOnly(2026, 1, 10)
         );
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_SourceIsScheduledInstallment_ThrowsInvalidOperationException()
+    public async Task Handle_SourceIsScheduledInstallment_ThrowsBusinessRuleException()
     {
         var repo = new FakeRentPaymentRepository();
         var handler = new RecordPaymentAllocationCommandHandler(repo, new FakeCurrentUserContext());
@@ -200,11 +216,11 @@ public class RecordPaymentAllocationCommandHandlerTests
             AllocationDate: new DateOnly(2026, 1, 10)
         );
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_DestinationIsCancelled_ThrowsInvalidOperationException()
+    public async Task Handle_DestinationIsCancelled_ThrowsBusinessRuleException()
     {
         var repo = new FakeRentPaymentRepository();
         var handler = new RecordPaymentAllocationCommandHandler(repo, new FakeCurrentUserContext());
@@ -223,11 +239,11 @@ public class RecordPaymentAllocationCommandHandlerTests
             AllocationDate: new DateOnly(2026, 1, 10)
         );
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_AllocationExceedsSourceFunds_ThrowsInvalidOperationException()
+    public async Task Handle_AllocationExceedsSourceFunds_ThrowsBusinessRuleException()
     {
         var repo = new FakeRentPaymentRepository();
         var handler = new RecordPaymentAllocationCommandHandler(repo, new FakeCurrentUserContext());
@@ -246,11 +262,11 @@ public class RecordPaymentAllocationCommandHandlerTests
             AllocationDate: new DateOnly(2026, 1, 10)
         );
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_AllocationExceedsObligationOutstanding_ThrowsInvalidOperationException()
+    public async Task Handle_AllocationExceedsObligationOutstanding_ThrowsBusinessRuleException()
     {
         var repo = new FakeRentPaymentRepository();
         var handler = new RecordPaymentAllocationCommandHandler(repo, new FakeCurrentUserContext());
@@ -269,6 +285,6 @@ public class RecordPaymentAllocationCommandHandlerTests
             AllocationDate: new DateOnly(2026, 1, 10)
         );
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
     }
 }

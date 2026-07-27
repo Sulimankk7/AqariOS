@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Marketplace.Commands.ArchiveMarketplaceListing;
@@ -30,12 +31,19 @@ public class ArchiveMarketplaceListingCommandHandler : IRequestHandler<ArchiveMa
 
         var listing = await _repository.GetByIdAsync(request.Id, cancellationToken);
         if (listing == null)
-            throw new KeyNotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
 
         if (listing.CompanyId != companyId)
-            throw new UnauthorizedAccessException("Listing does not belong to the current company context.");
+            throw new NotFoundException($"MarketplaceListing with ID {request.Id} was not found.");
 
-        listing.Archive(DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        try
+        {
+            listing.Archive(DateTimeOffset.UtcNow, _currentUserContext.UserId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message);
+        }
 
         return Unit.Value;
     }

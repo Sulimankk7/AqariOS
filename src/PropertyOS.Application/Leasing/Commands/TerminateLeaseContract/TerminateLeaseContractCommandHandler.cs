@@ -1,5 +1,6 @@
 using MediatR;
 
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Leasing;
 using PropertyOS.Domain.Leasing.Enums;
@@ -9,13 +10,23 @@ namespace PropertyOS.Application.Leasing.Commands.TerminateLeaseContract;
 public class TerminateLeaseContractCommandHandler : IRequestHandler<TerminateLeaseContractCommand, Unit>
 {
     private readonly ILeaseContractRepository _leaseContractRepository;
+    private readonly ITenantContext? _tenantContext;
     private readonly ICurrentUserContext _currentUserContext;
 
     public TerminateLeaseContractCommandHandler(
         ILeaseContractRepository leaseContractRepository,
         ICurrentUserContext currentUserContext)
+        : this(leaseContractRepository, null, currentUserContext)
+    {
+    }
+
+    public TerminateLeaseContractCommandHandler(
+        ILeaseContractRepository leaseContractRepository,
+        ITenantContext? tenantContext,
+        ICurrentUserContext currentUserContext)
     {
         _leaseContractRepository = leaseContractRepository;
+        _tenantContext = tenantContext;
         _currentUserContext = currentUserContext;
     }
 
@@ -23,20 +34,23 @@ public class TerminateLeaseContractCommandHandler : IRequestHandler<TerminateLea
     {
         var contract = await _leaseContractRepository.GetByIdAsync(request.ContractId, cancellationToken);
         if (contract == null)
-            throw new KeyNotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
+            throw new NotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
+
+        if (_tenantContext != null && _tenantContext.CompanyId.HasValue && contract.CompanyId != _tenantContext.CompanyId.Value)
+            throw new NotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
 
         if (contract.Status != ContractStatus.Active)
-            throw new InvalidOperationException($"Cannot terminate a contract in {contract.Status} status.");
+            throw new BusinessRuleException($"Cannot terminate a contract in {contract.Status} status.", "LEASE_TERMINATE_INVALID_STATUS");
 
         var terminationDate = DateOnly.FromDateTime(request.TerminationDate);
         if (terminationDate < contract.StartDate)
-            throw new InvalidOperationException("Termination date cannot be before the contract's start date.");
+            throw new BusinessRuleException("Termination date cannot be before the contract's start date.", "LEASE_TERMINATE_DATE_BEFORE_START");
 
         if (terminationDate > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new InvalidOperationException("Termination date cannot be in the future.");
+            throw new BusinessRuleException("Termination date cannot be in the future.", "LEASE_TERMINATE_DATE_IN_FUTURE");
 
         if (request.DepositDeductionAmount > 0 && string.IsNullOrWhiteSpace(request.DepositDeductionReason))
-            throw new InvalidOperationException("Deposit deduction reason is required when deduction amount is greater than zero.");
+            throw new BusinessRuleException("Deposit deduction reason is required when deduction amount is greater than zero.", "LEASE_TERMINATE_DEDUCTION_REASON_REQUIRED");
 
         var oldStatus = contract.Status;
         contract.Terminate(DateTimeOffset.UtcNow, _currentUserContext.UserId);

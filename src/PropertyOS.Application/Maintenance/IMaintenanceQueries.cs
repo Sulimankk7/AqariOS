@@ -12,25 +12,32 @@ namespace PropertyOS.Application.Maintenance;
 /// All methods return projections (DTOs) — never tracked domain entities.
 ///
 /// <para>CQRS separation: this interface is injected only into query handlers.</para>
+/// <para>Every method is explicitly tenant-scoped: plain queries run outside a
+/// transaction, so RLS tenant context is not guaranteed — the companyId predicate
+/// is the enforced boundary here (Architecture §7).</para>
 /// </summary>
 public interface IMaintenanceQueries
 {
-    Task<MaintenanceRequestDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<MaintenanceRequestDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default);
 
     Task<List<MaintenanceRequestSummaryDto>> GetRequestsAsync(
         MaintenanceRequestFilterOptions filter,
+        Guid companyId,
         CancellationToken cancellationToken = default);
 
     Task<List<MaintenanceAttachmentDto>> GetAttachmentsAsync(
         Guid requestId,
+        Guid companyId,
         CancellationToken cancellationToken = default);
 
     Task<List<MaintenanceCommentDto>> GetCommentsAsync(
         Guid requestId,
+        Guid companyId,
         CancellationToken cancellationToken = default);
 
     Task<List<MaintenanceStatusHistoryDto>> GetStatusHistoryAsync(
         Guid requestId,
+        Guid companyId,
         CancellationToken cancellationToken = default);
 }
 

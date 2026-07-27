@@ -32,8 +32,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
 
     public PostgresTestFixture()
     {
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:17")
+        _container = new PostgreSqlBuilder("postgres:17")
             .WithDatabase("propertyos_test")
             .WithUsername("propertyos")
             .WithPassword("propertyos_pass")
@@ -257,6 +256,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
             })
+            .LogSqlWhenRequested()
             .Options;
 
         Context = new PropertyOsDbContext(options);

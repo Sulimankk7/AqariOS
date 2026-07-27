@@ -5,4 +5,4 @@ using PropertyOS.Application.Leasing.Queries.Common;
 
 namespace PropertyOS.Application.Leasing.Queries.GetLeaseHistoryForApartment;
 
-public record GetLeaseHistoryForApartmentQuery(Guid ApartmentId) : IRequest<List<LeaseContractDto>>;
+public record GetLeaseHistoryForApartmentQuery(Guid ApartmentId, int PageSize = 50) : IRequest<List<LeaseContractDto>>;

@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Companies.Queries.Common;
 
@@ -21,10 +21,15 @@ public class GetCompanySettingsQueryHandler : IRequestHandler<GetCompanySettings
 
     public async Task<CompanySettingsDto?> Handle(GetCompanySettingsQuery request, CancellationToken cancellationToken)
     {
+        // Tenant scoping: settings are readable only by their owning company.
+        // Cross-tenant requests are masked as 404; null CompanyId is fail-closed.
+        if (!_tenantContext.IsPlatformAdmin && _tenantContext.CompanyId != request.CompanyId)
+            throw new NotFoundException($"Company settings for ID {request.CompanyId} were not found.");
+
         var settings = await _companyRepository.GetSettingsByIdAsync(request.CompanyId, cancellationToken);
         if (settings == null)
-            throw new KeyNotFoundException($"Company settings for ID {request.CompanyId} were not found.");
-            
+            throw new NotFoundException($"Company settings for ID {request.CompanyId} were not found.");
+
         return settings;
     }
 }

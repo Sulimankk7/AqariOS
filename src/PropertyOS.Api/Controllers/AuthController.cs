@@ -6,6 +6,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MediatR;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.DTOs.Identity;
@@ -97,6 +98,7 @@ public class AuthController : ControllerBase
     /// <response code="500">If an internal server error occurs.</response>
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthLoginLimit")]
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -239,6 +241,7 @@ public class AuthController : ControllerBase
     /// <response code="500">If an internal server error occurs.</response>
     [HttpPost("otp/request")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthOtpRequestLimit")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]

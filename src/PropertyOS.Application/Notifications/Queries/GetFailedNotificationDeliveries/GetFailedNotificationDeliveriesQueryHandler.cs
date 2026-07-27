@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -26,18 +25,11 @@ public class GetFailedNotificationDeliveriesQueryHandler : IRequestHandler<GetFa
     {
         var companyId = _tenantContext.CompanyId ?? throw new InvalidOperationException("Tenant context is required.");
 
-        var deliveries = await _notificationRepository.GetFailedDeliveriesAsync(companyId, cancellationToken);
-
-        return deliveries.Select(d => new NotificationDeliveryDto(
-            d.Id,
-            d.NotificationId,
-            d.DeliveryChannel,
-            d.DeliveryStatus,
-            d.AttemptCount,
-            d.CreatedAt,
-            d.SentAt,
-            d.DeliveredAt,
-            d.FailureReason
-        )).ToList();
+        return await _notificationRepository.GetFailedDeliveriesAsync(
+            companyId,
+            request.PageSize,
+            request.LastSeenSentAt,
+            request.LastSeenId,
+            cancellationToken);
     }
 }

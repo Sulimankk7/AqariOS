@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 using PropertyOS.Application.Financials.Commands.RecordPaymentAllocation;
@@ -43,7 +44,7 @@ public class ReceiveEfawateercomCallbackCommandHandler : IRequestHandler<Receive
             request.ExternalTransactionId, cancellationToken);
 
         if (transaction == null)
-            throw new KeyNotFoundException(
+            throw new NotFoundException(
                 $"eFAWATEERcom transaction with external ID '{request.ExternalTransactionId}' was not found.");
 
         // ── Step 2: Idempotency guard. ────────────────────────────────────────────────
@@ -58,15 +59,23 @@ public class ReceiveEfawateercomCallbackCommandHandler : IRequestHandler<Receive
         }
 
         // ── Step 3: Transition the gateway transaction status in the domain model. ──────
-        transaction.UpdateStatus(
-            status: request.Status,
-            responseTime: request.ResponseTime,
-            responseCode: request.ResponseCode,
-            responseMessage: request.ResponseMessage,
-            rawResponse: request.RawResponse,
-            now: DateTimeOffset.UtcNow,
-            updatedBy: _currentUserContext.UserId
-        );
+        try
+        {
+            transaction.UpdateStatus(
+                status: request.Status,
+                responseTime: request.ResponseTime,
+                responseCode: request.ResponseCode,
+                responseMessage: request.ResponseMessage,
+                rawResponse: request.RawResponse,
+                now: DateTimeOffset.UtcNow,
+                updatedBy: _currentUserContext.UserId
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Domain state-machine violation (terminal status cannot transition)
+            throw new BusinessRuleException(ex.Message, "EFAWATEERCOM_INVALID_TRANSITION");
+        }
 
         // ── Step 4: On success, run the full settlement pipeline. ─────────────────────
         if (request.Status == EfawateercomStatus.Success)
@@ -74,7 +83,7 @@ public class ReceiveEfawateercomCallbackCommandHandler : IRequestHandler<Receive
             // 4a. Load the scheduled installment (the obligation being settled).
             var installment = await _rentPaymentRepository.GetByIdAsync(transaction.RentPaymentId, cancellationToken);
             if (installment == null)
-                throw new KeyNotFoundException(
+                throw new NotFoundException(
                     $"Linked RentPayment installment with ID '{transaction.RentPaymentId}' was not found.");
 
             // 4b. Create the incoming cash receipt (UnallocatedReceipt) representing the funds received.
@@ -134,12 +143,24 @@ public class ReceiveEfawateercomCallbackCommandHandler : IRequestHandler<Receive
                 // IssueReceipt enforces all immutability invariants:
                 // - Must be fully paid (DueDateStatus == Paid, AmountPaid == AmountDue)
                 // - No duplicate active receipt (Receipt == null or soft-deleted)
-                // The resulting RentPaymentReceipt is tracked by EF and saved by TransactionBehavior.
-                installment.IssueReceipt(
-                    receiptNumber: receiptNumber,
-                    issuedAt: DateTimeOffset.UtcNow,
-                    issuedBy: _currentUserContext.UserId
-                );
+                RentPaymentReceipt receipt;
+                try
+                {
+                    receipt = installment.IssueReceipt(
+                        receiptNumber: receiptNumber,
+                        issuedAt: DateTimeOffset.UtcNow,
+                        issuedBy: _currentUserContext.UserId
+                    );
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Domain invariant violation (not fully paid, or receipt already issued)
+                    throw new BusinessRuleException(ex.Message, "RECEIPT_ISSUE_INVALID_STATE");
+                }
+
+                // Explicit Add: the receipt carries a client-generated ID, so it must be
+                // tracked as Added rather than left to navigation discovery.
+                await _rentPaymentRepository.AddReceiptAsync(receipt, cancellationToken);
             }
         }
 

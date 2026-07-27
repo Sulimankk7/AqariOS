@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials.Commands.CreateExpense;
 using PropertyOS.Application.Financials.Commands.UpdateExpense;
@@ -32,9 +33,12 @@ public class ExpenseCommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task<List<Expense>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default)
+        public Task AddReceiptAsync(ExpenseReceipt receipt, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task<List<Expense>> GetByBuildingIdAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(Expenses.Where(e => e.BuildingId == buildingId).ToList());
+            return Task.FromResult(Expenses.Where(e => e.BuildingId == buildingId && e.CompanyId == companyId).ToList());
         }
 
         public Task<bool> BuildingExistsAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default)
@@ -128,7 +132,7 @@ public class ExpenseCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CreateExpense_WithNonExistentBuilding_ThrowsKeyNotFoundException()
+    public async Task Handle_CreateExpense_WithNonExistentBuilding_ThrowsNotFoundException()
     {
         // Arrange
         var expenseRepo = new FakeExpenseRepository();
@@ -148,7 +152,7 @@ public class ExpenseCommandHandlerTests
         );
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
     }
 
     [Fact]

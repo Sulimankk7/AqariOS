@@ -20,7 +20,8 @@ public class ExpenseQueriesTests
 
         public Task<PropertyOS.Domain.Financials.Expense?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AddAsync(PropertyOS.Domain.Financials.Expense expense, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<PropertyOS.Domain.Financials.Expense>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task AddReceiptAsync(PropertyOS.Domain.Financials.ExpenseReceipt receipt, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<List<PropertyOS.Domain.Financials.Expense>> GetByBuildingIdAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> BuildingExistsAsync(Guid buildingId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<ExpenseDetailDto?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 

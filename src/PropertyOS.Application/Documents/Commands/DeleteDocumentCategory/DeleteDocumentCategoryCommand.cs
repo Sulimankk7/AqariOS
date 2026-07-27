@@ -1,6 +1,6 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Documents.Commands.DeleteDocumentCategory;
 
-public record DeleteDocumentCategoryCommand(Guid Id) : IRequest<Unit>;
+public record DeleteDocumentCategoryCommand(Guid Id) : ICommand;

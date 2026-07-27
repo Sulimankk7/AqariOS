@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
+using PropertyOS.Domain.Maintenance;
 
 namespace PropertyOS.Application.Maintenance.Commands.UpdateMaintenanceRequestStatus;
 
@@ -32,17 +34,26 @@ public class UpdateMaintenanceRequestStatusCommandHandler
             ?? throw new InvalidOperationException("Tenant context is required.");
 
         var maintenanceRequest = await _repository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new KeyNotFoundException($"Maintenance request '{request.Id}' was not found.");
+            ?? throw new NotFoundException($"Maintenance request '{request.Id}' was not found.");
 
         var now = DateTimeOffset.UtcNow;
 
         // Domain aggregate validates transition, creates history entry, raises event.
         // Any invalid transition throws InvalidOperationException — no transition logic here.
-        var history = maintenanceRequest.UpdateStatus(
-            newStatus: request.NewStatus,
-            changedAt: now,
-            changedBy: _currentUserContext.UserId,
-            reason: request.Reason);
+        MaintenanceStatusHistory history;
+        try
+        {
+            history = maintenanceRequest.UpdateStatus(
+                newStatus: request.NewStatus,
+                changedAt: now,
+                changedBy: _currentUserContext.UserId,
+                reason: request.Reason);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Domain rule: the requested transition is not permitted by the status graph
+            throw new BusinessRuleException(ex.Message, "MAINTENANCE_INVALID_TRANSITION");
+        }
 
         // History must be persisted in the same Unit-of-Work as the aggregate root update.
         await _repository.AddStatusHistoryAsync(history, cancellationToken);

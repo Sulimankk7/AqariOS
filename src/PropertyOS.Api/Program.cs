@@ -44,9 +44,23 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
-// Configure JWT Authentication & Authorization
+// Configure JWT Authentication & Authorization.
+// Fail-fast policy: no insecure fallback secret. Startup refuses to run with a missing,
+// too-short, or (outside Development) placeholder Jwt:Secret.
 var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtSecret = jwtSection["Secret"] ?? "PropertyOS-Secret-Signing-Key-Minimum-32-Bytes-Length!";
+var jwtSecret = jwtSection["Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret) || System.Text.Encoding.UTF8.GetByteCount(jwtSecret) < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:Secret is missing or shorter than 32 bytes. Configure a unique secret " +
+        "(e.g. via appsettings.Local.json or environment variables) before starting the API.");
+}
+if (!builder.Environment.IsDevelopment() &&
+    jwtSecret == "placeholder-long-secret-key-32-chars-minimum")
+{
+    throw new InvalidOperationException(
+        "Jwt:Secret is still the committed development placeholder. Set a real secret for non-Development environments.");
+}
 var jwtIssuer = jwtSection["Issuer"] ?? "PropertyOS";
 var jwtAudience = jwtSection["Audience"] ?? "PropertyOS-Clients";
 var jwtSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtSecret));
@@ -69,6 +83,22 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = jwtSigningKey,
         ClockSkew = TimeSpan.FromMinutes(1)
     };
+
+    // SignalR websocket/SSE clients cannot send an Authorization header; the JS client
+    // passes the JWT as ?access_token=… . Honor it for hub paths only.
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) &&
+                context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 builder.Services.AddAuthorization(options =>
 {
@@ -83,7 +113,55 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy(PropertyOS.Application.Properties.Security.PropertyPermissions.Delete, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Properties.Security.PropertyPermissions.Delete, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Leasing.Security.LeasingPermissions.Create, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Leasing.Security.LeasingPermissions.Create, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Leasing.Security.LeasingPermissions.Approve, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Leasing.Security.LeasingPermissions.Approve, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.PaymentsApprove, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.PaymentsApprove, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesCreate, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesCreate, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesApprove, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesApprove, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ReceiptsIssue, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ReceiptsIssue, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceCreate, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceCreate, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceUpdateStatus, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceUpdateStatus, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceComment, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceComment, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.DocumentsUpload, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.DocumentsUpload, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.DocumentsManageCategories, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.DocumentsManageCategories, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.NotificationsSend, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.NotificationsSend, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.NotificationsManageTemplates, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.NotificationsManageTemplates, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.NotificationsViewAll, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.NotificationsViewAll, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Companies.Security.CompaniesPermissions.Manage, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Companies.Security.CompaniesPermissions.Manage, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 });
+
+// In-app notification transport over SignalR (implements the Application-layer pusher).
+builder.Services.AddSingleton<PropertyOS.Application.Notifications.Services.IInAppNotificationPusher, PropertyOS.Api.Services.SignalRInAppNotificationPusher>();
 
 // Configure OpenAPI & Scalar
 builder.Services.AddOpenApi();
@@ -135,6 +213,12 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.StatusCode  = StatusCodes.Status429TooManyRequests;
         context.HttpContext.Response.ContentType = "application/problem+json";
 
+        // Retry-After: prefer the limiter's own hint, fall back to the global window.
+        var retryAfterSeconds = context.Lease.TryGetMetadata(System.Threading.RateLimiting.MetadataName.RetryAfter, out var retryAfter)
+            ? (int)retryAfter.TotalSeconds
+            : globalWindowSecs;
+        context.HttpContext.Response.Headers.RetryAfter = Math.Max(1, retryAfterSeconds).ToString();
+
         var problemDetails = new Microsoft.AspNetCore.Mvc.ProblemDetails
         {
             Status   = StatusCodes.Status429TooManyRequests,
@@ -157,6 +241,64 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit  = 0,
                 Window      = TimeSpan.FromMinutes(1)
             }));
+
+    // Credential-guessing defenses: dedicated, stricter fixed windows for login and OTP
+    // issuance, layered ON TOP of the global limiter (both apply). Config-driven with
+    // conservative defaults.
+    var loginPermitLimit = builder.Configuration.GetValue<int>("RateLimiting:Login:PermitLimit", 5);
+    var loginWindowSecs  = builder.Configuration.GetValue<int>("RateLimiting:Login:WindowSeconds", 60);
+    var loginQueueLimit  = builder.Configuration.GetValue<int>("RateLimiting:Login:QueueLimit", 0);
+    options.AddPolicy("AuthLoginLimit", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? (!string.IsNullOrWhiteSpace(context.Connection.Id) ? context.Connection.Id : "unknown-client"),
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = loginPermitLimit,
+                QueueLimit  = loginQueueLimit,
+                Window      = TimeSpan.FromSeconds(loginWindowSecs)
+            }));
+
+    var otpPermitLimit = builder.Configuration.GetValue<int>("RateLimiting:OtpRequest:PermitLimit", 3);
+    var otpWindowSecs  = builder.Configuration.GetValue<int>("RateLimiting:OtpRequest:WindowSeconds", 60);
+    var otpQueueLimit  = builder.Configuration.GetValue<int>("RateLimiting:OtpRequest:QueueLimit", 0);
+    options.AddPolicy("AuthOtpRequestLimit", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? (!string.IsNullOrWhiteSpace(context.Connection.Id) ? context.Connection.Id : "unknown-client"),
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = otpPermitLimit,
+                QueueLimit  = otpQueueLimit,
+                Window      = TimeSpan.FromSeconds(otpWindowSecs)
+            }));
+});
+
+// Proxy trust: X-Forwarded-For is honored ONLY from proxies inside configured
+// KnownNetworks (CIDR list). Rate-limit partition keys use RemoteIpAddress, so an
+// untrusted client cannot rotate its partition by forging the header.
+builder.Services.Configure<ForwardedHeadersOptions>(forwardedOptions =>
+{
+    forwardedOptions.ForwardedHeaders =
+        Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+        Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+
+    // The defaults trust loopback proxies; our config list REPLACES them so trust is
+    // exactly what deployment declares (fail-closed: empty config = trust no proxy).
+    forwardedOptions.KnownProxies.Clear();
+    forwardedOptions.KnownNetworks.Clear();
+
+    var knownNetworks = builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>() ?? Array.Empty<string>();
+    foreach (var cidr in knownNetworks)
+    {
+        var parts = cidr.Split('/');
+        if (parts.Length == 2 &&
+            System.Net.IPAddress.TryParse(parts[0], out var prefix) &&
+            int.TryParse(parts[1], out var prefixLength))
+        {
+            forwardedOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefix, prefixLength));
+        }
+    }
 });
 
 var app = builder.Build();
@@ -167,6 +309,9 @@ using (var scope = app.Services.CreateScope())
     var seeder = scope.ServiceProvider.GetRequiredService<PropertyOS.Application.Common.Interfaces.IPermissionCatalogSeeder>();
     await seeder.SeedAndReconcileAsync();
 }
+
+// Must run before anything that reads RemoteIpAddress (rate limiter partitions).
+app.UseForwardedHeaders();
 
 app.UseExceptionHandler();
 
@@ -185,8 +330,44 @@ app.UseRateLimiter();
 
 app.MapControllers();
 
-// Map SignalR Hubs & Hangfire Dashboard in later phases
-// app.MapHub<NotificationsHub>("/hubs/notifications");
+// Schedule recurring background jobs (only when Hangfire storage is configured)
+if (!string.IsNullOrEmpty(connectionString))
+{
+    var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Leasing.Jobs.ExpireLeaseContractsJob>(
+        "leasing-expire-lease-contracts",
+        job => job.ExecuteSweepAsync(null, PropertyOS.Infrastructure.Leasing.Jobs.ExpireLeaseContractsJob.DefaultBatchSize, CancellationToken.None),
+        "15 0 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Financials.Jobs.GenerateScheduledInstallmentsJob>(
+        "financials-generate-scheduled-installments",
+        job => job.ExecuteSweepAsync(null, PropertyOS.Infrastructure.Financials.Jobs.GenerateScheduledInstallmentsJob.DefaultBatchSize, CancellationToken.None),
+        "0 1 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Financials.Jobs.MarkOverdueRentPaymentsJob>(
+        "financials-mark-overdue-rent-payments",
+        job => job.ExecuteSweepAsync(null, PropertyOS.Infrastructure.Financials.Jobs.MarkOverdueRentPaymentsJob.DefaultBatchSize, CancellationToken.None),
+        "45 0 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Financials.Jobs.ExpireStaleEfawateercomTransactionsJob>(
+        "financials-expire-stale-efawateercom-transactions",
+        job => job.ExecuteSweepAsync(null, PropertyOS.Infrastructure.Financials.Jobs.ExpireStaleEfawateercomTransactionsJob.DefaultBatchSize, CancellationToken.None),
+        "0 * * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Notifications.Jobs.DispatchNotificationsJob>(
+        "notifications-dispatch-notifications",
+        job => job.ExecuteSweepAsync(PropertyOS.Infrastructure.Notifications.Jobs.DispatchNotificationsJob.DefaultBatchSize, CancellationToken.None),
+        "*/5 * * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
+}
+
+app.MapHub<PropertyOS.Api.Hubs.NotificationsHub>("/hubs/notifications");
+
+// Hangfire Dashboard deliberately unmapped (would need its own authorization filter).
 // app.UseHangfireDashboard("/hangfire");
 
 app.Run();

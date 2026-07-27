@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 using PropertyOS.Domain.Documents.Entities;
@@ -32,7 +33,7 @@ public class CreateDocumentCategoryCommandHandler : IRequestHandler<CreateDocume
         var nameExists = await _categoryRepository.ExistsByNameAsync(companyId, request.Name, null, cancellationToken);
         if (nameExists)
         {
-            throw new InvalidOperationException($"A document category named '{request.Name}' already exists within this company.");
+            throw new ConflictException($"A document category named '{request.Name}' already exists within this company.");
         }
 
         var now = DateTimeOffset.UtcNow;

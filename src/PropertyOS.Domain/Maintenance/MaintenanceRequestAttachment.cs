@@ -52,7 +52,9 @@ public class MaintenanceRequestAttachment : ISoftDeletable
     {
         return new MaintenanceRequestAttachment
         {
-            Id = Guid.Empty,
+            // Client-generated UUIDv7 (uniform platform pattern): the ID must exist before
+            // TransactionBehavior's SaveChanges so child rows and command return values can use it.
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             MaintenanceRequestId = maintenanceRequestId,
             FileId = fileId,

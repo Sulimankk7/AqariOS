@@ -16,4 +16,4 @@ public record RenewLeaseContractCommand(
     LegalRegime LegalRegime = LegalRegime.Standard,
     TenantType TenantType = TenantType.Personal,
     string? Notes = null
-) : ICommand;
+) : ICommand<Guid>;

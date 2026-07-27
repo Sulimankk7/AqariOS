@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Marketplace;
 using PropertyOS.Domain.Leasing;
@@ -17,12 +18,21 @@ public class ActivateLeaseContractCommandHandler : IRequestHandler<ActivateLease
 {
     private readonly ILeaseContractRepository _leaseContractRepository;
     private readonly IMarketplaceListingRepository _marketplaceListingRepository;
+    private readonly ITenantContext? _tenantContext;
     private readonly ICurrentUserContext _currentUserContext;
 
     public ActivateLeaseContractCommandHandler(
         ILeaseContractRepository leaseContractRepository,
         ICurrentUserContext currentUserContext)
-        : this(leaseContractRepository, null!, currentUserContext)
+        : this(leaseContractRepository, null!, null, currentUserContext)
+    {
+    }
+
+    public ActivateLeaseContractCommandHandler(
+        ILeaseContractRepository leaseContractRepository,
+        IMarketplaceListingRepository marketplaceListingRepository,
+        ICurrentUserContext currentUserContext)
+        : this(leaseContractRepository, marketplaceListingRepository, null, currentUserContext)
     {
     }
 
@@ -38,10 +48,12 @@ public class ActivateLeaseContractCommandHandler : IRequestHandler<ActivateLease
     public ActivateLeaseContractCommandHandler(
         ILeaseContractRepository leaseContractRepository,
         IMarketplaceListingRepository marketplaceListingRepository,
+        ITenantContext? tenantContext,
         ICurrentUserContext currentUserContext)
     {
         _leaseContractRepository = leaseContractRepository;
         _marketplaceListingRepository = marketplaceListingRepository ?? new NullMarketplaceListingRepository();
+        _tenantContext = tenantContext;
         _currentUserContext = currentUserContext;
     }
 
@@ -49,37 +61,43 @@ public class ActivateLeaseContractCommandHandler : IRequestHandler<ActivateLease
     {
         var contract = await _leaseContractRepository.GetByIdAsync(request.ContractId, cancellationToken);
         if (contract == null)
-            throw new KeyNotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
+            throw new NotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
+
+        if (_tenantContext != null && _tenantContext.CompanyId.HasValue && contract.CompanyId != _tenantContext.CompanyId.Value)
+            throw new NotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
 
         // 1. Prevent invalid status transitions
         if (contract.Status != ContractStatus.Draft && contract.Status != ContractStatus.PendingSignature)
-            throw new InvalidOperationException($"Cannot activate a contract in {contract.Status} status. Only Draft or PendingSignature are allowed.");
+            throw new BusinessRuleException($"Cannot activate a contract in {contract.Status} status. Only Draft or PendingSignature are allowed.", "LEASE_ACTIVATE_INVALID_STATUS");
 
         // 2. Cannot activate a contract before its start date
         if (contract.StartDate > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new InvalidOperationException("Cannot activate a contract before its start date.");
+            throw new BusinessRuleException("Cannot activate a contract before its start date.", "LEASE_ACTIVATE_BEFORE_START_DATE");
 
         // 3. Workflow gate: signed contract document must exist
         var hasSignedDoc = await _leaseContractRepository.HasSignedContractDocumentAsync(contract.Id, cancellationToken);
         if (!hasSignedDoc)
-            throw new InvalidOperationException("A signed contract document is required before activation.");
+            throw new BusinessRuleException("A signed contract document is required before activation.", "LEASE_ACTIVATE_SIGNED_DOCUMENT_REQUIRED");
 
         // 4. Overlap validation (excluding the current contract itself)
         var startDate = contract.StartDate.ToDateTime(TimeOnly.MinValue);
         var endDate = contract.EndDate.ToDateTime(TimeOnly.MinValue);
         if (await _leaseContractRepository.HasOverlappingNonTerminalContractAsync(contract.ApartmentId, startDate, endDate, contract.Id, cancellationToken))
-            throw new InvalidOperationException("An overlapping draft, pending, or active contract already exists for this apartment.");
+            throw new ConflictException("An overlapping draft, pending, or active contract already exists for this apartment.");
 
         // 5. Active contract check & predecessor superseding in the same transaction
         if (contract.PriorContractId.HasValue)
         {
             var priorContract = await _leaseContractRepository.GetByIdAsync(contract.PriorContractId.Value, cancellationToken);
             if (priorContract == null)
-                throw new KeyNotFoundException($"Predecessor LeaseContract with ID {contract.PriorContractId.Value} was not found.");
+                throw new NotFoundException($"Predecessor LeaseContract with ID {contract.PriorContractId.Value} was not found.");
+
+            if (_tenantContext != null && _tenantContext.CompanyId.HasValue && priorContract.CompanyId != _tenantContext.CompanyId.Value)
+                throw new NotFoundException($"Predecessor LeaseContract with ID {contract.PriorContractId.Value} was not found.");
 
             // Check if there is any other active contract on the apartment, excluding the predecessor contract
             if (await _leaseContractRepository.HasActiveContractForApartmentAsync(contract.ApartmentId, priorContract.Id, cancellationToken))
-                throw new InvalidOperationException("An active contract already exists for this apartment.");
+                throw new ConflictException("An active contract already exists for this apartment.");
 
             // Capture previousStatus BEFORE mutation
             var priorPreviousStatus = priorContract.Status;
@@ -103,7 +121,7 @@ public class ActivateLeaseContractCommandHandler : IRequestHandler<ActivateLease
         {
             // Verify no active contract exists for the apartment
             if (await _leaseContractRepository.HasActiveContractForApartmentAsync(contract.ApartmentId, cancellationToken))
-                throw new InvalidOperationException("An active contract already exists for this apartment.");
+                throw new ConflictException("An active contract already exists for this apartment.");
         }
 
         // 6. Mutate and activate the current contract

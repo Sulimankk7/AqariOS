@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Documents.DTOs;
 using PropertyOS.Application.Files;
@@ -40,14 +41,14 @@ public class ReplaceBuildingDocumentCommandHandler : IRequestHandler<ReplaceBuil
         var existingDoc = await _documentRepository.GetByIdAsync(request.ExistingDocumentId, companyId, cancellationToken);
         if (existingDoc == null)
         {
-            throw new KeyNotFoundException($"Existing building document with ID '{request.ExistingDocumentId}' was not found.");
+            throw new NotFoundException($"Existing building document with ID '{request.ExistingDocumentId}' was not found.");
         }
 
         // Verify new file exists in file_storage
         var newFileExists = await _fileRepository.ExistsAsync(request.NewFileId, companyId, cancellationToken);
         if (!newFileExists)
         {
-            throw new InvalidOperationException($"New file storage record with ID '{request.NewFileId}' was not found.");
+            throw new NotFoundException($"New file storage record with ID '{request.NewFileId}' was not found.");
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -77,7 +78,14 @@ public class ReplaceBuildingDocumentCommandHandler : IRequestHandler<ReplaceBuil
         );
 
         // 2. Soft-delete old document record (retaining historical trail)
-        existingDoc.SoftDelete(now, userId);
+        try
+        {
+            existingDoc.SoftDelete(now, userId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new BusinessRuleException(ex.Message, "DOCUMENT_INVALID_STATE");
+        }
 
         // 3. Persist new document
         await _documentRepository.AddAsync(newDocument, cancellationToken);

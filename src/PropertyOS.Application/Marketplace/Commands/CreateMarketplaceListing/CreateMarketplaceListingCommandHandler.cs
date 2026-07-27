@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Common.ValueObjects;
 using PropertyOS.Domain.Marketplace;
@@ -37,7 +38,7 @@ public class CreateMarketplaceListingCommandHandler : IRequestHandler<CreateMark
         // 1. Guard against unknown/foreign apartments (tenant isolation belt-and-suspenders)
         var apartment = await _apartmentRepository.GetByIdAsync(request.ApartmentId, companyId, cancellationToken);
         if (apartment == null)
-            throw new KeyNotFoundException($"Apartment '{request.ApartmentId}' was not found.");
+            throw new NotFoundException($"Apartment '{request.ApartmentId}' was not found.");
 
         // 2. Validate and normalize phone numbers using E.164 Value Object
         var contactPhone = new PhoneNumber(request.ContactPhone);

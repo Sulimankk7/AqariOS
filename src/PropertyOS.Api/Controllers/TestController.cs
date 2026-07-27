@@ -20,13 +20,15 @@ namespace PropertyOS.Api.Controllers;
 public class TestController : ControllerBase
 {
     private readonly PropertyOsDbContext _dbContext;
+    private readonly IHostEnvironment _environment;
 
     /// <summary>
     /// Initializes a new instance of TestController.
     /// </summary>
-    public TestController(PropertyOsDbContext dbContext)
+    public TestController(PropertyOsDbContext dbContext, IHostEnvironment environment)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _environment = environment;
     }
 
     /// <summary>
@@ -35,6 +37,10 @@ public class TestController : ControllerBase
     [HttpPost("mutate")]
     public async Task<IActionResult> Mutate()
     {
+        // Test-harness-only endpoint (anonymous DB write): invisible outside Development.
+        if (!_environment.IsDevelopment())
+            return NotFound();
+
         var user = new User
         {
             Email = $"audit_test_{Guid.NewGuid():N}@test.com",

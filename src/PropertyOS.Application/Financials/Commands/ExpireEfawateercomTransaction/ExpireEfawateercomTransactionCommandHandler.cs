@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Financials;
 using PropertyOS.Domain.Financials.Enums;
@@ -27,7 +28,7 @@ public class ExpireEfawateercomTransactionCommandHandler : IRequestHandler<Expir
         // FOR UPDATE serializes concurrent expiry/callback/cancel operations on the same row.
         var transaction = await _transactionRepository.GetByIdForUpdateAsync(request.TransactionId, cancellationToken);
         if (transaction == null)
-            throw new KeyNotFoundException($"eFAWATEERcom transaction with ID '{request.TransactionId}' was not found.");
+            throw new NotFoundException($"eFAWATEERcom transaction with ID '{request.TransactionId}' was not found.");
 
         // Idempotency: if the transaction is already in any terminal state, this is a no-op.
         // This can happen when a callback arrives just before the expiry sweep runs.
@@ -40,15 +41,23 @@ public class ExpireEfawateercomTransactionCommandHandler : IRequestHandler<Expir
         }
 
         // Transition to Timeout. The domain enforces that only non-terminal states can transition.
-        transaction.UpdateStatus(
-            status: EfawateercomStatus.Timeout,
-            responseTime: DateTimeOffset.UtcNow,
-            responseCode: request.ResponseCode ?? "TIMEOUT",
-            responseMessage: request.ResponseMessage ?? "Transaction expired without a gateway response.",
-            rawResponse: null,
-            now: DateTimeOffset.UtcNow,
-            updatedBy: _currentUserContext.UserId
-        );
+        try
+        {
+            transaction.UpdateStatus(
+                status: EfawateercomStatus.Timeout,
+                responseTime: DateTimeOffset.UtcNow,
+                responseCode: request.ResponseCode ?? "TIMEOUT",
+                responseMessage: request.ResponseMessage ?? "Transaction expired without a gateway response.",
+                rawResponse: null,
+                now: DateTimeOffset.UtcNow,
+                updatedBy: _currentUserContext.UserId
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Domain state-machine violation (terminal status cannot transition)
+            throw new BusinessRuleException(ex.Message, "EFAWATEERCOM_INVALID_TRANSITION");
+        }
 
         // TransactionBehavior owns SaveChangesAsync and COMMIT.
         return Unit.Value;
