@@ -39,6 +39,7 @@ internal sealed class ContractDocumentConfiguration : IEntityTypeConfiguration<C
             .HasColumnName("document_type")
             .HasColumnType("contract_document_type_enum")
             .HasDefaultValueSql("'other'")
+            .ValueGeneratedNever()
             .IsRequired();
 
         builder.Property(d => d.Description)

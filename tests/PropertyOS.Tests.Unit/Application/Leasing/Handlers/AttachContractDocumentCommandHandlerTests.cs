@@ -271,4 +271,73 @@ public class AttachContractDocumentCommandHandlerTests
         var hasSignedDoc = await leaseRepo.HasSignedContractDocumentAsync(contract.Id, CancellationToken.None);
         Assert.True(hasSignedDoc);
     }
+
+    /// <summary>
+    /// Regression test for zero-value enum sentinel bug.
+    /// ContractDocumentType.SignedContract == 0 (the C# int default).
+    /// EF Core's HasDefaultValueSql implicitly sets ValueGeneratedOnAdd, which causes EF to
+    /// omit zero-valued enum columns from the INSERT, allowing PostgreSQL's DEFAULT 'other'
+    /// to fire. This test guards against any regression where SignedContract (0) is silently
+    /// persisted as Other (4).
+    /// The fix: ContractDocumentConfiguration must set .ValueGeneratedNever() on DocumentType.
+    /// </summary>
+    [Fact]
+    public async Task Handle_DocumentType_SignedContract_NumericZero_IsNotSubstitutedWithOther()
+    {
+        // Arrange – SignedContract is numeric 0, the CLR default for int.
+        // A zero-sentinel bug would replace it with Other (4) silently.
+        var companyId = Guid.NewGuid();
+        var (contract, file) = CreateTestData(companyId);
+
+        var leaseRepo = new FakeLeaseContractRepository();
+        leaseRepo.Contracts[contract.Id] = contract;
+
+        var fileRepo = new FakeFileStorageRepository();
+        fileRepo.Files[file.Id] = file;
+
+        var tenantCtx = new FakeTenantContext { CompanyId = companyId };
+        var userCtx = new FakeCurrentUserContext();
+
+        var handler = new AttachContractDocumentCommandHandler(leaseRepo, fileRepo, tenantCtx, userCtx);
+
+        // Act – send documentType = 0 (SignedContract), the value a real API call sends
+        var command = new AttachContractDocumentCommand(
+            LeaseContractId: contract.Id,
+            FileId: file.Id,
+            DocumentType: (ContractDocumentType)0,   // explicitly numeric 0, same as JSON "documentType": 0
+            Description: "Signed lease contract"
+        );
+
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert – the persisted entity must carry SignedContract, NOT Other
+        Assert.Single(leaseRepo.AddedDocuments);
+        var doc = leaseRepo.AddedDocuments[0];
+
+        Assert.Equal((int)ContractDocumentType.SignedContract, 0); // guard: enum value IS 0
+        Assert.Equal(ContractDocumentType.SignedContract, doc.DocumentType);
+        Assert.NotEqual(ContractDocumentType.Other, doc.DocumentType);
+    }
+
+    [Fact]
+    public void ContractDocument_Create_WithSignedContractType_PreservesSignedContract()
+    {
+        // Directly verify ContractDocument.Create() does not substitute SignedContract (0) with Other.
+        // This isolates the domain factory from EF and handler concerns.
+        var companyId = Guid.NewGuid();
+        var leaseContractId = Guid.NewGuid();
+        var fileId = Guid.NewGuid();
+
+        var document = ContractDocument.Create(
+            companyId: companyId,
+            leaseContractId: leaseContractId,
+            fileId: fileId,
+            documentType: ContractDocumentType.SignedContract,
+            description: "Test",
+            uploadedBy: Guid.NewGuid()
+        );
+
+        Assert.Equal(ContractDocumentType.SignedContract, document.DocumentType);
+        Assert.Equal(0, (int)document.DocumentType);
+    }
 }

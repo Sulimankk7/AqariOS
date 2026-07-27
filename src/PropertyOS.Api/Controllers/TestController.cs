@@ -37,8 +37,8 @@ public class TestController : ControllerBase
     [HttpPost("mutate")]
     public async Task<IActionResult> Mutate()
     {
-        // Test-harness-only endpoint (anonymous DB write): invisible outside Development.
-        if (!_environment.IsDevelopment())
+        // Test-harness-only endpoint (anonymous DB write): invisible outside Development and Testing.
+        if (!_environment.IsDevelopment() && !_environment.IsEnvironment("Testing"))
             return NotFound();
 
         var user = new User

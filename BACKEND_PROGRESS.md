@@ -18,7 +18,7 @@ Phase 04/05 (Financials, Modules 6–7). Correctness core COMPLETE and verified 
 - Module 2 — Plans / Subscriptions: **COMPLETE**
 - Module 3 — Security / Identity / RBAC / Audit: **COMPLETE** (hardening items in Phase 12: JWT fail-fast, refresh-token review)
 - Module 4 — Properties: **COMPLETE** (Delete-policy regression fixed & verified)
-- Module 5 — Leasing: **NEEDS REVIEW → near-COMPLETE** (all code + unit tests done this session; awaiting integration-suite result; tenant-account/invitation flow remains an intentional deferral)
+- Module 5 — Leasing: **COMPLETE** (Contract Document Attachment completed, SignedContract EF persistence bug fixed, 13/13 focused unit tests passed, manual signed-document DB persistence verified, manual lease activation with SignedContract verified; tenant account/invitation flow remains intentional deferred scope)
 - Module 6 — Rent Payments & Cheques: **COMPLETE** (full API + jobs + integrity core + §6.1 grace matrix; verified)
 - Module 7 — Financial Operations: **COMPLETE** (API + webhook fail-closed + expiry job; real gateway = external blocker)
 - Module 8 — Maintenance: **COMPLETE** (persistence restored, exceptions, full API, verified)
@@ -92,7 +92,7 @@ See `git status`: prior Module 5 increment (~50 files) plus this session: `CLAUD
 None.
 
 ## NEXT ACTION
-USER: review + commit the working tree; apply the five pending migrations to the local AqariOS DB (`dotnet ef database update --project src/PropertyOS.Infrastructure --startup-project src/PropertyOS.Api`); rotate the secrets currently sitting in `appsettings.Local.json`; provision `FileStorage:UrlSigningSecret` + `Efawateercom:WebhookSecret`. NEXT ENGINEERING WORK (all externally gated): Reports design pass; real eFAWATEERcom/Email/SMS gateway integrations (incl. webhook tenant-context wiring); tenant invitation flow when un-deferred.
+Begin Module 6 — Rent Payments & Cheques final repository audit and API completion planning.
 Superseded plan:
 Phases 11–14 final passes: (1) API-completeness sweep of the remaining pre-existing surfaces (Companies/Subscriptions/Identity/User — verify every implemented use case is exposed and consistent, pagination/DTO checks); (2) consolidate `12-security-hardening.md` from the work already done + remaining items (production runtime role must NOT be superuser or RLS is inert — deployment doc; queries-without-transaction reality; view_all RLS bypass; Hangfire dashboard auth; magic-byte gaps; secret rotation guidance); (3) performance pass (13) — targeted: verify no unbounded queries remain, review hot paths; (4) `14-production-readiness.md` with per-category evidence; refresh CLAUDE.md's module-status line (6–8/10/11 now have APIs). Working tree is READY FOR USER COMMIT at every green checkpoint.
 Superseded plan:
