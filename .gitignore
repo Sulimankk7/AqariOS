@@ -78,6 +78,8 @@ secrets.json
 # Rider
 .idea/
 
+src/PropertyOS.Api/storage
+
 # Test artifacts
 TestResults/
 *.trx
