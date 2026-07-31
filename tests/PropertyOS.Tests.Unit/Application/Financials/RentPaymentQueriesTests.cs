@@ -33,6 +33,7 @@ public class RentPaymentQueriesTests
         public List<RentPayment> Payments { get; } = new();
         public List<ChequeDetails> Cheques { get; } = new();
         public List<PaymentAllocation> Allocations { get; } = new();
+        public List<RentPaymentReceipt> Receipts { get; } = new();
 
         public Task<RentPayment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => Task.FromResult(Payments.FirstOrDefault(p => p.Id == id));
@@ -51,7 +52,10 @@ public class RentPaymentQueriesTests
             => Task.FromResult(Payments.Where(p => ids.Contains(p.Id)).OrderBy(p => p.Id).ToList());
 
         public Task AddReceiptAsync(RentPaymentReceipt receipt, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+        {
+            Receipts.Add(receipt);
+            return Task.CompletedTask;
+        }
 
         public Task AddRangeAsync(IEnumerable<RentPayment> rentPayments, CancellationToken cancellationToken = default)
         {
@@ -59,7 +63,7 @@ public class RentPaymentQueriesTests
             return Task.CompletedTask;
         }
 
-            public Task<List<BillingPeriod>> GetScheduledInstallmentPeriodsAsync(Guid leaseContractId, CancellationToken cancellationToken = default)
+        public Task<List<BillingPeriod>> GetScheduledInstallmentPeriodsAsync(Guid leaseContractId, CancellationToken cancellationToken = default)
             => Task.FromResult(new List<BillingPeriod>());
 
         public Task<bool> HasScheduledInstallmentAsync(Guid leaseContractId, DateOnly start, DateOnly end, CancellationToken cancellationToken = default)
@@ -148,6 +152,7 @@ public class RentPaymentQueriesTests
         {
             var list = Payments
                 .Where(p => p.TenantId == tenantId && p.CompanyId == companyId)
+                .OrderByDescending(p => p.DueDate)
                 .Select(p => new RentPaymentDto { Id = p.Id, TenantId = p.TenantId, AmountDue = p.AmountDue })
                 .ToList();
             return Task.FromResult(list);
@@ -178,7 +183,10 @@ public class RentPaymentQueriesTests
             };
 
             var list = Payments
-                .Where(p => p.CompanyId == companyId && outstandingStatuses.Contains(p.DueDateStatus))
+                .Where(p => p.CompanyId == companyId
+                            && p.PaymentPurpose == PaymentPurpose.ScheduledInstallment
+                            && p.DeletedAt == null
+                            && outstandingStatuses.Contains(p.DueDateStatus))
                 .OrderBy(p => p.DueDate)
                 .Take(effectivePageSize)
                 .Select(p => new RentPaymentDto { Id = p.Id, DueDateStatus = p.DueDateStatus, DueDate = p.DueDate })
@@ -186,15 +194,23 @@ public class RentPaymentQueriesTests
             return Task.FromResult(list);
         }
 
-        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
+        public Task<List<ChequeDetailDto>> GetChequesAsync(ChequeStatus? status, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
         {
             var effectivePageSize = Math.Clamp(pageSize, 1, 200);
-            var list = Cheques
-                .Where(c => c.CompanyId == companyId && c.Status == status)
+            var query = Cheques.Where(c => c.CompanyId == companyId && c.DeletedAt == null);
+
+            if (status.HasValue)
+            {
+                query = query.Where(c => c.Status == status.Value);
+            }
+
+            var list = query
                 .OrderBy(c => c.DueDate)
+                .ThenBy(c => c.Id)
                 .Take(effectivePageSize)
                 .Select(c => new ChequeDetailDto { Id = c.Id, Status = c.Status })
                 .ToList();
+
             return Task.FromResult(list);
         }
 
@@ -217,8 +233,52 @@ public class RentPaymentQueriesTests
             return Task.FromResult(list);
         }
 
-        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default)
+        {
+            var receipt = Receipts.FirstOrDefault(r => r.RentPaymentId == rentPaymentId && r.CompanyId == companyId && r.DeletedAt == null);
+            if (receipt == null) return Task.FromResult<RentPaymentReceiptDto?>(null);
+
+            var dto = new RentPaymentReceiptDto
+            {
+                Id = receipt.Id,
+                RentPaymentId = receipt.RentPaymentId,
+                ReceiptNumber = receipt.ReceiptNumber,
+                IssueDate = receipt.IssueDate,
+                Amount = receipt.Amount,
+                Currency = receipt.Currency
+            };
+            return Task.FromResult<RentPaymentReceiptDto?>(dto);
+        }
+
+        public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default)
+        {
+            var query = Receipts.Where(r => r.CompanyId == companyId && r.DeletedAt == null);
+
+            if (filter.DateFrom.HasValue)
+                query = query.Where(r => r.IssueDate >= filter.DateFrom.Value);
+
+            if (filter.DateTo.HasValue)
+                query = query.Where(r => r.IssueDate <= filter.DateTo.Value);
+
+            var effectiveSize = Math.Clamp(filter.PageSize, 1, 200);
+
+            var list = query
+                .OrderByDescending(r => r.IssueDate)
+                .ThenBy(r => r.Id)
+                .Take(effectiveSize)
+                .Select(r => new RentPaymentReceiptDto
+                {
+                    Id = r.Id,
+                    RentPaymentId = r.RentPaymentId,
+                    ReceiptNumber = r.ReceiptNumber,
+                    IssueDate = r.IssueDate,
+                    Amount = r.Amount,
+                    Currency = r.Currency
+                })
+                .ToList();
+
+            return Task.FromResult(list);
+        }
     }
 
     private readonly Guid _companyId = Guid.NewGuid();
@@ -491,43 +551,154 @@ public class RentPaymentQueriesTests
     }
 
     [Fact]
-    public async Task GetChequesByStatusQuery_FiltersCorrectly()
+    public async Task GetOutstandingRentPaymentsQuery_ExcludesUnallocatedReceipts_Adjustments_Paid_And_SoftDeleted()
     {
         var repo = new FakeRentPaymentRepository();
-        var handler = new GetChequesByStatusQueryHandler(repo, _tenantContext);
+        var handler = new GetOutstandingRentPaymentsQueryHandler(repo, _tenantContext);
 
-        var cheque = CreateCheque(ChequeStatus.Received, new DateOnly(2026, 1, 10));
-        await repo.AddChequeAsync(cheque);
+        var leaseId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
 
-        var result = await handler.Handle(new GetChequesByStatusQuery(ChequeStatus.Received), CancellationToken.None);
+        // 1. ScheduledInstallment - Pending (Outstanding) -> SHOULD be returned
+        var scheduledPending = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Pending, new DateOnly(2026, 1, 1));
 
-        Assert.Single(result);
-        Assert.Equal(ChequeStatus.Received, result[0].Status);
+        // 1b. ScheduledInstallment - Late (Outstanding) -> SHOULD be returned
+        var scheduledLate = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Late, new DateOnly(2026, 1, 2));
+
+        // 2. UnallocatedReceipt - Pending -> Should NOT be returned
+        var unallocatedReceipt = RentPayment.Create(
+            companyId: _companyId,
+            leaseContractId: leaseId,
+            tenantId: tenantId,
+            buildingId: Guid.NewGuid(),
+            apartmentId: Guid.NewGuid(),
+            purpose: PaymentPurpose.UnallocatedReceipt,
+            amountDue: 500m,
+            currency: "JOD",
+            billingPeriodStart: null,
+            billingPeriodEnd: null,
+            dueDate: null,
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: Guid.NewGuid()
+        );
+
+        // 3. Adjustment - Pending -> Should NOT be returned
+        var adjustment = RentPayment.Create(
+            companyId: _companyId,
+            leaseContractId: leaseId,
+            tenantId: tenantId,
+            buildingId: Guid.NewGuid(),
+            apartmentId: Guid.NewGuid(),
+            purpose: PaymentPurpose.Adjustment,
+            amountDue: 100m,
+            currency: "JOD",
+            billingPeriodStart: null,
+            billingPeriodEnd: null,
+            dueDate: null,
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: Guid.NewGuid()
+        );
+
+        // 4. ScheduledInstallment - Fully Paid -> Should NOT be returned
+        var scheduledPaid = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Paid, new DateOnly(2026, 1, 3));
+
+        // 5. ScheduledInstallment - Soft Deleted -> Should NOT be returned
+        var scheduledSoftDeleted = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Pending, new DateOnly(2026, 1, 4));
+        scheduledSoftDeleted.SoftDelete(DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        // 6. Foreign company payment -> Should NOT be returned
+        var foreignCompanyPayment = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Pending, new DateOnly(2026, 1, 5), companyId: Guid.NewGuid());
+
+        await repo.AddAsync(scheduledPending);
+        await repo.AddAsync(scheduledLate);
+        await repo.AddAsync(unallocatedReceipt);
+        await repo.AddAsync(adjustment);
+        await repo.AddAsync(scheduledPaid);
+        await repo.AddAsync(scheduledSoftDeleted);
+        await repo.AddAsync(foreignCompanyPayment);
+
+        var result = await handler.Handle(new GetOutstandingRentPaymentsQuery(), CancellationToken.None);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, r => r.Id == scheduledPending.Id);
+        Assert.Contains(result, r => r.Id == scheduledLate.Id);
+        Assert.DoesNotContain(result, r => r.Id == unallocatedReceipt.Id);
+        Assert.DoesNotContain(result, r => r.Id == adjustment.Id);
+        Assert.DoesNotContain(result, r => r.Id == scheduledPaid.Id);
+        Assert.DoesNotContain(result, r => r.Id == scheduledSoftDeleted.Id);
+        Assert.DoesNotContain(result, r => r.Id == foreignCompanyPayment.Id);
     }
 
     [Fact]
-    public async Task GetChequesByStatusQuery_ExcludesOtherTenantsCheques()
+    public async Task GetChequesQuery_OmittedStatus_ReturnsAllStatusesForCompany()
     {
         var repo = new FakeRentPaymentRepository();
-        var handler = new GetChequesByStatusQueryHandler(repo, _tenantContext);
+        var handler = new GetChequesQueryHandler(repo, _tenantContext);
+
+        var c1 = CreateCheque(ChequeStatus.Received, new DateOnly(2026, 1, 10));
+        var c2 = CreateCheque(ChequeStatus.Deposited, new DateOnly(2026, 1, 11));
+        var c3 = CreateCheque(ChequeStatus.Cleared, new DateOnly(2026, 1, 12));
+
+        await repo.AddChequeAsync(c1);
+        await repo.AddChequeAsync(c2);
+        await repo.AddChequeAsync(c3);
+
+        // Status is null -> should return all 3 cheques
+        var result = await handler.Handle(new GetChequesQuery(Status: null), CancellationToken.None);
+
+        Assert.Equal(3, result.Count);
+        Assert.Contains(result, x => x.Id == c1.Id);
+        Assert.Contains(result, x => x.Id == c2.Id);
+        Assert.Contains(result, x => x.Id == c3.Id);
+    }
+
+    [Fact]
+    public async Task GetChequesQuery_SpecificStatus_ReturnsOnlyMatchingStatus()
+    {
+        var repo = new FakeRentPaymentRepository();
+        var handler = new GetChequesQueryHandler(repo, _tenantContext);
+
+        var c1 = CreateCheque(ChequeStatus.Received, new DateOnly(2026, 1, 10));
+        var c2 = CreateCheque(ChequeStatus.Deposited, new DateOnly(2026, 1, 11));
+
+        await repo.AddChequeAsync(c1);
+        await repo.AddChequeAsync(c2);
+
+        var resultReceived = await handler.Handle(new GetChequesQuery(Status: ChequeStatus.Received), CancellationToken.None);
+        Assert.Single(resultReceived);
+        Assert.Equal(c1.Id, resultReceived[0].Id);
+
+        var resultDeposited = await handler.Handle(new GetChequesQuery(Status: ChequeStatus.Deposited), CancellationToken.None);
+        Assert.Single(resultDeposited);
+        Assert.Equal(c2.Id, resultDeposited[0].Id);
+    }
+
+    [Fact]
+    public async Task GetChequesQuery_ExcludesOtherTenantsCheques()
+    {
+        var repo = new FakeRentPaymentRepository();
+        var handler = new GetChequesQueryHandler(repo, _tenantContext);
 
         var mine = CreateCheque(ChequeStatus.Received, new DateOnly(2026, 1, 10));
         var foreign = CreateCheque(ChequeStatus.Received, new DateOnly(2026, 1, 10), companyId: Guid.NewGuid());
         await repo.AddChequeAsync(mine);
         await repo.AddChequeAsync(foreign);
 
-        var result = await handler.Handle(new GetChequesByStatusQuery(ChequeStatus.Received), CancellationToken.None);
+        var result = await handler.Handle(new GetChequesQuery(Status: ChequeStatus.Received), CancellationToken.None);
 
         Assert.Single(result);
         Assert.Equal(mine.Id, result[0].Id);
     }
 
     [Fact]
-    public async Task GetChequesByStatusQueryValidator_EnforcesValidEnum()
+    public async Task GetChequesQueryValidator_EnforcesValidEnum_WhenStatusProvided()
     {
-        var validator = new GetChequesByStatusQueryValidator();
-        var result = await validator.ValidateAsync(new GetChequesByStatusQuery((ChequeStatus)999));
-        Assert.False(result.IsValid);
+        var validator = new GetChequesQueryValidator();
+        var invalidResult = await validator.ValidateAsync(new GetChequesQuery((ChequeStatus)999));
+        Assert.False(invalidResult.IsValid);
+
+        var nullResult = await validator.ValidateAsync(new GetChequesQuery(Status: null));
+        Assert.True(nullResult.IsValid);
     }
 
     [Fact]
@@ -552,4 +723,115 @@ public class RentPaymentQueriesTests
         var result = await validator.ValidateAsync(new GetUpcomingChequesQuery(-5));
         Assert.False(result.IsValid);
     }
+
+    [Fact]
+    public async Task GetRentPaymentReceiptByRentPaymentIdQuery_ReturnsReceipt_WhenExists()
+    {
+        var repo = new FakeRentPaymentRepository();
+        var handler = new PropertyOS.Application.Financials.Queries.GetRentPaymentReceiptByRentPaymentId.GetRentPaymentReceiptByRentPaymentIdQueryHandler(repo, _tenantContext);
+
+        var paymentId = Guid.NewGuid();
+        var payment = CreateRentPayment(paymentId, Guid.NewGuid(), Guid.NewGuid(), 1000m, DueDateStatus.Paid);
+        var paidProp = typeof(RentPayment).GetProperty("AmountPaid", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        paidProp?.SetValue(payment, 1000m);
+
+        var receipt = payment.IssueReceipt("REC-00001", DateTimeOffset.UtcNow, Guid.NewGuid());
+        await repo.AddAsync(payment);
+        await repo.AddReceiptAsync(receipt);
+
+        var result = await handler.Handle(new PropertyOS.Application.Financials.Queries.GetRentPaymentReceiptByRentPaymentId.GetRentPaymentReceiptByRentPaymentIdQuery(paymentId), CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(paymentId, result.RentPaymentId);
+        Assert.Equal("REC-00001", result.ReceiptNumber);
+        Assert.Equal(1000m, result.Amount);
+    }
+
+    [Fact]
+    public async Task GetRentPaymentReceiptByRentPaymentIdQuery_OtherCompany_ReturnsNull()
+    {
+        var repo = new FakeRentPaymentRepository();
+        var handler = new PropertyOS.Application.Financials.Queries.GetRentPaymentReceiptByRentPaymentId.GetRentPaymentReceiptByRentPaymentIdQueryHandler(repo, _tenantContext);
+
+        var paymentId = Guid.NewGuid();
+        var foreignCompanyId = Guid.NewGuid();
+        var payment = CreateRentPayment(paymentId, Guid.NewGuid(), Guid.NewGuid(), 1000m, DueDateStatus.Paid, companyId: foreignCompanyId);
+        var paidProp = typeof(RentPayment).GetProperty("AmountPaid", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        paidProp?.SetValue(payment, 1000m);
+
+        var receipt = payment.IssueReceipt("REC-00002", DateTimeOffset.UtcNow, Guid.NewGuid());
+        await repo.AddAsync(payment);
+        await repo.AddReceiptAsync(receipt);
+
+        var result = await handler.Handle(new PropertyOS.Application.Financials.Queries.GetRentPaymentReceiptByRentPaymentId.GetRentPaymentReceiptByRentPaymentIdQuery(paymentId), CancellationToken.None);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetRentPaymentReceiptByRentPaymentIdQueryValidator_EnforcesRentPaymentIdNotEmpty()
+    {
+        var validator = new PropertyOS.Application.Financials.Queries.GetRentPaymentReceiptByRentPaymentId.GetRentPaymentReceiptByRentPaymentIdQueryValidator();
+        var result = await validator.ValidateAsync(new PropertyOS.Application.Financials.Queries.GetRentPaymentReceiptByRentPaymentId.GetRentPaymentReceiptByRentPaymentIdQuery(Guid.Empty));
+        Assert.False(result.IsValid);
+    }
+
+    [Fact]
+    public async Task GetRentPaymentReceiptsQuery_ReturnsFilteredAndPaginatedReceipts()
+    {
+        var repo = new FakeRentPaymentRepository();
+        var handler = new PropertyOS.Application.Financials.Queries.GetRentPaymentReceipts.GetRentPaymentReceiptsQueryHandler(repo, _tenantContext);
+
+        var p1 = CreateRentPayment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 500m, DueDateStatus.Paid);
+        var paidProp = typeof(RentPayment).GetProperty("AmountPaid", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        paidProp?.SetValue(p1, 500m);
+        var r1 = p1.IssueReceipt("REC-0001", new DateTimeOffset(2026, 7, 1, 12, 0, 0, TimeSpan.Zero), Guid.NewGuid());
+
+        var p2 = CreateRentPayment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 750m, DueDateStatus.Paid);
+        paidProp?.SetValue(p2, 750m);
+        var r2 = p2.IssueReceipt("REC-0002", new DateTimeOffset(2026, 7, 5, 12, 0, 0, TimeSpan.Zero), Guid.NewGuid());
+
+        var p3 = CreateRentPayment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1000m, DueDateStatus.Paid, companyId: Guid.NewGuid());
+        paidProp?.SetValue(p3, 1000m);
+        var r3 = p3.IssueReceipt("REC-0003", new DateTimeOffset(2026, 7, 10, 12, 0, 0, TimeSpan.Zero), Guid.NewGuid());
+
+        await repo.AddReceiptAsync(r1);
+        await repo.AddReceiptAsync(r2);
+        await repo.AddReceiptAsync(r3);
+
+        var query = new PropertyOS.Application.Financials.Queries.GetRentPaymentReceipts.GetRentPaymentReceiptsQuery(
+            DateFrom: new DateOnly(2026, 7, 1),
+            DateTo: new DateOnly(2026, 7, 6),
+            PageSize: 10
+        );
+
+        var results = await handler.Handle(query, CancellationToken.None);
+
+        Assert.Equal(2, results.Count);
+        Assert.Contains(results, r => r.ReceiptNumber == "REC-0001");
+        Assert.Contains(results, r => r.ReceiptNumber == "REC-0002");
+    }
+
+    [Fact]
+    public async Task GetRentPaymentReceiptsQueryValidator_ValidatesPageSizeAndDateBounds()
+    {
+        var validator = new PropertyOS.Application.Financials.Queries.GetRentPaymentReceipts.GetRentPaymentReceiptsQueryValidator();
+
+        var invalidPageSize = await validator.ValidateAsync(new PropertyOS.Application.Financials.Queries.GetRentPaymentReceipts.GetRentPaymentReceiptsQuery(PageSize: 0));
+        Assert.False(invalidPageSize.IsValid);
+
+        var invalidDateRange = await validator.ValidateAsync(new PropertyOS.Application.Financials.Queries.GetRentPaymentReceipts.GetRentPaymentReceiptsQuery(
+            DateFrom: new DateOnly(2026, 7, 10),
+            DateTo: new DateOnly(2026, 7, 1)
+        ));
+        Assert.False(invalidDateRange.IsValid);
+
+        var validQuery = await validator.ValidateAsync(new PropertyOS.Application.Financials.Queries.GetRentPaymentReceipts.GetRentPaymentReceiptsQuery(
+            DateFrom: new DateOnly(2026, 7, 1),
+            DateTo: new DateOnly(2026, 7, 10),
+            PageSize: 50
+        ));
+        Assert.True(validQuery.IsValid);
+    }
 }
+

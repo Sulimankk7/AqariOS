@@ -41,7 +41,28 @@ public class CancelRentPaymentCommandHandler : IRequestHandler<CancelRentPayment
         if (payment == null || payment.CompanyId != companyId)
             throw new NotFoundException($"RentPayment with ID {request.RentPaymentId} was not found.");
 
-        // A payment referenced by any ACTIVE allocation — in either direction — cannot be
+        // 1. Validate terminal cancellation state
+        if (payment.DueDateStatus == DueDateStatus.Cancelled)
+            throw new BusinessRuleException(
+                "Payment is already cancelled.",
+                "PAYMENT_ALREADY_CANCELLED");
+
+        // 2. Validate active issued receipt
+        var hasActiveReceipt = !string.IsNullOrWhiteSpace(payment.ReceiptNumber)
+            || (payment.Receipt != null && payment.Receipt.DeletedAt == null);
+
+        if (!hasActiveReceipt)
+        {
+            var receiptDto = await _rentPaymentRepository.GetReceiptByRentPaymentIdAsync(payment.Id, companyId, cancellationToken);
+            hasActiveReceipt = receiptDto != null;
+        }
+
+        if (hasActiveReceipt)
+            throw new BusinessRuleException(
+                "Cannot cancel a payment with an active issued receipt.",
+                "PAYMENT_CANCEL_HAS_RECEIPT");
+
+        // 3. A payment referenced by any ACTIVE allocation — in either direction — cannot be
         // cancelled: the allocations must be reversed first to keep settlement math intact.
         var obligationAllocations = await _rentPaymentRepository.GetAllocationsByObligationIdAsync(
             payment.Id, cancellationToken);

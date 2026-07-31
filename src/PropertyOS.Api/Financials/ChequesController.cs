@@ -74,22 +74,22 @@ public class ChequesController : ControllerBase
     }
 
     /// <summary>
-    /// Gets cheques filtered by lifecycle status.
+    /// Gets cheques optionally filtered by lifecycle status. When status is omitted, returns cheques across all statuses.
     /// </summary>
-    /// <param name="status">Cheque status filter.</param>
+    /// <param name="status">Optional cheque status filter.</param>
     /// <param name="pageSize">Maximum number of results to return (default 50, max 200).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of cheques with the given status.</returns>
+    /// <returns>List of cheques for the authenticated company.</returns>
     [HttpGet("api/v{version:apiVersion}/cheques")]
     [ProducesResponseType(typeof(List<ChequeDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetByStatus(
-        [FromQuery] ChequeStatus status,
+    public async Task<IActionResult> GetCheques(
+        [FromQuery] ChequeStatus? status = null,
         [FromQuery] int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetChequesByStatusQuery(Status: status, PageSize: pageSize);
+        var query = new GetChequesQuery(Status: status, PageSize: pageSize);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }

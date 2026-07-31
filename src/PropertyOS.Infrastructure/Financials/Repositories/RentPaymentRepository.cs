@@ -39,11 +39,28 @@ public class RentPaymentRepository : IRentPaymentRepository
         // allocation writers locking overlapping payment sets.
         var idArray = ids.Distinct().OrderBy(id => id).ToArray();
 
-        return await _dbContext.RentPayments
+        var dbPayments = await _dbContext.RentPayments
             .FromSqlRaw(
                 "SELECT *, xmin FROM rent_payments WHERE id = ANY({0}) AND deleted_at IS NULL ORDER BY id FOR UPDATE",
                 idArray)
             .ToListAsync(cancellationToken);
+
+        // Include any newly added entities in the current transaction (in ChangeTracker / Local)
+        // that have not yet been flushed to PostgreSQL via SaveChangesAsync.
+        var missingIds = ids.Except(dbPayments.Select(p => p.Id)).ToHashSet();
+        if (missingIds.Count > 0)
+        {
+            var localPayments = _dbContext.RentPayments.Local
+                .Where(p => missingIds.Contains(p.Id) && p.DeletedAt == null)
+                .ToList();
+
+            if (localPayments.Count > 0)
+            {
+                dbPayments.AddRange(localPayments);
+            }
+        }
+
+        return dbPayments;
     }
 
     public async Task AddAsync(RentPayment rentPayment, CancellationToken cancellationToken = default)
@@ -205,6 +222,7 @@ public class RentPaymentRepository : IRentPaymentRepository
         return _dbContext.RentPayments
             .AsNoTracking()
             .Where(p => p.TenantId == tenantId && p.CompanyId == companyId)
+            .OrderByDescending(p => p.DueDate)
             .ProjectToType<RentPaymentDto>()
             .ToListAsync(cancellationToken);
     }
@@ -257,7 +275,10 @@ public class RentPaymentRepository : IRentPaymentRepository
 
         return _dbContext.RentPayments
             .AsNoTracking()
-            .Where(p => p.CompanyId == companyId && outstandingStatuses.Contains(p.DueDateStatus))
+            .Where(p => p.CompanyId == companyId
+                        && p.PaymentPurpose == PaymentPurpose.ScheduledInstallment
+                        && p.DeletedAt == null
+                        && outstandingStatuses.Contains(p.DueDateStatus))
             .OrderBy(p => p.DueDate)
             .ThenBy(p => p.Id)
             .Take(effectivePageSize)
@@ -265,13 +286,20 @@ public class RentPaymentRepository : IRentPaymentRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
+    public Task<List<ChequeDetailDto>> GetChequesAsync(ChequeStatus? status, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
     {
         var effectivePageSize = Math.Clamp(pageSize, 1, 200);
 
-        return _dbContext.ChequeDetails
+        var query = _dbContext.ChequeDetails
             .AsNoTracking()
-            .Where(c => c.CompanyId == companyId && c.Status == status)
+            .Where(c => c.CompanyId == companyId && c.DeletedAt == null);
+
+        if (status.HasValue)
+        {
+            query = query.Where(c => c.Status == status.Value);
+        }
+
+        return query
             .OrderBy(c => c.DueDate)
             .ThenBy(c => c.Id)
             .Take(effectivePageSize)

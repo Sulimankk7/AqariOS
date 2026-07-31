@@ -8,22 +8,22 @@ using PropertyOS.Application.Financials.Queries.GetRentPaymentById;
 
 namespace PropertyOS.Application.Financials.Queries.GetChequesByStatus;
 
-public class GetChequesByStatusQueryHandler : IRequestHandler<GetChequesByStatusQuery, List<ChequeDetailDto>>
+public class GetChequesQueryHandler : IRequestHandler<GetChequesQuery, List<ChequeDetailDto>>
 {
     private readonly IRentPaymentRepository _rentPaymentRepository;
     private readonly ITenantContext _tenantContext;
 
-    public GetChequesByStatusQueryHandler(IRentPaymentRepository rentPaymentRepository, ITenantContext tenantContext)
+    public GetChequesQueryHandler(IRentPaymentRepository rentPaymentRepository, ITenantContext tenantContext)
     {
         _rentPaymentRepository = rentPaymentRepository;
         _tenantContext = tenantContext;
     }
 
-    public Task<List<ChequeDetailDto>> Handle(GetChequesByStatusQuery request, CancellationToken cancellationToken)
+    public Task<List<ChequeDetailDto>> Handle(GetChequesQuery request, CancellationToken cancellationToken)
     {
         var companyId = _tenantContext.CompanyId
             ?? throw new InvalidOperationException("Tenant context is required.");
 
-        return _rentPaymentRepository.GetChequesByStatusAsync(request.Status, companyId, request.PageSize, cancellationToken);
+        return _rentPaymentRepository.GetChequesAsync(request.Status, companyId, request.PageSize, cancellationToken);
     }
 }

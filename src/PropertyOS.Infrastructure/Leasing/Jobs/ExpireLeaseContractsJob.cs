@@ -9,6 +9,7 @@ using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Companies;
 using PropertyOS.Application.Leasing;
 using PropertyOS.Application.Leasing.Commands.ExpireLeaseContract;
+using Microsoft.EntityFrameworkCore;
 using PropertyOS.Infrastructure.Identity;
 
 namespace PropertyOS.Infrastructure.Leasing.Jobs;
@@ -138,16 +139,13 @@ public class ExpireLeaseContractsJob
             var dbContext = platformScope.ServiceProvider
                 .GetRequiredService<IApplicationDbContext>();
 
-            await using var tx = await dbContext.BeginTransactionAsync(cancellationToken);
-            // ↑ TenantSessionInterceptor fires here:
-            //   SET LOCAL app.is_platform_admin = 'true'
+            companyIds = await dbContext.ExecuteInTransactionAsync(async (ct) =>
+            {
+                var companyRepo = platformScope.ServiceProvider
+                    .GetRequiredService<ICompanyRepository>();
 
-            var companyRepo = platformScope.ServiceProvider
-                .GetRequiredService<ICompanyRepository>();
-
-            companyIds = await companyRepo.GetActiveCompanyIdsAsync(cancellationToken);
-
-            await tx.CommitAsync(cancellationToken);
+                return await companyRepo.GetActiveCompanyIdsAsync(ct);
+            }, cancellationToken);
             // ↑ SET LOCAL is reset — no tenant state leaks through connection pooling
         }
 
@@ -221,18 +219,14 @@ public class ExpireLeaseContractsJob
                 var dbContext = eligibilityScope.ServiceProvider
                     .GetRequiredService<IApplicationDbContext>();
 
-                await using var tx = await dbContext.BeginTransactionAsync(cancellationToken);
-                // ↑ TenantSessionInterceptor fires:
-                //   SET LOCAL app.current_company_id = '<companyId>'
-                //   SET LOCAL app.is_platform_admin = 'false'
+                batchContractIds = await dbContext.ExecuteInTransactionAsync(async (ct) =>
+                {
+                    var contractRepo = eligibilityScope.ServiceProvider
+                        .GetRequiredService<ILeaseContractRepository>();
 
-                var contractRepo = eligibilityScope.ServiceProvider
-                    .GetRequiredService<ILeaseContractRepository>();
-
-                batchContractIds = await contractRepo.GetActiveContractIdsExpiringOnOrBeforeAsync(
-                    jordanBusinessDate, batchSize, afterContractId, cancellationToken);
-
-                await tx.CommitAsync(cancellationToken);
+                    return await contractRepo.GetActiveContractIdsExpiringOnOrBeforeAsync(
+                        jordanBusinessDate, batchSize, afterContractId, ct);
+                }, cancellationToken);
             }
 
             if (batchContractIds.Count == 0)

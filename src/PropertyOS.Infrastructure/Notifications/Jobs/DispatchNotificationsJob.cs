@@ -9,6 +9,7 @@ using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Companies;
 using PropertyOS.Application.Notifications;
 using PropertyOS.Application.Notifications.Commands.DispatchNotification;
+using Microsoft.EntityFrameworkCore;
 using PropertyOS.Infrastructure.Identity;
 
 namespace PropertyOS.Infrastructure.Notifications.Jobs;
@@ -114,16 +115,13 @@ public class DispatchNotificationsJob
             var dbContext = platformScope.ServiceProvider
                 .GetRequiredService<IApplicationDbContext>();
 
-            await using var tx = await dbContext.BeginTransactionAsync(cancellationToken);
-            // ↑ TenantSessionInterceptor fires here:
-            //   SET LOCAL app.is_platform_admin = 'true'
+            companyIds = await dbContext.ExecuteInTransactionAsync(async (ct) =>
+            {
+                var companyRepo = platformScope.ServiceProvider
+                    .GetRequiredService<ICompanyRepository>();
 
-            var companyRepo = platformScope.ServiceProvider
-                .GetRequiredService<ICompanyRepository>();
-
-            companyIds = await companyRepo.GetActiveCompanyIdsAsync(cancellationToken);
-
-            await tx.CommitAsync(cancellationToken);
+                return await companyRepo.GetActiveCompanyIdsAsync(ct);
+            }, cancellationToken);
             // ↑ SET LOCAL is reset — no tenant state leaks through connection pooling
         }
 
@@ -195,18 +193,14 @@ public class DispatchNotificationsJob
                 var dbContext = eligibilityScope.ServiceProvider
                     .GetRequiredService<IApplicationDbContext>();
 
-                await using var tx = await dbContext.BeginTransactionAsync(cancellationToken);
-                // ↑ TenantSessionInterceptor fires:
-                //   SET LOCAL app.current_company_id = '<companyId>'
-                //   SET LOCAL app.is_platform_admin = 'false'
+                batchNotificationIds = await dbContext.ExecuteInTransactionAsync(async (ct) =>
+                {
+                    var notificationRepo = eligibilityScope.ServiceProvider
+                        .GetRequiredService<INotificationRepository>();
 
-                var notificationRepo = eligibilityScope.ServiceProvider
-                    .GetRequiredService<INotificationRepository>();
-
-                batchNotificationIds = await notificationRepo.GetDispatchCandidateIdsAsync(
-                    batchSize, afterNotificationId, cancellationToken);
-
-                await tx.CommitAsync(cancellationToken);
+                    return await notificationRepo.GetDispatchCandidateIdsAsync(
+                        batchSize, afterNotificationId, ct);
+                }, cancellationToken);
             }
 
             if (batchNotificationIds.Count == 0)

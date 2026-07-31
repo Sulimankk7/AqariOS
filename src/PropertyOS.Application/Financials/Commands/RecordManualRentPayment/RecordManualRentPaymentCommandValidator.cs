@@ -13,7 +13,7 @@ public class RecordManualRentPaymentCommandValidator : AbstractValidator<RecordM
         RuleFor(v => v.Amount)
             .GreaterThan(0).WithMessage("Amount must be greater than zero.");
 
-        RuleFor(v => v.Method)
+        RuleFor(v => v.PaymentMethod)
             .IsInEnum().WithMessage("Method must be a valid payment method.");
 
         RuleFor(v => v.PaymentReferenceNumber)
@@ -21,7 +21,7 @@ public class RecordManualRentPaymentCommandValidator : AbstractValidator<RecordM
 
         RuleFor(v => v.Cheque)
             .NotNull()
-            .When(v => v.Method == PaymentMethod.Cheque)
+            .When(v => v.PaymentMethod == PaymentMethod.Cheque)
             .WithMessage("Cheque details are required when the payment method is Cheque.");
 
         When(v => v.Cheque != null, () =>

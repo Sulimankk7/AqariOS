@@ -40,7 +40,7 @@ public class RecordManualRentPaymentCommandHandler : IRequestHandler<RecordManua
 
         // Efawateercom money-in is created exclusively by the gateway callback pipeline
         // (ReceiveEfawateercomCallbackCommand); it can never be recorded manually.
-        if (request.Method == PaymentMethod.Efawateercom)
+        if (request.PaymentMethod == PaymentMethod.Efawateercom)
             throw new BusinessRuleException(
                 "Efawateercom payments cannot be recorded manually; they are created by the gateway callback pipeline.",
                 "MANUAL_PAYMENT_METHOD_INVALID");
@@ -69,7 +69,7 @@ public class RecordManualRentPaymentCommandHandler : IRequestHandler<RecordManua
         );
 
         payment.SetPaymentReceiptDetails(
-            method: request.Method,
+            method: request.PaymentMethod,
             reference: request.PaymentReferenceNumber,
             receiptNumber: null,
             updatedAt: DateTimeOffset.UtcNow,
@@ -78,7 +78,7 @@ public class RecordManualRentPaymentCommandHandler : IRequestHandler<RecordManua
 
         await _rentPaymentRepository.AddAsync(payment, cancellationToken);
 
-        if (request.Method == PaymentMethod.Cheque)
+        if (request.PaymentMethod == PaymentMethod.Cheque)
         {
             // The validator enforces the cheque block; this is a defensive backstop for
             // non-HTTP dispatch paths that bypass the FluentValidation pipeline.

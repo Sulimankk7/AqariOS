@@ -5,4 +5,4 @@ using PropertyOS.Domain.Financials.Enums;
 
 namespace PropertyOS.Application.Financials.Queries.GetChequesByStatus;
 
-public record GetChequesByStatusQuery(ChequeStatus Status, int PageSize = 50) : IRequest<List<ChequeDetailDto>>;
+public record GetChequesQuery(ChequeStatus? Status = null, int PageSize = 50) : IRequest<List<ChequeDetailDto>>;

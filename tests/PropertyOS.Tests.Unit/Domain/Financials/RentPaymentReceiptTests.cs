@@ -242,4 +242,148 @@ public class RentPaymentReceiptTests
             payment.IssueReceipt("REC-123", DateTimeOffset.UtcNow, Guid.NewGuid())
         );
     }
+
+    [Fact]
+    public void IssueReceipt_OnUnallocatedReceipt_PendingWithZeroAmountPaid_Succeeds()
+    {
+        var unallocatedPayment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.UnallocatedReceipt,
+            300.00m,
+            "JOD",
+            null,
+            null,
+            null,
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        Assert.Equal(0, unallocatedPayment.AmountPaid);
+        Assert.Equal(DueDateStatus.Pending, unallocatedPayment.DueDateStatus);
+
+        var issuedAt = DateTimeOffset.UtcNow;
+        var issuedBy = Guid.NewGuid();
+        unallocatedPayment.IssueReceipt("REC-000001", issuedAt, issuedBy);
+
+        Assert.NotNull(unallocatedPayment.Receipt);
+        Assert.Equal("REC-000001", unallocatedPayment.ReceiptNumber);
+        Assert.Equal(300.00m, unallocatedPayment.Receipt.Amount);
+    }
+
+    [Theory]
+    [InlineData(0, DueDateStatus.Pending)]
+    [InlineData(150, DueDateStatus.Pending)]
+    [InlineData(300, DueDateStatus.Pending)]
+    public void IssueReceipt_OnUnallocatedReceipt_SucceedsRegardlessOfAllocationState(decimal allocatedAmount, DueDateStatus status)
+    {
+        var unallocatedPayment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.UnallocatedReceipt,
+            300.00m,
+            "JOD",
+            null,
+            null,
+            null,
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        unallocatedPayment.UpdateAllocationSync(allocatedAmount, status, DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        unallocatedPayment.IssueReceipt("REC-000002", DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        Assert.NotNull(unallocatedPayment.Receipt);
+        Assert.Equal("REC-000002", unallocatedPayment.ReceiptNumber);
+    }
+
+    [Fact]
+    public void IssueReceipt_OnCancelledUnallocatedReceipt_ThrowsInvalidOperationException()
+    {
+        var unallocatedPayment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.UnallocatedReceipt,
+            300.00m,
+            "JOD",
+            null,
+            null,
+            null,
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        unallocatedPayment.Cancel(DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            unallocatedPayment.IssueReceipt("REC-000003", DateTimeOffset.UtcNow, Guid.NewGuid())
+        );
+
+        Assert.Contains("cancelled", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(unallocatedPayment.Receipt);
+    }
+
+    [Fact]
+    public void IssueReceipt_OnAdjustmentRecord_ThrowsInvalidOperationException()
+    {
+        var adjustmentPayment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.Adjustment,
+            100.00m,
+            "JOD",
+            null,
+            null,
+            null,
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            adjustmentPayment.IssueReceipt("REC-000004", DateTimeOffset.UtcNow, Guid.NewGuid())
+        );
+
+        Assert.Contains("adjustment", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(adjustmentPayment.Receipt);
+    }
+
+    [Fact]
+    public void IssueReceipt_OnFailedIssuance_DoesNotModifyReceiptState()
+    {
+        var installment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            900.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        Assert.Throws<InvalidOperationException>(() =>
+            installment.IssueReceipt("REC-FAIL", DateTimeOffset.UtcNow, Guid.NewGuid())
+        );
+
+        Assert.Null(installment.Receipt);
+        Assert.Null(installment.ReceiptNumber);
+    }
 }

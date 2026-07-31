@@ -8,7 +8,7 @@ namespace PropertyOS.Application.Financials.Commands.RecordManualRentPayment;
 
 /// <summary>
 /// Cheque block for manual cheque payments. Required (validator-enforced) when
-/// <see cref="RecordManualRentPaymentCommand.Method"/> is <see cref="PaymentMethod.Cheque"/>.
+/// <see cref="RecordManualRentPaymentCommand.PaymentMethod"/> is <see cref="PaymentMethod.Cheque"/>.
 /// </summary>
 public record ManualChequeDetails(
     string ChequeNumber,
@@ -27,7 +27,7 @@ public record ManualChequeDetails(
 public record RecordManualRentPaymentCommand(
     Guid LeaseContractId,
     decimal Amount,
-    PaymentMethod Method,
+    PaymentMethod PaymentMethod,
     string? PaymentReferenceNumber = null,
     string? Notes = null,
     ManualChequeDetails? Cheque = null,

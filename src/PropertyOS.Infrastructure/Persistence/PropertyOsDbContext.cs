@@ -210,4 +210,27 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
     {
         return Database.BeginTransactionAsync(cancellationToken);
     }
+
+    public async Task<TResult> ExecuteInTransactionAsync<TResult>(System.Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
+    {
+        var strategy = Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await Database.BeginTransactionAsync(cancellationToken);
+            var result = await operation(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return result;
+        });
+    }
+
+    public async Task ExecuteInTransactionAsync(System.Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
+    {
+        var strategy = Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await Database.BeginTransactionAsync(cancellationToken);
+            await operation(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+        });
+    }
 }

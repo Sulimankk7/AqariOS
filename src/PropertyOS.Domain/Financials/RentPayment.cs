@@ -118,6 +118,9 @@ public class RentPayment : ISoftDeletable
 
     public void Cancel(DateTimeOffset updatedAt, Guid? updatedBy)
     {
+        if (DueDateStatus == DueDateStatus.Cancelled)
+            throw new InvalidOperationException("Payment is already cancelled.");
+
         DueDateStatus = DueDateStatus.Cancelled;
         UpdatedAt = updatedAt;
         UpdatedBy = updatedBy;
@@ -146,14 +149,29 @@ public class RentPayment : ISoftDeletable
     /// </summary>
     public RentPaymentReceipt IssueReceipt(string receiptNumber, DateTimeOffset issuedAt, Guid? issuedBy, string? notes = null)
     {
-        if (DueDateStatus != DueDateStatus.Paid)
-            throw new InvalidOperationException("Cannot issue a receipt for a payment that is not fully paid.");
-
-        if (AmountPaid != AmountDue)
-            throw new InvalidOperationException("Cannot issue a receipt for a payment where AmountPaid is not equal to AmountDue.");
-
         if (Receipt != null && Receipt.DeletedAt == null)
             throw new InvalidOperationException("A receipt has already been issued for this payment.");
+
+        if (DueDateStatus == DueDateStatus.Cancelled)
+            throw new InvalidOperationException("Cannot issue a receipt for a cancelled payment.");
+
+        if (PaymentPurpose == PaymentPurpose.UnallocatedReceipt)
+        {
+            if (AmountDue <= 0)
+                throw new InvalidOperationException("Cannot issue a receipt for a received payment with non-positive AmountDue.");
+        }
+        else if (PaymentPurpose == PaymentPurpose.ScheduledInstallment)
+        {
+            if (DueDateStatus != DueDateStatus.Paid)
+                throw new InvalidOperationException("Cannot issue a receipt for an installment that is not fully paid.");
+
+            if (AmountPaid != AmountDue)
+                throw new InvalidOperationException("Cannot issue a receipt for an installment where AmountPaid is not equal to AmountDue.");
+        }
+        else
+        {
+            throw new InvalidOperationException("Cannot issue a receipt for an adjustment record.");
+        }
 
         Receipt = RentPaymentReceipt.Create(
             companyId: CompanyId,

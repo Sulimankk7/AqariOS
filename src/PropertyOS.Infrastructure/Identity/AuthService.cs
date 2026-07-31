@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.DTOs.Identity;
 using PropertyOS.Application.Identity;
@@ -24,6 +26,8 @@ public class AuthService : IAuthService
     private readonly PropertyOsDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly ILogger<AuthService>? _logger;
+    private readonly IHostEnvironment? _environment;
 
     /// <summary>
     /// Initializes a new instance of AuthService.
@@ -31,11 +35,15 @@ public class AuthService : IAuthService
     public AuthService(
         PropertyOsDbContext dbContext,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IJwtTokenGenerator jwtTokenGenerator,
+        ILogger<AuthService>? logger = null,
+        IHostEnvironment? environment = null)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
         _jwtTokenGenerator = jwtTokenGenerator ?? throw new ArgumentNullException(nameof(jwtTokenGenerator));
+        _logger = logger;
+        _environment = environment;
     }
 
     /// <inheritdoc />
@@ -308,6 +316,11 @@ public class AuthService : IAuthService
 
         _dbContext.OtpChallenges.Add(challenge);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (_environment?.IsDevelopment() == true)
+        {
+            _logger?.LogInformation("DEV OTP for {Phone}: {Code}", phone, rawCode);
+        }
 
         return rawCode;
     }

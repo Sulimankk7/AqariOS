@@ -165,7 +165,7 @@ public class RentPaymentsController : ControllerBase
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: request.LeaseContractId,
             Amount: request.Amount,
-            Method: request.Method,
+            PaymentMethod: request.PaymentMethod,
             PaymentReferenceNumber: request.PaymentReferenceNumber,
             Notes: request.Notes,
             Cheque: request.Cheque == null

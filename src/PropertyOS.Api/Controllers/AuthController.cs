@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MediatR;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.DTOs.Identity;
@@ -250,7 +252,7 @@ public class AuthController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var clientIp = GetClientIpAddress();
-        var code = await _authService.RequestOtpAsync(dto, clientIp, cancellationToken);
+        await _authService.RequestOtpAsync(dto, clientIp, cancellationToken);
         return Ok(new { message = "OTP challenge generated successfully.", phone = dto.Phone });
     }
 

@@ -21,6 +21,7 @@ public class CancelRentPaymentCommandHandlerTests
     {
         public List<RentPayment> Payments { get; } = new();
         public List<PaymentAllocation> Allocations { get; } = new();
+        public List<RentPaymentReceipt> Receipts { get; } = new();
 
         public Task<RentPayment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
             => Task.FromResult(Payments.FirstOrDefault(p => p.Id == id));
@@ -51,10 +52,13 @@ public class CancelRentPaymentCommandHandlerTests
             => Task.FromResult(Allocations.Where(a => a.ReceivingPaymentId == receivingId).ToList());
 
         public Task AddReceiptAsync(RentPaymentReceipt receipt, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+        {
+            Receipts.Add(receipt);
+            return Task.CompletedTask;
+        }
 
         public Task AddRangeAsync(IEnumerable<RentPayment> rentPayments, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-            public Task<List<BillingPeriod>> GetScheduledInstallmentPeriodsAsync(Guid leaseContractId, CancellationToken cancellationToken = default)
+        public Task<List<BillingPeriod>> GetScheduledInstallmentPeriodsAsync(Guid leaseContractId, CancellationToken cancellationToken = default)
             => Task.FromResult(new List<BillingPeriod>());
 
         public Task<bool> HasScheduledInstallmentAsync(Guid leaseContractId, DateOnly start, DateOnly end, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -67,9 +71,48 @@ public class CancelRentPaymentCommandHandlerTests
         public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetChequesAsync(ChequeStatus? status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+
+        public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default)
+        {
+            var payment = Payments.FirstOrDefault(p => p.Id == rentPaymentId && p.CompanyId == companyId);
+            if (payment?.Receipt != null && payment.Receipt.DeletedAt == null)
+            {
+                return Task.FromResult<RentPaymentReceiptDto?>(new RentPaymentReceiptDto
+                {
+                    Id = payment.Receipt.Id,
+                    CompanyId = payment.Receipt.CompanyId,
+                    RentPaymentId = payment.Receipt.RentPaymentId,
+                    ReceiptNumber = payment.Receipt.ReceiptNumber,
+                    IssueDate = payment.Receipt.IssueDate,
+                    IssuedBy = payment.Receipt.IssuedBy,
+                    Amount = payment.Receipt.Amount,
+                    Currency = payment.Receipt.Currency,
+                    Notes = payment.Receipt.Notes
+                });
+            }
+
+            var receipt = Receipts.FirstOrDefault(r => r.RentPaymentId == rentPaymentId && r.CompanyId == companyId && r.DeletedAt == null);
+            if (receipt != null)
+            {
+                return Task.FromResult<RentPaymentReceiptDto?>(new RentPaymentReceiptDto
+                {
+                    Id = receipt.Id,
+                    CompanyId = receipt.CompanyId,
+                    RentPaymentId = receipt.RentPaymentId,
+                    ReceiptNumber = receipt.ReceiptNumber,
+                    IssueDate = receipt.IssueDate,
+                    IssuedBy = receipt.IssuedBy,
+                    Amount = receipt.Amount,
+                    Currency = receipt.Currency,
+                    Notes = receipt.Notes
+                });
+            }
+
+            return Task.FromResult<RentPaymentReceiptDto?>(null);
+        }
+
         public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
@@ -259,5 +302,57 @@ public class CancelRentPaymentCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         Assert.Equal(DueDateStatus.Cancelled, receipt.DueDateStatus);
+    }
+
+    [Fact]
+    public async Task Handle_AlreadyCancelledPayment_ThrowsBusinessRuleException_AndDoesNotMutateMetadataOrNotes()
+    {
+        var companyId = Guid.NewGuid();
+        var (handler, paymentRepo) = CreateSut(companyId);
+
+        var payment = CreatePayment(companyId, PaymentPurpose.UnallocatedReceipt, 200m);
+        await paymentRepo.AddAsync(payment);
+
+        // Cancel the first time
+        var initialCommand = new CancelRentPaymentCommand(payment.Id, "Initial cancellation reason");
+        await handler.Handle(initialCommand, CancellationToken.None);
+
+        var originalUpdatedAt = payment.UpdatedAt;
+        var originalUpdatedBy = payment.UpdatedBy;
+        var originalNotes = payment.Notes;
+
+        // Attempt to cancel a second time
+        var secondCommand = new CancelRentPaymentCommand(payment.Id, "Second cancellation attempt");
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(secondCommand, CancellationToken.None));
+
+        Assert.Equal("PAYMENT_ALREADY_CANCELLED", ex.Code);
+        Assert.Equal(DueDateStatus.Cancelled, payment.DueDateStatus);
+        Assert.Equal(originalUpdatedAt, payment.UpdatedAt);
+        Assert.Equal(originalUpdatedBy, payment.UpdatedBy);
+        Assert.Equal(originalNotes, payment.Notes);
+    }
+
+    [Fact]
+    public async Task Handle_PaymentWithActiveIssuedReceipt_ThrowsBusinessRuleException_AndPreservesReceipt()
+    {
+        var companyId = Guid.NewGuid();
+        var (handler, paymentRepo) = CreateSut(companyId);
+
+        var payment = CreatePayment(companyId, PaymentPurpose.ScheduledInstallment, 500m);
+        payment.UpdateAllocationSync(500m, DueDateStatus.Paid, DateTimeOffset.UtcNow, Guid.NewGuid());
+        var issuedAt = DateTimeOffset.UtcNow;
+        var issuedBy = Guid.NewGuid();
+        payment.IssueReceipt("REC-99999", issuedAt, issuedBy);
+        await paymentRepo.AddAsync(payment);
+
+        var command = new CancelRentPaymentCommand(payment.Id);
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
+
+        Assert.Equal("PAYMENT_CANCEL_HAS_RECEIPT", ex.Code);
+        Assert.NotEqual(DueDateStatus.Cancelled, payment.DueDateStatus);
+        Assert.NotNull(payment.Receipt);
+        Assert.Equal("REC-99999", payment.Receipt.ReceiptNumber);
+        Assert.Null(payment.Receipt.DeletedAt);
     }
 }

@@ -23,6 +23,24 @@ builder.WebHost.UseSentry();
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Configure CORS Policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+        if (origins == null || origins.Length == 0)
+        {
+            origins = new[] { "http://localhost:5173" };
+        }
+
+        policy.WithOrigins(origins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 // Add Global Exception Handler
 builder.Services.AddExceptionHandler<PropertyOS.Api.Middleware.GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -323,6 +341,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

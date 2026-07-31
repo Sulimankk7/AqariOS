@@ -6,7 +6,7 @@ namespace PropertyOS.Api.Models.Financials;
 
 /// <summary>
 /// Request model for the cheque block of a manual cheque payment.
-/// Required when <see cref="RecordManualRentPaymentRequest.Method"/> is <see cref="PaymentMethod.Cheque"/>.
+/// Required when <see cref="RecordManualRentPaymentRequest.PaymentMethod"/> is <see cref="PaymentMethod.Cheque"/>.
 /// </summary>
 public record ManualChequeDetailsRequest(
     string ChequeNumber,
@@ -23,7 +23,7 @@ public record ManualChequeDetailsRequest(
 public record RecordManualRentPaymentRequest(
     Guid LeaseContractId,
     decimal Amount,
-    PaymentMethod Method,
+    PaymentMethod PaymentMethod,
     string? PaymentReferenceNumber = null,
     string? Notes = null,
     ManualChequeDetailsRequest? Cheque = null,

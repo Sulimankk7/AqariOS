@@ -116,7 +116,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<List<ChequeDetailDto>> GetChequesByStatusAsync(ChequeStatus status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<ChequeDetailDto>> GetChequesAsync(ChequeStatus? status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -201,7 +201,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: contract.Id,
             Amount: 350m,
-            Method: PaymentMethod.Cash,
+            PaymentMethod: PaymentMethod.Cash,
             PaymentReferenceNumber: "CASH-001",
             Notes: "Walk-in payment"
         );
@@ -230,6 +230,32 @@ public class RecordManualRentPaymentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_BankTransferPayment_CreatesUnallocatedReceipt()
+    {
+        var companyId = Guid.NewGuid();
+        var (handler, contractRepo, paymentRepo, _, sender) = CreateSut(companyId);
+
+        var contract = CreateContract(companyId);
+        await contractRepo.AddAsync(contract);
+
+        var command = new RecordManualRentPaymentCommand(
+            LeaseContractId: contract.Id,
+            Amount: 500m,
+            PaymentMethod: PaymentMethod.BankTransfer,
+            PaymentReferenceNumber: "TRF-99001",
+            Notes: "Wire transfer"
+        );
+
+        var paymentId = await handler.Handle(command, CancellationToken.None);
+
+        var payment = Assert.Single(paymentRepo.Payments);
+        Assert.Equal(paymentId, payment.Id);
+        Assert.Equal(PaymentMethod.BankTransfer, payment.PaymentMethod);
+        Assert.Equal("TRF-99001", payment.PaymentReferenceNumber);
+        Assert.Empty(paymentRepo.Cheques);
+    }
+
+    [Fact]
     public async Task Handle_MissingContract_ThrowsNotFoundException()
     {
         var (handler, _, _, _, _) = CreateSut(Guid.NewGuid());
@@ -237,7 +263,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: Guid.NewGuid(),
             Amount: 100m,
-            Method: PaymentMethod.Cash
+            PaymentMethod: PaymentMethod.Cash
         );
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
@@ -255,7 +281,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: contract.Id,
             Amount: 100m,
-            Method: PaymentMethod.Cash
+            PaymentMethod: PaymentMethod.Cash
         );
 
         var ex = await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
@@ -270,7 +296,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: Guid.NewGuid(),
             Amount: 100m,
-            Method: PaymentMethod.Cash
+            PaymentMethod: PaymentMethod.Cash
         );
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
@@ -288,7 +314,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: contract.Id,
             Amount: 100m,
-            Method: PaymentMethod.Efawateercom
+            PaymentMethod: PaymentMethod.Efawateercom
         );
 
         var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => handler.Handle(command, CancellationToken.None));
@@ -307,7 +333,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: contract.Id,
             Amount: 1500m,
-            Method: PaymentMethod.Cheque,
+            PaymentMethod: PaymentMethod.Cheque,
             Cheque: new ManualChequeDetails(
                 ChequeNumber: "CHQ-778899",
                 BankName: "Bank of Jordan",
@@ -348,7 +374,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: contract.Id,
             Amount: 100m,
-            Method: PaymentMethod.Cheque,
+            PaymentMethod: PaymentMethod.Cheque,
             Cheque: null
         );
 
@@ -371,7 +397,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: contract.Id,
             Amount: 250m,
-            Method: PaymentMethod.BankTransfer,
+            PaymentMethod: PaymentMethod.BankTransfer,
             PaymentReferenceNumber: "TRF-42",
             Allocations: allocations
         );
@@ -398,7 +424,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: contract.Id,
             Amount: 100m,
-            Method: PaymentMethod.BankTransfer,
+            PaymentMethod: PaymentMethod.BankTransfer,
             Allocations: new List<AllocationDetail>()
         );
 
@@ -415,7 +441,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: Guid.NewGuid(),
             Amount: 100m,
-            Method: PaymentMethod.Cheque
+            PaymentMethod: PaymentMethod.Cheque
         );
 
         var result = validator.Validate(command);
@@ -432,7 +458,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: Guid.NewGuid(),
             Amount: 0m,
-            Method: PaymentMethod.Cash
+            PaymentMethod: PaymentMethod.Cash
         );
 
         var result = validator.Validate(command);
@@ -449,7 +475,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         var command = new RecordManualRentPaymentCommand(
             LeaseContractId: Guid.NewGuid(),
             Amount: 100m,
-            Method: PaymentMethod.Cash,
+            PaymentMethod: PaymentMethod.Cash,
             Allocations: new List<AllocationDetail> { new(Guid.NewGuid(), 0m) }
         );
 
@@ -457,4 +483,105 @@ public class RecordManualRentPaymentCommandHandlerTests
 
         Assert.False(result.IsValid);
     }
+
+    [Theory]
+    [InlineData(0, PaymentMethod.Cash)]
+    [InlineData(1, PaymentMethod.BankTransfer)]
+    [InlineData(2, PaymentMethod.Cheque)]
+    [InlineData(3, PaymentMethod.Efawateercom)]
+    public void Request_DeserializesPaymentMethodFromJsonNumericValues(int jsonValue, PaymentMethod expectedMethod)
+    {
+        var json = $$"""
+            {
+              "leaseContractId": "01900000-0000-7000-8000-000000000001",
+              "amount": 100.00,
+              "paymentMethod": {{jsonValue}}
+            }
+            """;
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+        };
+
+        var request = System.Text.Json.JsonSerializer.Deserialize<PropertyOS.Api.Models.Financials.RecordManualRentPaymentRequest>(json, options);
+
+        Assert.NotNull(request);
+        Assert.Equal(expectedMethod, request.PaymentMethod);
+    }
+
+    [Fact]
+    public async Task GetByIdsForUpdateAsync_ResolvesUnpersistedTrackedLocalEntities()
+    {
+        // Tests the persistence mechanism: when a receiving payment is added to DbContext ChangeTracker
+        // during an in-flight command, GetByIdsForUpdateAsync must include it from DbContext.Local
+        // even before SaveChangesAsync has been invoked.
+        var leaseRepo = new FakeLeaseContractRepository();
+        var rentRepo = new FakeRentPaymentRepository();
+        var tenantCtx = new FakeTenantContext { CompanyId = Guid.NewGuid() };
+        var userCtx = new FakeCurrentUserContext();
+
+        var contract = LeaseContract.Create(
+            companyId: tenantCtx.CompanyId.Value,
+            buildingId: Guid.NewGuid(),
+            apartmentId: Guid.NewGuid(),
+            tenantId: Guid.NewGuid(),
+            contractNumber: "LC-REG-1",
+            startDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            endDate: DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
+            monthlyRentAmount: 900m,
+            paymentFrequency: PaymentFrequency.Monthly,
+            paymentDueDay: 1,
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId.Value
+        );
+
+        leaseRepo.Contracts[contract.Id] = contract;
+
+        var obligation = RentPayment.Create(
+            companyId: contract.CompanyId,
+            leaseContractId: contract.Id,
+            tenantId: contract.TenantId,
+            buildingId: contract.BuildingId,
+            apartmentId: contract.ApartmentId,
+            purpose: PaymentPurpose.ScheduledInstallment,
+            amountDue: 900m,
+            currency: "JOD",
+            billingPeriodStart: DateOnly.FromDateTime(DateTime.UtcNow),
+            billingPeriodEnd: DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            dueDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId.Value
+        );
+
+        rentRepo.Payments.Add(obligation);
+
+        var receivingPayment = RentPayment.Create(
+            companyId: contract.CompanyId,
+            leaseContractId: contract.Id,
+            tenantId: contract.TenantId,
+            buildingId: contract.BuildingId,
+            apartmentId: contract.ApartmentId,
+            purpose: PaymentPurpose.UnallocatedReceipt,
+            amountDue: 500m,
+            currency: "JOD",
+            billingPeriodStart: null,
+            billingPeriodEnd: null,
+            dueDate: null,
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: userCtx.UserId.Value
+        );
+
+        // Add receiving payment to repository (in-memory ChangeTracker state)
+        await rentRepo.AddAsync(receivingPayment, CancellationToken.None);
+
+        // Verify GetByIdsForUpdateAsync resolves BOTH obligation AND the newly added receiving payment
+        var involvedIds = new[] { obligation.Id, receivingPayment.Id };
+        var lockedPayments = await rentRepo.GetByIdsForUpdateAsync(involvedIds, CancellationToken.None);
+
+        Assert.Equal(2, lockedPayments.Count);
+        Assert.Contains(lockedPayments, p => p.Id == obligation.Id);
+        Assert.Contains(lockedPayments, p => p.Id == receivingPayment.Id);
+    }
 }
+
