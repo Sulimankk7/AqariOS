@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using PropertyOS.Api.Models.Properties;
 using PropertyOS.Application.Properties.Buildings.Commands.ArchiveBuilding;
 using PropertyOS.Application.Properties.Buildings.Commands.CreateBuilding;
@@ -29,14 +30,17 @@ namespace PropertyOS.Api.Controllers;
 public class BuildingsController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly ILogger<BuildingsController> _logger;
 
     /// <summary>
     /// Initializes a new instance of BuildingsController.
     /// </summary>
     /// <param name="mediator">The MediatR sender instance.</param>
-    public BuildingsController(ISender mediator)
+    /// <param name="logger">The logger instance.</param>
+    public BuildingsController(ISender mediator, ILogger<BuildingsController> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -63,6 +67,10 @@ public class BuildingsController : ControllerBase
         [FromBody] CreateBuildingRequest request,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] POST /api/v1/buildings UserId={UserId} CompanyId={CompanyId}", 
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new CreateBuildingCommand(
             Name: request.Name,
             TotalFloors: request.TotalFloors,
@@ -102,6 +110,10 @@ public class BuildingsController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] GET /api/v1/buildings/{Id} BuildingId={BuildingId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var query = new GetBuildingByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
@@ -123,6 +135,10 @@ public class BuildingsController : ControllerBase
     public async Task<ActionResult<List<BuildingDto>>> List(
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] GET /api/v1/buildings UserId={UserId} CompanyId={CompanyId}", 
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var query = new ListBuildingsQuery();
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
@@ -154,6 +170,10 @@ public class BuildingsController : ControllerBase
         [FromBody] UpdateBuildingRequest request,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] PUT /api/v1/buildings/{Id} BuildingId={BuildingId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new UpdateBuildingCommand(
             Id: id,
             Name: request.Name,
@@ -193,6 +213,10 @@ public class BuildingsController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] DELETE /api/v1/buildings/{Id} BuildingId={BuildingId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new ArchiveBuildingCommand(id);
         await _mediator.Send(command, cancellationToken);
         return NoContent();

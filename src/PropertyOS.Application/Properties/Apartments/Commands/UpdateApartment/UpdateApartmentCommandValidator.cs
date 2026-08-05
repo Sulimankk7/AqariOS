@@ -1,9 +1,12 @@
+using System.Linq;
 using FluentValidation;
 
 namespace PropertyOS.Application.Properties.Apartments.Commands.UpdateApartment;
 
 public class UpdateApartmentCommandValidator : AbstractValidator<UpdateApartmentCommand>
 {
+    private static readonly string[] SupportedCurrencies = ["JOD", "USD", "EUR", "AED", "SAR"];
+
     public UpdateApartmentCommandValidator()
     {
         RuleFor(v => v.Id)
@@ -14,6 +17,7 @@ public class UpdateApartmentCommandValidator : AbstractValidator<UpdateApartment
             .When(v => v.BaseRentAmount.HasValue);
 
         RuleFor(v => v.BaseRentCurrency)
-            .Length(3).WithMessage("Currency code must be 3 characters.");
+            .Must(c => string.IsNullOrEmpty(c) || SupportedCurrencies.Contains(c.ToUpperInvariant()))
+            .WithMessage("Currency must be a supported code (JOD, USD, EUR, AED, SAR).");
     }
 }

@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using PropertyOS.Api.Models.Properties;
 using PropertyOS.Application.Properties.Floors.Commands.ArchiveFloor;
 using PropertyOS.Application.Properties.Floors.Commands.CreateFloor;
@@ -28,14 +29,17 @@ namespace PropertyOS.Api.Controllers;
 public class FloorsController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly ILogger<FloorsController> _logger;
 
     /// <summary>
     /// Initializes a new instance of FloorsController.
     /// </summary>
     /// <param name="mediator">The MediatR sender instance.</param>
-    public FloorsController(ISender mediator)
+    /// <param name="logger">The logger instance.</param>
+    public FloorsController(ISender mediator, ILogger<FloorsController> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -66,6 +70,10 @@ public class FloorsController : ControllerBase
         [FromBody] CreateFloorRequest request,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] POST /api/v1/buildings/{BuildingId}/floors UserId={UserId} CompanyId={CompanyId}", 
+            buildingId, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new CreateFloorCommand(
             BuildingId: buildingId,
             FloorNumber: request.FloorNumber,
@@ -97,6 +105,10 @@ public class FloorsController : ControllerBase
         [FromRoute] Guid buildingId,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] GET /api/v1/buildings/{BuildingId}/floors UserId={UserId} CompanyId={CompanyId}", 
+            buildingId, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var query = new ListFloorsQuery(buildingId);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
@@ -122,6 +134,10 @@ public class FloorsController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] GET /api/v1/floors/{Id} FloorId={FloorId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var query = new GetFloorByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
@@ -151,6 +167,10 @@ public class FloorsController : ControllerBase
         [FromBody] UpdateFloorRequest request,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] PUT /api/v1/floors/{Id} FloorId={FloorId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new UpdateFloorCommand(
             Id: id,
             FloorLabel: request.FloorLabel,
@@ -181,6 +201,10 @@ public class FloorsController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] DELETE /api/v1/floors/{Id} FloorId={FloorId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new ArchiveFloorCommand(id);
         await _mediator.Send(command, cancellationToken);
         return NoContent();

@@ -87,7 +87,7 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
 
         var auditState = new AuditTransactionState();
         var auditTxInterceptor = new AuditTransactionInterceptor(auditState);
-        var auditSaveChangesInterceptor = new AuditSaveChangesInterceptor(tenantContext, userContext, auditState, new StaticAuditRequestContext());
+        var auditSaveChangesInterceptor = new AuditSaveChangesInterceptor(tenantContext, userContext, auditState, new StaticAuditRequestContext(), Microsoft.Extensions.Logging.Abstractions.NullLogger<AuditSaveChangesInterceptor>.Instance);
 
         var options = new DbContextOptionsBuilder<PropertyOsDbContext>()
             .UseNpgsql(connection, npgsqlOptions =>

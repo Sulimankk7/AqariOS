@@ -48,6 +48,16 @@ public class ContractDocument : ISoftDeletable
         };
     }
 
+    public void ReplaceFile(Guid newFileId, string? description, Guid? updatedBy, DateTimeOffset now)
+    {
+        FileId = newFileId;
+        if (description != null)
+        {
+            Description = description;
+        }
+        UpdatedAt = now;
+    }
+
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)
     {
         if (DeletedAt.HasValue) return;
@@ -56,3 +66,4 @@ public class ContractDocument : ISoftDeletable
         UpdatedAt = deletedAt;
     }
 }
+

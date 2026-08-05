@@ -343,6 +343,31 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("TraceId", httpContext.TraceIdentifier);
+        
+        var user = httpContext.User;
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                diagnosticContext.Set("UserId", userId);
+            }
+
+            var companyId = user.FindFirst("company_id")?.Value;
+            if (!string.IsNullOrEmpty(companyId))
+            {
+                diagnosticContext.Set("CompanyId", companyId);
+            }
+        }
+    };
+});
+
 app.UseCors("CorsPolicy");
 
 app.UseAuthentication();

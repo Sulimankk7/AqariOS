@@ -24,6 +24,11 @@ using PropertyOS.Domain.Common.Enums;
 using PropertyOS.Domain.Marketplace.Enums;
 using PropertyOS.Application.Properties;
 using PropertyOS.Infrastructure.Properties.Repositories;
+using PropertyOS.Application.Properties.Buildings.Services;
+using PropertyOS.Application.Properties.Floors.Services;
+using PropertyOS.Application.Properties.Apartments.Services;
+using PropertyOS.Application.Properties.ParkingSpots.Services;
+using PropertyOS.Infrastructure.Properties.Services;
 
 
 namespace PropertyOS.Infrastructure;
@@ -194,16 +199,75 @@ public static class DependencyInjection
         services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PropertyOS.Application.Files.Options.FileStorageOptions>>().Value);
         services.AddScoped<PropertyOS.Application.Files.IFileStorageRepository, PropertyOS.Infrastructure.Files.Repositories.FileStorageRepository>();
         services.AddSingleton<PropertyOS.Application.Files.Services.IFileUrlSigner, PropertyOS.Infrastructure.Files.Services.HmacFileUrlSigner>();
-        services.AddScoped<PropertyOS.Application.Files.Services.IStorageProvider, PropertyOS.Infrastructure.Files.Services.PhysicalFileStorageProvider>();
+
+        // Register both concrete provider types so the factory can resolve them without
+        // using a service locator — each is registered under its own concrete type, not
+        // under IStorageProvider. The factory below resolves IStorageProvider.
+        services.AddScoped<PropertyOS.Infrastructure.Files.Services.PhysicalFileStorageProvider>();
+        services.AddSingleton<Azure.Storage.Blobs.BlobServiceClient>(sp =>
+        {
+            var opts = sp.GetRequiredService<PropertyOS.Application.Files.Options.FileStorageOptions>();
+
+            if (string.IsNullOrWhiteSpace(opts.ConnectionString))
+                throw new InvalidOperationException(
+                    "FileStorage:ConnectionString is required when Provider = \"AzureBlob\". " +
+                    "Set it to your Azure Storage connection string in appsettings or environment variables.");
+
+            return new Azure.Storage.Blobs.BlobServiceClient(opts.ConnectionString);
+        });
+        services.AddSingleton<Azure.Storage.Blobs.BlobContainerClient>(sp =>
+        {
+            var opts = sp.GetRequiredService<PropertyOS.Application.Files.Options.FileStorageOptions>();
+
+            if (string.IsNullOrWhiteSpace(opts.ContainerName))
+                throw new InvalidOperationException(
+                    "FileStorage:ContainerName is required when Provider = \"AzureBlob\". " +
+                    "Set it to your existing Azure Blob container name.");
+
+            var serviceClient = sp.GetRequiredService<Azure.Storage.Blobs.BlobServiceClient>();
+            var container = serviceClient.GetBlobContainerClient(opts.ContainerName);
+
+            // Fail fast if the container does not exist. The container must be pre-created;
+            // this provider never auto-creates infrastructure resources.
+            if (!container.Exists())
+                throw new InvalidOperationException(
+                    $"Azure Blob container '{opts.ContainerName}' does not exist in the configured storage account. " +
+                    $"Create the container before starting the application. " +
+                    $"This provider does not auto-create containers.");
+
+            return container;
+        });
+        services.AddScoped<PropertyOS.Infrastructure.Files.Services.AzureBlobStorageProvider>();
+
+        // Configuration-driven factory: resolves IStorageProvider from FileStorageOptions.Provider.
+        // All switch logic is contained within Infrastructure; Application layer never sees this.
+        services.AddScoped<PropertyOS.Application.Files.Services.IStorageProvider>(sp =>
+        {
+            var opts = sp.GetRequiredService<PropertyOS.Application.Files.Options.FileStorageOptions>();
+            return opts.Provider switch
+            {
+                "AzureBlob" => (PropertyOS.Application.Files.Services.IStorageProvider)
+                    sp.GetRequiredService<PropertyOS.Infrastructure.Files.Services.AzureBlobStorageProvider>(),
+                _ => sp.GetRequiredService<PropertyOS.Infrastructure.Files.Services.PhysicalFileStorageProvider>()
+            };
+        });
+
         services.AddScoped<PropertyOS.Application.Documents.IDocumentCategoryRepository, PropertyOS.Infrastructure.Documents.Repositories.DocumentCategoryRepository>();
         services.AddScoped<PropertyOS.Application.Documents.IBuildingDocumentRepository, PropertyOS.Infrastructure.Documents.Repositories.BuildingDocumentRepository>();
         services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PropertyOS.Infrastructure.Documents.Security.ConfidentialDocumentAuthorizationHandler>();
+
 
         // Module 4 - Properties
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IFloorRepository, FloorRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IParkingSpotRepository, ParkingSpotRepository>();
+
+        // Module 4 - Safe Archive Policy: dependency checkers
+        services.AddScoped<IBuildingArchiveDependencyChecker, BuildingArchiveDependencyChecker>();
+        services.AddScoped<IFloorArchiveDependencyChecker, FloorArchiveDependencyChecker>();
+        services.AddScoped<IApartmentArchiveDependencyChecker, ApartmentArchiveDependencyChecker>();
+        services.AddScoped<IParkingSpotArchiveDependencyChecker, ParkingSpotArchiveDependencyChecker>();
 
         // Module 11 - Notifications
         services.AddScoped<PropertyOS.Application.Notifications.INotificationTemplateRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationTemplateRepository>();
@@ -312,8 +376,15 @@ public static class DependencyInjection
             // Performance rules (Architecture §6):
             //   • Lazy loading disabled — EF Core does NOT enable lazy loading by default.
             //     No call needed — the default behavior is correct.
-            //   • Sensitive data logging disabled in production.
-            options.EnableSensitiveDataLogging(false);
+            //   • Sensitive data logging: enabled in Development so SQL parameters (including
+            //     xmin, entity IDs, and soft-delete values) are visible in diagnostic logs.
+            //     Disabled in all other environments.
+            var environment = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Hosting.IHostEnvironment>();
+            bool isDevelopment = string.Equals(
+                environment.EnvironmentName, "Development",
+                StringComparison.OrdinalIgnoreCase);
+            options.EnableSensitiveDataLogging(isDevelopment);
         });
 
         return services;

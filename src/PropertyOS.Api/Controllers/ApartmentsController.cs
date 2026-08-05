@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using PropertyOS.Api.Models.Properties;
 using PropertyOS.Application.Properties.Apartments.Commands.ArchiveApartment;
 using PropertyOS.Application.Properties.Apartments.Commands.CreateApartment;
@@ -28,14 +29,17 @@ namespace PropertyOS.Api.Controllers;
 public class ApartmentsController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly ILogger<ApartmentsController> _logger;
 
     /// <summary>
     /// Initializes a new instance of ApartmentsController.
     /// </summary>
     /// <param name="mediator">The MediatR sender instance.</param>
-    public ApartmentsController(ISender mediator)
+    /// <param name="logger">The logger instance.</param>
+    public ApartmentsController(ISender mediator, ILogger<ApartmentsController> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -66,6 +70,10 @@ public class ApartmentsController : ControllerBase
         [FromBody] CreateApartmentRequest request,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] POST /api/v1/floors/{FloorId}/apartments UserId={UserId} CompanyId={CompanyId}", 
+            floorId, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new CreateApartmentCommand(
             FloorId: floorId,
             UnitNumber: request.UnitNumber,
@@ -103,6 +111,10 @@ public class ApartmentsController : ControllerBase
         [FromQuery] Guid? floorId = null,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] GET /api/v1/apartments UserId={UserId} CompanyId={CompanyId}", 
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var query = new ListApartmentsQuery(buildingId, floorId);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
@@ -128,6 +140,10 @@ public class ApartmentsController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] GET /api/v1/apartments/{Id} ApartmentId={ApartmentId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var query = new GetApartmentByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
@@ -157,6 +173,10 @@ public class ApartmentsController : ControllerBase
         [FromBody] UpdateApartmentRequest request,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] PUT /api/v1/apartments/{Id} ApartmentId={ApartmentId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new UpdateApartmentCommand(
             Id: id,
             BaseRentAmount: request.BaseRentAmount,
@@ -187,6 +207,10 @@ public class ApartmentsController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[API] DELETE /api/v1/apartments/{Id} ApartmentId={ApartmentId} UserId={UserId} CompanyId={CompanyId}", 
+            id, id, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, 
+            User.FindFirst("company_id")?.Value);
+
         var command = new ArchiveApartmentCommand(id);
         await _mediator.Send(command, cancellationToken);
         return NoContent();

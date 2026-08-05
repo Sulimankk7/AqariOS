@@ -19,9 +19,13 @@ using PropertyOS.Application.Leasing.Queries.GetExpiringLeases;
 using PropertyOS.Application.Leasing.Queries.GetLeaseContractById;
 using PropertyOS.Application.Leasing.Queries.GetLeaseHistoryForApartment;
 using PropertyOS.Application.Leasing.Queries.SearchLeaseContracts;
+using PropertyOS.Application.Leasing.Commands.DeleteContractDocument;
+using PropertyOS.Application.Leasing.Commands.ReplaceContractDocument;
+using PropertyOS.Application.Leasing.Queries.GetContractDocumentDownloadUrl;
 using PropertyOS.Application.Leasing.Security;
 
 namespace PropertyOS.Api.Leasing;
+
 
 /// <summary>
 /// API controller managing lease contracts lifecycle.
@@ -149,6 +153,68 @@ public class LeaseContractsController : ControllerBase
         var documentId = await _mediator.Send(command, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id }, documentId);
     }
+
+    /// <summary>
+    /// Generates or redirects to a short-lived download/view URL for an attached contract document.
+    /// </summary>
+    [HttpGet("api/v{version:apiVersion}/leasing/contracts/{id:guid}/documents/{documentId:guid}/download")]
+    [Authorize(Policy = LeasingPermissions.Create)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ContractDocumentDownloadUrlDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadDocument(
+        [FromRoute] Guid id,
+        [FromRoute] Guid documentId,
+        [FromQuery] bool inline = false,
+        [FromQuery] bool redirect = true,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetContractDocumentDownloadUrlQuery(id, documentId, inline);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (redirect)
+        {
+            return Redirect(result.Url);
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Replaces the underlying file of an attached contract document.
+    /// </summary>
+    [HttpPut("api/v{version:apiVersion}/leasing/contracts/{id:guid}/documents/{documentId:guid}/replace")]
+    [Authorize(Policy = LeasingPermissions.Create)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReplaceDocument(
+        [FromRoute] Guid id,
+        [FromRoute] Guid documentId,
+        [FromBody] ReplaceContractDocumentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new ReplaceContractDocumentCommand(id, documentId, request.NewFileId, request.Description);
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Soft-deletes an attached contract document.
+    /// </summary>
+    [HttpDelete("api/v{version:apiVersion}/leasing/contracts/{id:guid}/documents/{documentId:guid}")]
+    [Authorize(Policy = LeasingPermissions.Create)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteDocument(
+        [FromRoute] Guid id,
+        [FromRoute] Guid documentId,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new DeleteContractDocumentCommand(id, documentId);
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+
 
     /// <summary>
     /// Activates a draft or pending signature lease contract.

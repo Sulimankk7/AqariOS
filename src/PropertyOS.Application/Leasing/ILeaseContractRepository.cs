@@ -16,7 +16,9 @@ public interface ILeaseContractRepository
     Task<bool> HasSignedContractDocumentAsync(Guid leaseContractId, CancellationToken cancellationToken = default);
     Task<bool> HasDocumentAsync(Guid leaseContractId, Guid fileId, CancellationToken cancellationToken = default);
     Task<bool> HasSuccessorContractAsync(Guid priorContractId, CancellationToken cancellationToken = default);
+    Task<ContractDocument?> GetDocumentByIdAsync(Guid leaseContractId, Guid documentId, Guid companyId, CancellationToken cancellationToken = default);
     Task AddDocumentAsync(ContractDocument document, CancellationToken cancellationToken = default);
+
     Task AddStatusHistoryAsync(ContractStatusHistory statusHistory, CancellationToken cancellationToken = default);
     Task AddTerminationAsync(ContractTermination termination, CancellationToken cancellationToken = default);
     /// <summary>

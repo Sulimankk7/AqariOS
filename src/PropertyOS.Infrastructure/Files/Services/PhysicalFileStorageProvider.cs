@@ -67,14 +67,16 @@ public class PhysicalFileStorageProvider : IStorageProvider
         return Task.FromResult(info.Length);
     }
 
-    public Task<string> GeneratePreSignedDownloadUrlAsync(string storageKey, string filename, int expirationMinutes, CancellationToken cancellationToken = default)
+    public Task<string> GeneratePreSignedDownloadUrlAsync(string storageKey, string filename, int expirationMinutes, bool inline = false, CancellationToken cancellationToken = default)
     {
         GetFullPath(storageKey); // key sanity/containment check before signing anything
         var expires = DateTimeOffset.UtcNow.AddMinutes(expirationMinutes).ToUnixTimeSeconds();
         var token = _urlSigner.CreateToken("download", storageKey, expires);
-        var url = $"/api/v1/files/download?key={Uri.EscapeDataString(storageKey)}&expires={expires}&sig={token}";
+        var inlineParam = inline ? "&inline=true" : "";
+        var url = $"/api/v1/files/download?key={Uri.EscapeDataString(storageKey)}&expires={expires}&sig={token}{inlineParam}";
         return Task.FromResult(url);
     }
+
 
     public Task<string> GeneratePreSignedUploadUrlAsync(string storageKey, int expirationMinutes, CancellationToken cancellationToken = default)
     {

@@ -1,3 +1,4 @@
+using System.Linq;
 using FluentValidation;
 using PropertyOS.Domain.Properties.Enums;
 
@@ -5,6 +6,8 @@ namespace PropertyOS.Application.Properties.Apartments.Commands.CreateApartment;
 
 public class CreateApartmentCommandValidator : AbstractValidator<CreateApartmentCommand>
 {
+    private static readonly string[] SupportedCurrencies = ["JOD", "USD", "EUR", "AED", "SAR"];
+
     public CreateApartmentCommandValidator()
     {
         RuleFor(v => v.FloorId)
@@ -31,14 +34,24 @@ public class CreateApartmentCommandValidator : AbstractValidator<CreateApartment
             .MaximumLength(255).WithMessage("External owner name must not exceed 255 characters.")
             .When(v => v.OwnershipStatus == OwnershipStatus.ThirdPartyOwned);
 
+        RuleFor(v => v.ExternalOwnerName)
+            .Empty().WithMessage("External owner name must be null when ownership status is CompanyOwned.")
+            .When(v => v.OwnershipStatus != OwnershipStatus.ThirdPartyOwned);
+
         RuleFor(v => v.ExternalOwnerPhone)
-            .MaximumLength(20).WithMessage("External owner phone must not exceed 20 characters.");
+            .MaximumLength(20).WithMessage("External owner phone must not exceed 20 characters.")
+            .When(v => v.OwnershipStatus == OwnershipStatus.ThirdPartyOwned);
+
+        RuleFor(v => v.ExternalOwnerPhone)
+            .Empty().WithMessage("External owner phone must be null when ownership status is CompanyOwned.")
+            .When(v => v.OwnershipStatus != OwnershipStatus.ThirdPartyOwned);
 
         RuleFor(v => v.BaseRentAmount)
             .GreaterThan(0).WithMessage("Base rent amount must be positive when provided.")
             .When(v => v.BaseRentAmount.HasValue);
 
         RuleFor(v => v.BaseRentCurrency)
-            .Length(3).WithMessage("Currency code must be 3 characters.");
+            .Must(c => string.IsNullOrEmpty(c) || SupportedCurrencies.Contains(c.ToUpperInvariant()))
+            .WithMessage("Currency must be a supported code (JOD, USD, EUR, AED, SAR).");
     }
 }

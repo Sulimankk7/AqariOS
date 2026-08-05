@@ -161,12 +161,26 @@ public class LeaseContractRepository : ILeaseContractRepository
             .ProjectToType<ContractStatusHistoryDto>()
             .ToListAsync(cancellationToken);
 
-        contractDto.Documents = await _dbContext.ContractDocuments
-            .AsNoTracking()
-            .Where(d => d.LeaseContractId == id)
-            .OrderByDescending(d => d.CreatedAt)
-            .ProjectToType<ContractDocumentDto>()
-            .ToListAsync(cancellationToken);
+        contractDto.Documents = await (from d in _dbContext.ContractDocuments.AsNoTracking()
+                                       join f in _dbContext.FileStorage.AsNoTracking() on d.FileId equals f.Id into fj
+                                       from f in fj.DefaultIfEmpty()
+                                       where d.LeaseContractId == id
+                                       orderby d.CreatedAt descending
+                                       select new ContractDocumentDto
+                                       {
+                                           Id = d.Id,
+                                           CompanyId = d.CompanyId,
+                                           LeaseContractId = d.LeaseContractId,
+                                           FileId = d.FileId,
+                                           DocumentType = d.DocumentType,
+                                           Description = d.Description,
+                                           OriginalFilename = f != null ? f.OriginalFilename : null,
+                                           MimeType = f != null ? f.MimeType : null,
+                                           SizeBytes = f != null ? f.SizeBytes : 0,
+                                           UploadedBy = d.UploadedBy,
+                                           CreatedAt = d.CreatedAt
+                                       }).ToListAsync(cancellationToken);
+
 
         contractDto.Termination = await _dbContext.ContractTerminations
             .AsNoTracking()
@@ -246,4 +260,11 @@ public class LeaseContractRepository : ILeaseContractRepository
             .ProjectToType<LeaseContractDto>()
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<ContractDocument?> GetDocumentByIdAsync(Guid leaseContractId, Guid documentId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.ContractDocuments
+            .FirstOrDefaultAsync(d => d.Id == documentId && d.LeaseContractId == leaseContractId && d.CompanyId == companyId, cancellationToken);
+    }
 }
+

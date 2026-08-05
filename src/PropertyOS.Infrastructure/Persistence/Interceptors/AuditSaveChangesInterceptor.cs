@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Audit.Entities;
 using PropertyOS.Domain.Audit.Enums;
@@ -15,17 +16,20 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
     private readonly ICurrentUserContext _currentUserContext;
     private readonly AuditTransactionState _auditState;
     private readonly IAuditRequestContext _auditRequestContext; // To be implemented in Step 5
-    
+    private readonly ILogger<AuditSaveChangesInterceptor> _logger;
+
     public AuditSaveChangesInterceptor(
-        ITenantContext tenantContext, 
+        ITenantContext tenantContext,
         ICurrentUserContext currentUserContext,
         AuditTransactionState auditState,
-        IAuditRequestContext auditRequestContext)
+        IAuditRequestContext auditRequestContext,
+        ILogger<AuditSaveChangesInterceptor> logger)
     {
         _tenantContext = tenantContext;
         _currentUserContext = currentUserContext;
         _auditState = auditState;
         _auditRequestContext = auditRequestContext;
+        _logger = logger;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
@@ -46,6 +50,20 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
         var source = _auditRequestContext.Source;
         var correlationId = _auditRequestContext.CorrelationId;
         var requestId = _auditRequestContext.RequestId;
+
+        // DIAGNOSTIC: log every tracked ISoftDeletable entry so we can confirm EntityState and DeletedAt values.
+        foreach (var diagEntry in context.ChangeTracker.Entries().Where(e => e.Entity is ISoftDeletable))
+        {
+            var diagDeletedAt = diagEntry.Properties.FirstOrDefault(p => p.Metadata.Name == "DeletedAt");
+            _logger.LogInformation(
+                "[DIAG:AuditSaveChangesInterceptor] ISoftDeletable entry: EntityType={EntityType} EntityState={EntityState} " +
+                "DeletedAt.OriginalValue={OriginalValue} DeletedAt.CurrentValue={CurrentValue} DeletedAt.IsModified={IsModified}",
+                diagEntry.Entity.GetType().Name,
+                diagEntry.State,
+                diagDeletedAt?.OriginalValue ?? "(null)",
+                diagDeletedAt?.CurrentValue ?? "(null)",
+                diagDeletedAt?.IsModified ?? false);
+        }
 
         foreach (var entry in context.ChangeTracker.Entries())
         {

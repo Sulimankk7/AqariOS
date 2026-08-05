@@ -6,6 +6,7 @@ using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Properties;
 using PropertyOS.Domain.Properties;
+using PropertyOS.Domain.Properties.Enums;
 
 namespace PropertyOS.Application.Properties.Apartments.Commands.CreateApartment;
 
@@ -46,11 +47,19 @@ public class CreateApartmentCommandHandler : IRequestHandler<CreateApartmentComm
         if (building == null || building.CompanyId != companyId || !building.IsActive)
             throw new BusinessRuleException("Cannot add an apartment to an inactive or non-existent building.");
 
+        if (floor.BuildingId != building.Id)
+            throw new BusinessRuleException($"Floor with ID {request.FloorId} does not belong to Building {building.Id}.");
+
         if (await _apartmentRepository.UnitNumberExistsInBuildingAsync(building.Id, request.UnitNumber, cancellationToken))
             throw new ConflictException($"An apartment with unit number '{request.UnitNumber}' already exists in this building.");
 
         var now = DateTimeOffset.UtcNow;
         var userId = _currentUserContext.UserId;
+
+        // Enforce null external owner fields if OwnershipStatus is not ThirdPartyOwned
+        var isThirdParty = request.OwnershipStatus == OwnershipStatus.ThirdPartyOwned;
+        var externalOwnerName = isThirdParty ? request.ExternalOwnerName : null;
+        var externalOwnerPhone = isThirdParty ? request.ExternalOwnerPhone : null;
 
         var apartment = Apartment.Create(
             companyId: companyId,
@@ -61,8 +70,8 @@ public class CreateApartmentCommandHandler : IRequestHandler<CreateApartmentComm
             createdAt: now,
             createdBy: userId,
             ownershipStatus: request.OwnershipStatus,
-            externalOwnerName: request.ExternalOwnerName,
-            externalOwnerPhone: request.ExternalOwnerPhone,
+            externalOwnerName: externalOwnerName,
+            externalOwnerPhone: externalOwnerPhone,
             bedrooms: request.Bedrooms,
             bathrooms: request.Bathrooms,
             baseRentAmount: request.BaseRentAmount,

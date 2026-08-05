@@ -144,6 +144,7 @@ public class FilesController : ControllerBase
         [FromQuery] string key,
         [FromQuery] long expires,
         [FromQuery] string sig,
+        [FromQuery] bool inline = false,
         CancellationToken cancellationToken = default)
     {
         if (!_urlSigner.Verify("download", key, expires, sig, DateTimeOffset.UtcNow))
@@ -159,11 +160,14 @@ public class FilesController : ControllerBase
             return NotFound();
         }
 
-        // Serve as an opaque attachment: never let browsers sniff/execute stored content.
+        // Serve with explicit Content-Disposition and nosniff option
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         var filename = ExtractDownloadFilename(key);
-        return File(stream, "application/octet-stream", filename);
+        var disposition = inline ? "inline" : "attachment";
+        Response.Headers["Content-Disposition"] = $"{disposition}; filename=\"{filename}\"";
+        return File(stream, "application/octet-stream");
     }
+
 
     /// <summary>
     /// Key tail is "{fileId}-{sanitizedFilename}"; strip the 36-char GUID prefix when present.

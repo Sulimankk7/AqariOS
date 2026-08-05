@@ -11,6 +11,10 @@ public class ContractDocumentDto
     public Guid FileId { get; set; }
     public ContractDocumentType DocumentType { get; set; }
     public string? Description { get; set; }
+    public string? OriginalFilename { get; set; }
+    public string? MimeType { get; set; }
+    public long SizeBytes { get; set; }
     public Guid? UploadedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
+

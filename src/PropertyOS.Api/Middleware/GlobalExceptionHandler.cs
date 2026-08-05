@@ -70,6 +70,15 @@ public class GlobalExceptionHandler : IExceptionHandler
                 }
                 break;
 
+            case ArchiveBlockedException archiveBlockedException:
+                statusCode = StatusCodes.Status409Conflict;
+                problemDetails.Status = statusCode;
+                problemDetails.Title = archiveBlockedException.Message;
+                problemDetails.Detail = "Resolve the following active dependencies before archiving.";
+                problemDetails.Extensions["code"] = "ARCHIVE_BLOCKED";
+                problemDetails.Extensions["dependencies"] = archiveBlockedException.Dependencies;
+                break;
+
             case BusinessRuleException businessRuleException:
                 statusCode = StatusCodes.Status422UnprocessableEntity;
                 problemDetails.Status = statusCode;
