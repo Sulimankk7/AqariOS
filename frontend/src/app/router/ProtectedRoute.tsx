@@ -4,12 +4,16 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ROUTES } from "@/config/routes";
 
 export function ProtectedRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authStatus } = useAuth();
   const location = useLocation();
 
+  if (authStatus === "initializing") {
+    return null;
+  }
+
   if (!isAuthenticated) {
-    // Redirect to login but save the attempted url
-    return <Navigate to={ROUTES.auth.login} state={{ from: location }} replace />;
+    const returnUrl = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`${ROUTES.auth.login}?returnUrl=${returnUrl}`} replace />;
   }
 
   return <Outlet />;

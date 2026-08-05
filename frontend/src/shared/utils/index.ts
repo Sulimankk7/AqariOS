@@ -40,3 +40,6 @@ export function normaliseString(value: string): string {
 export function normalisePhone(value: string): string {
   return value.replace(/[^\d+]/g, "");
 }
+
+export * from './errorHandling';
+

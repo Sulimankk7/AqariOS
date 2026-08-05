@@ -1,20 +1,17 @@
 /**
  * Topbar Component — Enterprise Shell Header.
  *
- * Contains:
- * - Mobile hamburger
- * - Company Switcher dropdown
- * - Global Search trigger (Ctrl+K badge)
- * - Language toggle
- * - Theme selector
- * - Notification bell
- * - User menu (Profile, Preferences, Language, Appearance, Logout)
+ * Designed for exceptional UX, visual clarity, and full RTL/LTR responsiveness.
  *
- * Architecture Rule:
- * Logout calls queryClient.clear() then auth.logout() — never accesses localStorage directly.
+ * Contains:
+ * - Mobile hamburger menu trigger
+ * - Company/Organization Switcher (Sleek dropdown badge)
+ * - Global Search trigger with Ctrl+K shortcut badge
+ * - Quick Action Tools (Language Switcher, Theme Selector, Notification Bell)
+ * - User Profile & Identity Menu
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
   Menu,
@@ -31,11 +28,11 @@ import {
   SlidersHorizontal,
   Check,
   Palette,
+  Sparkles,
 } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
 import { useTheme } from "@/shared/theme";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useQueryClient } from "@tanstack/react-query";
 import { ROUTES } from "@/config/routes";
 
 export interface TopbarProps {
@@ -46,7 +43,6 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
   const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [showCompanyMenu, setShowCompanyMenu] = useState(false);
@@ -54,42 +50,54 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  const headerRef = useRef<HTMLHeadingElement>(null);
+
+  // Close all dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setShowCompanyMenu(false);
+        setShowThemeMenu(false);
+        setShowNotificationMenu(false);
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "ar" : "en");
   };
 
-  /**
-   * Logout: clears TanStack Query cache first, then clears auth state.
-   * Redirects to /auth/login.
-   */
   const handleLogout = () => {
-    queryClient.clear();
-    logout();
     setShowUserMenu(false);
-    navigate(ROUTES.auth.login, { replace: true });
+    logout();
   };
 
-  /** Close all dropdowns when navigating */
   const handleNavigate = (path: string) => {
     setShowUserMenu(false);
     setShowCompanyMenu(false);
     navigate(path);
   };
 
-  // Company switcher — placeholder until backend provides company data
-  const mockCompany = {
-    name: user?.name ? `${user.name}'s Organization` : "AqariOS Organization",
-    code: "AQ-ORG",
-    avatar: user?.name ? user.name[0].toUpperCase() : "A",
-  };
+  // Company details derived from session
+  const companyInfo = user
+    ? {
+        name: user.companyName || `${user.name}'s Organization`,
+        code: "AQ-ORG",
+        avatar: user.companyName ? user.companyName[0].toUpperCase() : user.name ? user.name[0].toUpperCase() : "A",
+      }
+    : null;
 
   return (
     <header
-      className="sticky top-0 z-30 w-full h-14 border-b border-border bg-card/95 backdrop-blur-sm px-4 sm:px-6 flex items-center justify-between gap-4"
+      ref={headerRef}
+      className="sticky top-0 z-30 w-full h-14 border-b border-border bg-card/95 backdrop-blur-md px-3 sm:px-5 flex items-center justify-between gap-3 shadow-xs"
       role="banner"
     >
-      {/* Left: Mobile Hamburger + Company Switcher */}
-      <div className="flex items-center gap-3">
+      {/* ── Start (Left in LTR / Right in RTL): Mobile Hamburger + Organization Switcher ── */}
+      <div className="flex items-center gap-2">
         {/* Mobile Hamburger */}
         <button
           onClick={onOpenMobileNav}
@@ -99,111 +107,134 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Company Switcher */}
-        <div className="relative">
-          <button
-            onClick={() => setShowCompanyMenu((prev) => !prev)}
-            aria-label="Switch company"
-            aria-expanded={showCompanyMenu}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-secondary/80 hover:bg-secondary text-xs font-medium transition-colors cursor-pointer"
-          >
-            {/* Company avatar */}
-            <div className="w-5 h-5 rounded bg-brand-green-900 text-white flex items-center justify-center text-[9px] font-bold shrink-0">
-              {mockCompany.avatar}
-            </div>
-            <div className="hidden sm:block text-start truncate max-w-32">
-              <span className="font-semibold text-foreground block truncate">
-                {mockCompany.name}
-              </span>
-              <span className="text-[9px] text-muted-foreground block">
-                {mockCompany.code}
-              </span>
-            </div>
-            <ChevronDown
-              className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${showCompanyMenu ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {showCompanyMenu && (
-            <div
-              className="absolute start-0 top-full mt-2 w-56 rounded-lg border border-border bg-card shadow-lg p-1.5 text-xs z-50"
-              role="menu"
+        {/* Company / Organization Switcher */}
+        {user && companyInfo && (
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowCompanyMenu((prev) => !prev);
+                setShowThemeMenu(false);
+                setShowNotificationMenu(false);
+                setShowUserMenu(false);
+              }}
+              aria-label="Switch organization"
+              aria-expanded={showCompanyMenu}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border/70 bg-secondary/60 hover:bg-secondary hover:border-border text-xs transition-all cursor-pointer group"
+              title={companyInfo.name}
             >
-              <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                {t("common.selectCompany")}
+              <div className="w-5 h-5 rounded bg-primary/15 text-primary border border-primary/30 flex items-center justify-center text-[10px] font-bold shrink-0 group-hover:scale-105 transition-transform">
+                {companyInfo.avatar}
               </div>
-              <button
-                onClick={() => setShowCompanyMenu(false)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-secondary text-start transition-colors cursor-pointer"
-                role="menuitem"
+              <span className="hidden md:inline-block font-medium text-foreground truncate max-w-[150px] text-xs">
+                {companyInfo.name}
+              </span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-200 ${
+                  showCompanyMenu ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {showCompanyMenu && (
+              <div
+                className="absolute start-0 top-full mt-1.5 w-60 rounded-xl border border-border bg-card shadow-xl p-1.5 text-xs z-50 animate-in fade-in-50 zoom-in-95 duration-100"
+                role="menu"
               >
-                <div>
-                  <p className="font-medium text-foreground">{mockCompany.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{mockCompany.code}</p>
+                <div className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                  {t("common.selectCompany")}
                 </div>
-                <Check className="w-3.5 h-3.5 text-primary" />
-              </button>
-            </div>
-          )}
-        </div>
+                <button
+                  onClick={() => setShowCompanyMenu(false)}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 text-start cursor-pointer"
+                  role="menuitem"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <Building2 className="w-4 h-4 text-primary shrink-0" />
+                    <div className="truncate">
+                      <p className="font-semibold text-foreground truncate">{companyInfo.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{companyInfo.code}</p>
+                    </div>
+                  </div>
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Center: Search trigger with Ctrl+K badge */}
-      <button
-        onClick={() => {
-          window.dispatchEvent(
-            new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
-          );
-        }}
-        aria-label="Open command palette (Ctrl+K)"
-        className="hidden md:flex items-center gap-2 px-3.5 py-1.5 w-56 lg:w-96 rounded-lg border border-border bg-secondary text-muted-foreground text-xs hover:border-border-strong transition-colors cursor-pointer"
-      >
-        <Search className="w-3.5 h-3.5 shrink-0" />
-        <span className="truncate text-start flex-1">{t("common.searchPlaceholder")}</span>
-        <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono rounded bg-card border border-border text-muted-foreground">
-          Ctrl+K
-        </kbd>
-      </button>
+      {/* ── Center: Global Command Search Trigger (Ctrl+K) ── */}
+      <div className="flex-1 max-w-xl mx-2 flex justify-center">
+        <button
+          onClick={() => {
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
+            );
+          }}
+          aria-label="Open command palette (Ctrl+K)"
+          className="w-full max-w-[480px] flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-border/80 bg-secondary/50 hover:bg-secondary hover:border-border text-muted-foreground text-xs transition-all cursor-pointer shadow-2xs group"
+        >
+          <Search className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+          <span className="truncate text-start flex-1 text-muted-foreground group-hover:text-foreground transition-colors">
+            {t("common.searchPlaceholder")}
+          </span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono rounded-full bg-card border border-border text-muted-foreground shadow-2xs">
+            Ctrl+K
+          </kbd>
+        </button>
+      </div>
 
-      {/* Right: Language, Theme, Notifications, User */}
-      <div className="flex items-center gap-1.5">
-        {/* Language Toggle */}
+      {/* ── End (Right in LTR / Left in RTL): Language, Theme, Notifications, User Profile ── */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Language Switcher */}
         <button
           onClick={toggleLanguage}
           aria-label="Switch language"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border hover:bg-secondary text-foreground text-xs font-medium transition-colors cursor-pointer"
+          title={language === "en" ? "التحويل إلى العربية" : "Switch to English"}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/60 hover:bg-secondary text-foreground text-xs font-medium transition-all cursor-pointer"
         >
-          <Globe className="w-3.5 h-3.5 text-brand-green-600" />
-          <span className="hidden sm:inline">{language === "en" ? "العربية" : "English"}</span>
+          <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="font-medium text-xs">{language === "en" ? "العربية" : "EN"}</span>
         </button>
 
         {/* Theme Selector */}
         <div className="relative">
           <button
-            onClick={() => setShowThemeMenu((prev) => !prev)}
+            onClick={() => {
+              setShowThemeMenu((prev) => !prev);
+              setShowCompanyMenu(false);
+              setShowNotificationMenu(false);
+              setShowUserMenu(false);
+            }}
             aria-label="Change theme"
             aria-expanded={showThemeMenu}
-            className="p-2 rounded-lg border border-border hover:bg-secondary text-foreground transition-colors cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center rounded-lg border border-border/60 hover:bg-secondary text-foreground transition-all cursor-pointer"
+            title="Appearance Theme"
           >
-            {theme === "light" && <Sun className="w-3.5 h-3.5 text-amber-500" />}
-            {theme === "dark" && <Moon className="w-3.5 h-3.5 text-blue-400" />}
-            {theme === "system" && <Monitor className="w-3.5 h-3.5 text-muted-foreground" />}
+            {theme === "light" && <Sun className="w-4 h-4 text-amber-500" />}
+            {theme === "dark" && <Moon className="w-4 h-4 text-blue-400" />}
+            {theme === "system" && <Monitor className="w-4 h-4 text-muted-foreground" />}
           </button>
 
           {showThemeMenu && (
             <div
-              className="absolute end-0 top-full mt-2 w-36 rounded-lg border border-border bg-card shadow-lg p-1 space-y-0.5 text-xs z-50"
+              className="absolute end-0 top-full mt-1.5 w-36 rounded-xl border border-border bg-card shadow-xl p-1 space-y-0.5 text-xs z-50 animate-in fade-in-50 zoom-in-95 duration-100"
               role="menu"
             >
               {[
-                { key: "light", label: t("theme.light"), icon: <Sun className="w-3.5 h-3.5" /> },
-                { key: "dark", label: t("theme.dark"), icon: <Moon className="w-3.5 h-3.5" /> },
-                { key: "system", label: t("theme.system"), icon: <Monitor className="w-3.5 h-3.5" /> },
+                { key: "light", label: t("theme.light"), icon: <Sun className="w-3.5 h-3.5 text-amber-500" /> },
+                { key: "dark", label: t("theme.dark"), icon: <Moon className="w-3.5 h-3.5 text-blue-400" /> },
+                { key: "system", label: t("theme.system"), icon: <Monitor className="w-3.5 h-3.5 text-muted-foreground" /> },
               ].map(({ key, label, icon }) => (
                 <button
                   key={key}
-                  onClick={() => { setTheme(key as "light" | "dark" | "system"); setShowThemeMenu(false); }}
-                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-start transition-colors cursor-pointer ${theme === key ? "bg-secondary font-semibold" : "hover:bg-secondary"}`}
+                  onClick={() => {
+                    setTheme(key as "light" | "dark" | "system");
+                    setShowThemeMenu(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-start transition-colors cursor-pointer ${
+                    theme === key ? "bg-secondary font-semibold text-foreground" : "hover:bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
                   role="menuitem"
                 >
                   {icon}
@@ -218,107 +249,135 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
         {/* Notification Bell */}
         <div className="relative">
           <button
-            onClick={() => setShowNotificationMenu((prev) => !prev)}
+            onClick={() => {
+              setShowNotificationMenu((prev) => !prev);
+              setShowCompanyMenu(false);
+              setShowThemeMenu(false);
+              setShowUserMenu(false);
+            }}
             aria-label="Notifications"
             aria-expanded={showNotificationMenu}
-            className="relative p-2 rounded-lg border border-border hover:bg-secondary text-foreground transition-colors cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center relative rounded-lg border border-border/60 hover:bg-secondary text-foreground transition-all cursor-pointer"
+            title="Notifications"
           >
-            <Bell className="w-3.5 h-3.5 text-brand-brown-600" />
-            {/* Unread indicator — will be driven by real API count in future */}
+            <Bell className="w-4 h-4 text-foreground" />
             <span
-              className="absolute top-1 end-1 w-1.5 h-1.5 rounded-full bg-danger"
+              className="absolute top-2 end-2 w-2 h-2 rounded-full bg-destructive ring-2 ring-card animate-pulse"
               aria-label="Unread notifications"
             />
           </button>
 
           {showNotificationMenu && (
             <div
-              className="absolute end-0 top-full mt-2 w-72 rounded-lg border border-border bg-card shadow-lg p-2 text-xs z-50"
+              className="absolute end-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl border border-border bg-card shadow-xl p-3 text-xs z-50 animate-in fade-in-50 zoom-in-95 duration-100"
               role="dialog"
               aria-label="Notifications panel"
             >
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
-                <span className="font-semibold text-foreground">{t("common.notifications")}</span>
+                <span className="font-semibold text-foreground flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5 text-primary" />
+                  {t("common.notifications")}
+                </span>
+                <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
+                  0 New
+                </span>
               </div>
-              {/* Empty state */}
-              <div className="flex flex-col items-center justify-center py-6 text-muted-foreground gap-2">
-                <Bell className="w-8 h-8 opacity-30" />
-                <p>{t("common.noNotifications") || "No notifications"}</p>
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2 text-center">
+                <Bell className="w-8 h-8 opacity-25" />
+                <p className="font-medium text-foreground">{t("common.noNotifications") || "All caught up!"}</p>
+                <p className="text-[11px] text-muted-foreground">You have no unread notifications right now.</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* User Menu */}
+        {/* Separator */}
+        <div className="h-5 w-[1px] bg-border mx-1 hidden sm:block" />
+
+        {/* User Profile Menu */}
         {user && (
           <div className="relative">
             <button
-              onClick={() => setShowUserMenu((prev) => !prev)}
+              onClick={() => {
+                setShowUserMenu((prev) => !prev);
+                setShowCompanyMenu(false);
+                setShowThemeMenu(false);
+                setShowNotificationMenu(false);
+              }}
               aria-label="User menu"
               aria-expanded={showUserMenu}
-              className="flex items-center gap-2 p-1.5 rounded-lg border border-border hover:bg-secondary text-xs transition-colors cursor-pointer"
+              className="flex items-center gap-2 p-1 rounded-full border border-border/80 hover:border-primary/40 hover:bg-secondary/60 text-xs transition-all cursor-pointer group"
             >
-              <div className="w-6 h-6 rounded-full bg-brand-brown-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              {/* User Avatar */}
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                 {user.name ? user.name[0].toUpperCase() : "U"}
               </div>
-              <div className="hidden sm:flex flex-col text-start max-w-24">
-                <span className="font-medium text-foreground truncate">{user.name || "User"}</span>
-                <span className="text-[9px] text-muted-foreground truncate">{user.email}</span>
-              </div>
+
+              {/* User Name (Smooth display on desktop) */}
+              <span className="hidden md:inline-block font-medium text-foreground text-xs pe-1 truncate max-w-[130px]">
+                {user.name}
+              </span>
               <ChevronDown
-                className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
+                className={`w-3.5 h-3.5 text-muted-foreground me-1 shrink-0 transition-transform duration-200 ${
+                  showUserMenu ? "rotate-180" : ""
+                }`}
               />
             </button>
 
             {showUserMenu && (
               <div
-                className="absolute end-0 top-full mt-2 w-52 rounded-lg border border-border bg-card shadow-lg p-1.5 text-xs z-50 space-y-0.5"
+                className="absolute end-0 top-full mt-1.5 w-60 rounded-xl border border-border bg-card shadow-xl p-1.5 text-xs z-50 space-y-1 animate-in fade-in-50 zoom-in-95 duration-100"
                 role="menu"
               >
-                {/* User identity header */}
-                <div className="px-2.5 py-2 border-b border-border mb-1">
-                  <p className="font-semibold text-foreground truncate">{user.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+                {/* User identity header card */}
+                <div className="p-2.5 rounded-lg bg-secondary/50 border border-border/50 mb-1">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0">
+                      {user.name ? user.name[0].toUpperCase() : "U"}
+                    </div>
+                    <div className="truncate">
+                      <p className="font-semibold text-foreground truncate">{user.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Profile */}
                 <button
                   onClick={() => handleNavigate(ROUTES.profile.root)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-start hover:bg-secondary transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
                   role="menuitem"
                 >
-                  <UserCircle className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>{t("nav.profile") || "Profile"}</span>
+                  <UserCircle className="w-4 h-4 text-muted-foreground" />
+                  <span>{t("nav.profile") || "My Profile"}</span>
                 </button>
 
                 {/* Preferences */}
                 <button
                   onClick={() => handleNavigate(ROUTES.preferences.root)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-start hover:bg-secondary transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
                   role="menuitem"
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                  <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
                   <span>{t("nav.preferences") || "Preferences"}</span>
                 </button>
 
-                {/* Language */}
+                {/* Quick Language Toggle */}
                 <button
-                  onClick={() => { toggleLanguage(); setShowUserMenu(false); }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-start hover:bg-secondary transition-colors cursor-pointer"
+                  onClick={() => {
+                    toggleLanguage();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
                   role="menuitem"
                 >
-                  <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>{language === "en" ? "العربية" : "English"}</span>
-                </button>
-
-                {/* Appearance */}
-                <button
-                  onClick={() => { setShowUserMenu(false); setShowThemeMenu(true); }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-start hover:bg-secondary transition-colors cursor-pointer"
-                  role="menuitem"
-                >
-                  <Palette className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>{t("theme.mode") || "Appearance"}</span>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    <span>{t("common.language") || "Language"}</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-primary">
+                    {language === "en" ? "العربية" : "English"}
+                  </span>
                 </button>
 
                 <div className="border-t border-border my-1" />
@@ -326,11 +385,11 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
                 {/* Logout */}
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-start text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start text-destructive hover:bg-destructive/10 transition-colors cursor-pointer font-medium"
                   role="menuitem"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>{t("nav.logout")}</span>
+                  <LogOut className="w-4 h-4" />
+                  <span>{t("nav.logout") || "Sign out"}</span>
                 </button>
               </div>
             )}
@@ -340,3 +399,5 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
     </header>
   );
 }
+
+export default Topbar;

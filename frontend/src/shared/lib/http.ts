@@ -7,11 +7,88 @@
  *   - Automatic Bearer token injection from storage
  *   - credentials: "include" enabled for HttpOnly cookie exchange (Axios withCredentials: true equivalent)
  *   - Global error normalization (RFC 7807 ProblemDetails & ValidationProblemDetails)
+ *   - Production-Grade 401 Refresh Token & Mutex-Locked Session Invalidation Pipeline
  */
 
 import { apiConfig } from "@/config/api";
 import { storage, STORAGE_KEYS } from "@/shared/services/storage";
 import { logger } from "@/shared/services/logger";
+import { toast } from "sonner";
+
+// ── 401 Unauthorized & Refresh Token Pipeline State ─────────────────────────
+
+type UnauthorizedHandler = (returnUrl?: string) => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+let isRefreshingToken = false;
+let failedQueue: Array<{
+  resolve: (token: string | null) => void;
+  reject: (err: any) => void;
+}> = [];
+
+let hasShownSessionExpiredToast = false;
+
+export function registerUnauthorizedHandler(handler: UnauthorizedHandler): void {
+  unauthorizedHandler = handler;
+}
+
+export function resetUnauthorizedState(): void {
+  hasShownSessionExpiredToast = false;
+  isRefreshingToken = false;
+  failedQueue = [];
+}
+
+const PUBLIC_AUTH_PATHS = [
+  "/api/v1/auth/login",
+  "/api/v1/auth/register",
+  "/api/v1/auth/refresh",
+  "/api/v1/auth/otp/request",
+  "/api/v1/auth/otp/verify",
+];
+
+const PUBLIC_UI_ROUTES = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/otp",
+];
+
+function isPublicAuthEndpoint(url: string, skipAuth?: boolean): boolean {
+  if (skipAuth) return true;
+  return PUBLIC_AUTH_PATHS.some((path) => url.includes(path));
+}
+
+function isPublicUiRoute(): boolean {
+  const currentPath = window.location.pathname.toLowerCase();
+  return PUBLIC_UI_ROUTES.some((route) => currentPath.startsWith(route));
+}
+
+function processQueue(error: any, token: string | null = null) {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+}
+
+function triggerSessionInvalidation(): void {
+  // Show only ONE friendly toast notification per session expiry
+  if (!hasShownSessionExpiredToast) {
+    hasShownSessionExpiredToast = true;
+    toast.error("Your session has expired. Please sign in again.");
+  }
+
+  if (unauthorizedHandler) {
+    try {
+      unauthorizedHandler();
+    } catch {
+      // Fail-safe
+    }
+  }
+}
 
 // ── Error Classes & Types ─────────────────────────────────────────────────────
 
@@ -50,6 +127,7 @@ export interface RequestConfig extends Omit<RequestInit, "body"> {
   body?: unknown;
   headers?: Record<string, string>;
   skipAuth?: boolean;
+  isRetry?: boolean;
 }
 
 type RequestInterceptor = (config: RequestConfig) => RequestConfig | Promise<RequestConfig>;
@@ -116,6 +194,35 @@ export class HttpClient {
     return `${base}${normalised}`;
   }
 
+  /** Attempt single silent refresh request using HttpOnly cookie or refresh token */
+  private async performTokenRefresh(): Promise<string | null> {
+    try {
+      const fullUrl = this.resolveUrl("/api/v1/auth/refresh");
+      const res = await fetch(fullUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({}),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const data = await res.json();
+      if (data && data.accessToken) {
+        storage.set(STORAGE_KEYS.accessToken, data.accessToken);
+        return data.accessToken;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   /** Low-level request dispatcher */
   public async request<T>(config: RequestConfig): Promise<T> {
     let finalConfig = await this.interceptors.request.run(config);
@@ -137,11 +244,66 @@ export class HttpClient {
         ...finalConfig,
         headers,
         body: fetchBody,
-        // Enable withCredentials equivalent: send HttpOnly cookies with every request
         credentials: "include",
       });
 
       response = await this.interceptors.response.run(response);
+
+      // Handle HTTP 401 Unauthorized
+      if (response.status === 401) {
+        const isPublic = isPublicAuthEndpoint(finalConfig.url, finalConfig.skipAuth);
+
+        // Requirement 4: 401 on public endpoints must NOT trigger session invalidation or logout
+        if (isPublic) {
+          logger.warn(`401 on public endpoint ${finalConfig.url} — bypassing session invalidation.`);
+        } else if (finalConfig.isRetry) {
+          // Requirement 1 & 8: Request already retried once — prevent infinite retry loops
+          logger.warn(`Retry failed with 401 at ${finalConfig.url}. Triggering session invalidation.`);
+          triggerSessionInvalidation();
+        } else {
+          // Requirement 1 & 2: Mutex-locked single Refresh Token flow for multiple simultaneous 401s
+          if (isRefreshingToken) {
+            return new Promise<T>((resolve, reject) => {
+              failedQueue.push({
+                resolve: (newToken: string | null) => {
+                  if (newToken) {
+                    finalConfig.headers = {
+                      ...(finalConfig.headers ?? {}),
+                      Authorization: `Bearer ${newToken}`,
+                    };
+                    finalConfig.isRetry = true;
+                    this.request<T>(finalConfig).then(resolve).catch(reject);
+                  } else {
+                    reject(new ApiError(401, "Session expired"));
+                  }
+                },
+                reject: (err: any) => reject(err),
+              });
+            });
+          }
+
+          isRefreshingToken = true;
+          logger.info(`401 encountered at ${finalConfig.url}. Attempting single token refresh...`);
+
+          const newAccessToken = await this.performTokenRefresh();
+          isRefreshingToken = false;
+
+          if (newAccessToken) {
+            logger.info("Token refresh succeeded. Retrying original request...");
+            processQueue(null, newAccessToken);
+            finalConfig.headers = {
+              ...(finalConfig.headers ?? {}),
+              Authorization: `Bearer ${newAccessToken}`,
+            };
+            finalConfig.isRetry = true;
+            return this.request<T>(finalConfig);
+          } else {
+            logger.warn("Token refresh failed. Invalidating session.");
+            processQueue(new ApiError(401, "Session expired"), null);
+            triggerSessionInvalidation();
+          }
+        }
+      }
 
       if (!response.ok) {
         let payload: ProblemDetailsPayload | undefined;

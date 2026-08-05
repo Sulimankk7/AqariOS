@@ -14,7 +14,7 @@ type LogPayload = Record<string, unknown> | Error | unknown;
 
 function shouldLog(level: LogLevel): boolean {
   if (env.isProd) {
-    return level === "warn" || level === "error";
+    return false;
   }
   return true;
 }

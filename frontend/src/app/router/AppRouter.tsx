@@ -8,11 +8,13 @@
  * [ProtectedRoute]      → requires isAuthenticated
  *   [AppLayout]         → sidebar + topbar shell
  *     /dashboard
- *     /buildings        /apartments      /parking
- *     /leases           /tenants
- *     /payments         /financial-operations
- *     /maintenance      /marketplace     /documents
- *     /notifications    /settings        /profile   /preferences
+ *     /buildings
+ *       /buildings/:id
+ *       /buildings/:buildingId/floors/new
+ *       /buildings/:buildingId/floors/:floorId
+ *       /buildings/:buildingId/floors/:floorId/apartments/new
+ *     /apartments
+ *       /apartments/:id (Canonical Apartment Details)
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
@@ -25,8 +27,6 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 
 // Lucide icons for placeholders
 import {
-  Building2,
-  Home,
   Car,
   FileText,
   Users,
@@ -51,6 +51,28 @@ import ResetPasswordPage from "@/features/auth/pages/ResetPassword";
 
 // Real page implementations
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
+import BuildingsPage from "@/features/buildings/pages/BuildingsPage";
+import CreateBuildingPage from "@/features/buildings/pages/CreateBuildingPage";
+import EditBuildingPage from "@/features/buildings/pages/EditBuildingPage";
+import BuildingDetailsPage from "@/features/buildings/pages/BuildingDetailsPage";
+
+import CreateFloorPage from "@/features/floors/pages/CreateFloorPage";
+import FloorDetailsPage from "@/features/floors/pages/FloorDetailsPage";
+
+import ApartmentsPage from "@/features/apartments/pages/ApartmentsPage";
+import CreateApartmentPage from "@/features/apartments/pages/CreateApartmentPage";
+import EditApartmentPage from "@/features/apartments/pages/EditApartmentPage";
+import ApartmentDetailsPage from "@/features/apartments/pages/ApartmentDetailsPage";
+
+import LeasesPage from "@/features/leasing/pages/LeasesPage";
+import CreateLeasePage from "@/features/leasing/pages/CreateLeasePage";
+import EditLeasePage from "@/features/leasing/pages/EditLeasePage";
+import LeaseDetailsPage from "@/features/leasing/pages/LeaseDetailsPage";
+
+import TenantsPage from "@/features/tenants/pages/TenantsPage";
+import CreateTenantPage from "@/features/tenants/pages/CreateTenantPage";
+import EditTenantPage from "@/features/tenants/pages/EditTenantPage";
+import TenantDetailsPage from "@/features/tenants/pages/TenantDetailsPage";
 
 /** Root redirect — sends authenticated users to /dashboard, others to /auth/login */
 function RootRedirect() {
@@ -84,27 +106,31 @@ export function AppRouter() {
             {/* Dashboard */}
             <Route path={ROUTES.dashboard.root} element={<DashboardPage />} />
 
-            {/* Assets — Property */}
-            <Route
-              path={ROUTES.buildings.root}
-              element={
-                <ModulePlaceholder
-                  title="Buildings"
-                  description="Manage your building portfolio, floors, and physical assets."
-                  icon={Building2}
-                />
-              }
-            />
-            <Route
-              path={ROUTES.apartments.root}
-              element={
-                <ModulePlaceholder
-                  title="Apartments"
-                  description="View and manage individual apartment units across all buildings."
-                  icon={Home}
-                />
-              }
-            />
+            {/* Assets — Buildings Hierarchy */}
+            <Route path={ROUTES.buildings.root}>
+              <Route index element={<BuildingsPage />} />
+              <Route path="new" element={<CreateBuildingPage />} />
+              <Route path=":id" element={<BuildingDetailsPage />} />
+              <Route path=":id/edit" element={<EditBuildingPage />} />
+            </Route>
+
+            {/* Floors Hierarchy (Nested under Building context) */}
+            <Route path="/buildings/:buildingId/floors/new" element={<CreateFloorPage />} />
+            <Route path="/buildings/:buildingId/floors/:floorId" element={<FloorDetailsPage />} />
+
+            {/* Apartment Creation under Floor Context */}
+            <Route path="/buildings/:buildingId/floors/:floorId/apartments/new" element={<CreateApartmentPage />} />
+            <Route path="/floors/:floorId/apartments/new" element={<CreateApartmentPage />} />
+
+            {/* Assets — Apartments (Global Discovery & Canonical Unit Details) */}
+            <Route path={ROUTES.apartments.root}>
+              <Route index element={<ApartmentsPage />} />
+              <Route path="new" element={<CreateApartmentPage />} />
+              <Route path=":id" element={<ApartmentDetailsPage />} />
+              <Route path=":id/edit" element={<EditApartmentPage />} />
+            </Route>
+
+            {/* Assets — Parking */}
             <Route
               path={ROUTES.parking.root}
               element={
@@ -117,26 +143,19 @@ export function AppRouter() {
             />
 
             {/* Leasing */}
-            <Route
-              path={ROUTES.leases.root}
-              element={
-                <ModulePlaceholder
-                  title="Leases"
-                  description="Manage tenant contracts, renewals, and lease agreements."
-                  icon={FileText}
-                />
-              }
-            />
-            <Route
-              path={ROUTES.tenants.root}
-              element={
-                <ModulePlaceholder
-                  title="Tenants"
-                  description="Maintain tenant profiles, communications, and history."
-                  icon={Users}
-                />
-              }
-            />
+            <Route path={ROUTES.leases.root}>
+              <Route index element={<LeasesPage />} />
+              <Route path="new" element={<CreateLeasePage />} />
+              <Route path=":id" element={<LeaseDetailsPage />} />
+              <Route path=":id/edit" element={<EditLeasePage />} />
+            </Route>
+            {/* Tenants */}
+            <Route path={ROUTES.tenants.root}>
+              <Route index element={<TenantsPage />} />
+              <Route path="new" element={<CreateTenantPage />} />
+              <Route path=":id" element={<TenantDetailsPage />} />
+              <Route path=":id/edit" element={<EditTenantPage />} />
+            </Route>
 
             {/* Finance */}
             <Route

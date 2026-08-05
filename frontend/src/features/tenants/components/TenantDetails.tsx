@@ -1,0 +1,317 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { DataTable, Column } from '@/shared/components/ui/DataTable';
+import {
+  TenantDetailDto,
+  TenantFamilyMemberDto,
+  TenantEmergencyContactDto,
+  TenantVehicleDto,
+  LeaseContractDto,
+} from '../types/tenants.types';
+import { useTenantLeaseHistory } from '../hooks/useTenants';
+import { getTenantTranslation } from '../constants/translations';
+import { useTranslation } from '@/shared/i18n';
+import {
+  User,
+  Phone,
+  Briefcase,
+  Building,
+  Users,
+  ShieldAlert,
+  Car,
+  FileText,
+  Edit,
+  Trash2,
+  Eye,
+  ArrowLeft,
+  ArrowRight,
+} from 'lucide-react';
+import { contractStatusToLabel, contractStatusToBadgeVariant } from '@/features/leasing/constants/leasingEnums';
+import { getLeasingTranslation } from '@/features/leasing/constants/translations';
+import { DeleteTenantDialog } from './DeleteTenantDialog';
+import { extractUserFriendlyError } from '@/shared/utils';
+
+interface TenantDetailsProps {
+  tenant: TenantDetailDto;
+}
+
+export function TenantDetails({ tenant }: TenantDetailsProps) {
+  const navigate = useNavigate();
+  const { language } = useTranslation();
+  const t = (key: string) => getTenantTranslation(key, language);
+  const leasingT = (key: string) => getLeasingTranslation(key, language);
+
+  const [deletingTenant, setDeletingTenant] = useState<boolean>(false);
+
+  // Fetch tenant lease history from endpoint GET /api/v1/leasing/tenants/{tenantId}/leases
+  const {
+    data: leases,
+    isLoading: isLoadingLeases,
+    error: errorLeases,
+    refetch: refetchLeases,
+  } = useTenantLeaseHistory(tenant.id, 50);
+
+  // Columns for Lease History
+  const leaseColumns: Column<LeaseContractDto>[] = [
+    {
+      key: 'contractNumber',
+      header: leasingT('contractNumber'),
+      accessor: (row) => row.contractNumber,
+      cell: (row) => (
+        <div
+          className="font-medium text-primary cursor-pointer hover:underline"
+          onClick={() => navigate(`/leases/${row.id}`)}
+        >
+          {row.contractNumber}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: leasingT('status'),
+      accessor: (row) => contractStatusToLabel(row.status, leasingT),
+      cell: (row) => (
+        <Badge variant={contractStatusToBadgeVariant(row.status)}>
+          {contractStatusToLabel(row.status, leasingT)}
+        </Badge>
+      ),
+    },
+    {
+      key: 'dates',
+      header: `${leasingT('startDate')} — ${leasingT('endDate')}`,
+      accessor: (row) => `${row.startDate} ~ ${row.endDate}`,
+    },
+    {
+      key: 'monthlyRent',
+      header: leasingT('monthlyRent'),
+      accessor: (row) => `${row.monthlyRentAmount} ${row.currency}`,
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'end',
+      cell: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          title={leasingT('viewDetails')}
+          aria-label={leasingT('viewDetails')}
+          onClick={() => navigate(`/leases/${row.id}`)}
+        >
+          <Eye className="w-4 h-4" />
+        </Button>
+      ),
+    },
+  ];
+
+  const BackIcon = language === 'ar' ? ArrowRight : ArrowLeft;
+
+  return (
+    <div className="space-y-6">
+      {/* Header Actions Card */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-6 rounded-lg border shadow-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" aria-label="Back to Tenants" onClick={() => navigate('/tenants')}>
+            <BackIcon className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{tenant.name}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {t('nationalId')}: {tenant.nationalId}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate(`/tenants/${tenant.id}/edit`)}>
+            <Edit className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+            {t('edit')}
+          </Button>
+
+          <Button variant="destructive" onClick={() => setDeletingTenant(true)}>
+            <Trash2 className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+            {t('delete')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Primary Details Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Basic Personal Information */}
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              {t('tenantDetails')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="border p-3 rounded-md">
+              <span className="text-xs text-muted-foreground block">{t('name')}</span>
+              <span className="text-sm font-semibold">{tenant.name}</span>
+            </div>
+
+            <div className="border p-3 rounded-md">
+              <span className="text-xs text-muted-foreground block">{t('nationalId')}</span>
+              <span className="text-sm font-semibold">{tenant.nationalId}</span>
+            </div>
+
+            <div className="border p-3 rounded-md">
+              <span className="text-xs text-muted-foreground block">{t('phone')}</span>
+              <span className="text-sm font-semibold flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                {tenant.phone}
+              </span>
+            </div>
+
+            <div className="border p-3 rounded-md">
+              <span className="text-xs text-muted-foreground block">{t('occupation')}</span>
+              <span className="text-sm font-medium flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
+                {tenant.occupation || '—'}
+              </span>
+            </div>
+
+            <div className="border p-3 rounded-md sm:col-span-2">
+              <span className="text-xs text-muted-foreground block">{t('employer')}</span>
+              <span className="text-sm font-medium flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5 text-muted-foreground" />
+                {tenant.employer || '—'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sub-Entities Section: Family Members, Emergency Contacts, Vehicles */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Family Members */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              {t('familyMembers')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tenant.familyMembers.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">{t('noFamilyMembers')}</p>
+            ) : (
+              <div className="space-y-2">
+                {tenant.familyMembers.map((member) => (
+                  <div key={member.id} className="p-2.5 border rounded-md text-xs space-y-1">
+                    <div className="font-semibold text-foreground">{member.name}</div>
+                    <div className="text-muted-foreground flex justify-between">
+                      <span>{t('relationship')}: {member.relationshipType}</span>
+                      {member.ageBracket && <span>{member.ageBracket}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Emergency Contacts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-primary" />
+              {t('emergencyContacts')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tenant.emergencyContacts.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">{t('noEmergencyContacts')}</p>
+            ) : (
+              <div className="space-y-2">
+                {tenant.emergencyContacts.map((contact) => (
+                  <div key={contact.id} className="p-2.5 border rounded-md text-xs space-y-1">
+                    <div className="font-semibold text-foreground">{contact.name}</div>
+                    <div className="text-muted-foreground flex justify-between">
+                      <span>{contact.relationshipType}</span>
+                      <span className="font-mono">{contact.phone}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Vehicles */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Car className="w-4 h-4 text-primary" />
+              {t('vehicles')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tenant.vehicles.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">{t('noVehicles')}</p>
+            ) : (
+              <div className="space-y-2">
+                {tenant.vehicles.map((v) => (
+                  <div key={v.id} className="p-2.5 border rounded-md text-xs space-y-1">
+                    <div className="font-semibold text-foreground flex justify-between">
+                      <span>{v.makeModel}</span>
+                      <Badge variant="outline" className="text-[10px] font-mono">{v.plateNumber}</Badge>
+                    </div>
+                    <div className="text-muted-foreground">{t('color')}: {v.color}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lease History Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" />
+            {t('leaseHistory')}
+          </CardTitle>
+          <CardDescription>All lease contracts associated with this tenant.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {errorLeases ? (
+            <div className="p-4 text-center space-y-2">
+              <p className="text-destructive font-medium">
+                {extractUserFriendlyError(errorLeases, t('loadError'))}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => refetchLeases()}>
+                {t('retry')}
+              </Button>
+            </div>
+          ) : (
+            <DataTable
+              data={leases || []}
+              columns={leaseColumns}
+              isLoading={isLoadingLeases}
+              emptyMessage={t('noLeases')}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteTenantDialog
+        tenantId={deletingTenant ? tenant.id : null}
+        tenantName={tenant.name}
+        open={deletingTenant}
+        onOpenChange={(open) => {
+          setDeletingTenant(open);
+          if (!open) {
+            // Stay on details or redirect to list if deleted
+          }
+        }}
+      />
+    </div>
+  );
+}

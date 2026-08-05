@@ -2,8 +2,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildingsApi } from '../api/buildings.api';
 import { buildingKeys } from './buildingKeys';
 import { CreateBuildingRequest, UpdateBuildingRequest } from '../types/buildings.types';
+import { BuildingFormValues } from '../schemas/buildings.schema';
 import { toast } from 'sonner';
-import { buildingTranslations as t } from '../constants/translations';
+import { getBuildingTranslation } from '../constants/translations';
+import { isArchiveBlockedError } from '@/shared/lib/archiveBlocked';
+
+function getCurrentLang(): 'en' | 'ar' {
+  try {
+    return (localStorage.getItem('aqari:language') as 'en' | 'ar') || 'en';
+  } catch {
+    return 'en';
+  }
+}
+
+const t = (key: string) => getBuildingTranslation(key, getCurrentLang());
 
 export const useBuildings = () => {
   return useQuery({
@@ -24,13 +36,13 @@ export const useCreateBuilding = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateBuildingRequest) => buildingsApi.createBuilding(data),
+    mutationFn: (data: BuildingFormValues | CreateBuildingRequest) => buildingsApi.createBuilding(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: buildingKeys.all });
-      toast.success(t.createSuccess);
+      toast.success(t('createSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || 'Failed to create building');
+      toast.error(error?.detail || error?.message || t('loadError'));
     }
   });
 };
@@ -39,15 +51,15 @@ export const useUpdateBuilding = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateBuildingRequest }) => 
+    mutationFn: ({ id, data }: { id: string; data: BuildingFormValues | UpdateBuildingRequest }) => 
       buildingsApi.updateBuilding(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: buildingKeys.all });
       queryClient.invalidateQueries({ queryKey: buildingKeys.detail(variables.id) });
-      toast.success(t.updateSuccess);
+      toast.success(t('updateSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || 'Failed to update building');
+      toast.error(error?.detail || error?.message || t('loadError'));
     }
   });
 };
@@ -58,11 +70,14 @@ export const useDeleteBuilding = () => {
   return useMutation({
     mutationFn: (id: string) => buildingsApi.deleteBuilding(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: buildingKeys.lists() });
-      toast.success(t.deleteSuccess);
+      queryClient.invalidateQueries({ queryKey: buildingKeys.all });
+      toast.success(t('deleteSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || 'Failed to delete building');
+      if (isArchiveBlockedError(error)) {
+        return;
+      }
+      toast.error(error?.detail || error?.message || t('loadError'));
     }
   });
 };

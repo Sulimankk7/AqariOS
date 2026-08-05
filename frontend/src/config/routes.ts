@@ -29,19 +29,45 @@ export const ROUTES = {
   /** /dashboard */
   dashboard: { root: "/dashboard" },
 
-  // Assets / Property
+  // Assets / Property Hierarchy
   /** /buildings */
-  buildings: { root: "/buildings" },
+  buildings: {
+    root: "/buildings",
+    new: "/buildings/new",
+    details: (id: string) => `/buildings/${id}`,
+    edit: (id: string) => `/buildings/${id}/edit`,
+    floors: {
+      new: (buildingId: string) => `/buildings/${buildingId}/floors/new`,
+      details: (buildingId: string, floorId: string) => `/buildings/${buildingId}/floors/${floorId}`,
+      edit: (buildingId: string, floorId: string) => `/buildings/${buildingId}/floors/${floorId}/edit`,
+    },
+  },
   /** /apartments */
-  apartments: { root: "/apartments" },
+  apartments: { 
+    root: "/apartments",
+    new: "/apartments/new",
+    floorNew: (buildingId: string, floorId: string) => `/buildings/${buildingId}/floors/${floorId}/apartments/new`,
+    details: (id: string) => `/apartments/${id}`,
+    edit: (id: string) => `/apartments/${id}/edit`,
+  },
   /** /parking */
   parking: { root: "/parking" },
 
   // Leasing
   /** /leases */
-  leases: { root: "/leases" },
+  leases: {
+    root: "/leases",
+    new: "/leases/new",
+    details: (id: string) => `/leases/${id}`,
+    edit: (id: string) => `/leases/${id}/edit`,
+  },
   /** /tenants */
-  tenants: { root: "/tenants" },
+  tenants: {
+    root: "/tenants",
+    new: "/tenants/new",
+    details: (id: string) => `/tenants/${id}`,
+    edit: (id: string) => `/tenants/${id}/edit`,
+  },
 
   // Finance
   /** /payments */

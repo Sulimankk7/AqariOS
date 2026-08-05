@@ -1,12 +1,13 @@
 /**
  * LoginForm component for the Login page.
  * Connected to backend API (POST /api/v1/auth/login).
+ * Supports returnUrl redirection after successful authentication.
  *
  * Architectural Glass Skyscraper adaptive Light/Dark mode design.
  */
 
 import React, { useState } from "react";
-import { useNavigate, useOutletContext } from "react-router";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router";
 import { Mail, Lock, Smartphone, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { GoogleLogo } from "@/shared/components/GoogleLogo";
 import { FieldLabel, inputClass } from "@/features/auth/components/FieldLabel";
@@ -14,7 +15,6 @@ import { ArchitecturalButton } from "@/features/auth/components/ArchitecturalBut
 import { TRANSLATIONS } from "@/features/auth/constants/translations";
 import { authApi } from "@/features/auth/api/auth.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { ApiError } from "@/shared/lib/http";
 import { ROUTES } from "@/config/routes";
 
 interface LoginFormProps {
@@ -24,6 +24,7 @@ interface LoginFormProps {
 
 export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const context = useOutletContext<{ isDark?: boolean }>();
   const isDark = context?.isDark ?? false;
@@ -65,9 +66,12 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
         onFeedbackMessage("Authentication successful. Welcome back!");
       }
       
-      navigate(ROUTES.dashboard.root);
-    } catch (err) {
-      setErrorMessage("An unexpected error occurred during login.");
+      const returnUrl = searchParams.get("returnUrl");
+      const targetPath = returnUrl && returnUrl.startsWith("/") ? returnUrl : ROUTES.dashboard.root;
+      navigate(targetPath, { replace: true });
+    } catch (err: any) {
+      const errorMsg = err?.detail || err?.message || "An unexpected error occurred during login.";
+      setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +128,7 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
           type="button"
           onClick={() => navigate(ROUTES.auth.otp)}
           className={`flex-1 py-1.5 text-[12.5px] font-medium rounded-md flex items-center justify-center gap-2 transition-all cursor-pointer ${
-            isDark ? "text-gray-400 hover:text-gray-200" : "text-[#6B7280] hover:text-[#374151]"
+            isDark ? "text-[#6B7280] hover:text-gray-200" : "text-[#6B7280] hover:text-[#374151]"
           }`}
         >
           <Smartphone size={13} strokeWidth={1.8} />
@@ -147,7 +151,7 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email */}
+        {/* Email or Phone */}
         <div>
           <FieldLabel isDark={isDark}>{t.emailLabel}</FieldLabel>
           <div className="relative">
@@ -227,7 +231,7 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
           </button>
         </div>
 
-        {/* Sign In Primary Button (Architectural Glass Panel) */}
+        {/* Sign In Primary Button */}
         <ArchitecturalButton
           type="submit"
           isLoading={isLoading}

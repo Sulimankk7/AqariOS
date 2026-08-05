@@ -1,27 +1,10 @@
-export enum BuildingType {
-  Residential = 'Residential',
-  Commercial = 'Commercial',
-  MixedUse = 'MixedUse',
-}
+import { BuildingType, Governorate } from '../constants/buildingEnums';
 
-export enum Governorate {
-  Amman = 'Amman',
-  Zarqa = 'Zarqa',
-  Irbid = 'Irbid',
-  Balqa = 'Balqa',
-  Madaba = 'Madaba',
-  Karak = 'Karak',
-  Tafilah = 'Tafilah',
-  Maan = 'Maan',
-  Aqaba = 'Aqaba',
-  Ajloun = 'Ajloun',
-  Jerash = 'Jerash',
-  Mafraq = 'Mafraq',
-}
+export { BuildingType, Governorate };
 
 export interface BuildingAddressDto {
   buildingId: string;
-  governorate: Governorate;
+  governorate: Governorate | number;
   district: string;
   area?: string;
   streetName?: string;
@@ -33,7 +16,7 @@ export interface BuildingDto {
   companyId: string;
   name: string;
   internalCode?: string;
-  buildingType: BuildingType;
+  buildingType: BuildingType | number;
   totalFloors: number;
   constructionYear?: number;
   gpsLatitude?: number;
@@ -45,36 +28,38 @@ export interface BuildingDto {
   address?: BuildingAddressDto;
 }
 
+/**
+ * Authoritative backend request contract for POST /api/v1/buildings
+ */
 export interface CreateBuildingRequest {
   name: string;
+  buildingType: number;
   internalCode?: string;
-  buildingType: BuildingType;
-  totalFloors: number;
   constructionYear?: number;
   gpsLatitude?: number;
   gpsLongitude?: number;
-  address: {
-    governorate: Governorate;
-    district: string;
-    area?: string;
-    streetName?: string;
-    postalCode?: string;
-  };
+  totalFloors: number;
+  addressGovernorate: number;
+  addressCity: string;
+  addressNeighborhood: string;
+  addressStreet?: string;
+  addressPostalCode?: string;
 }
 
+/**
+ * Authoritative backend request contract for PUT /api/v1/buildings/{id}
+ */
 export interface UpdateBuildingRequest {
   name: string;
+  buildingType: number;
   internalCode?: string;
-  buildingType: BuildingType;
-  totalFloors: number;
   constructionYear?: number;
   gpsLatitude?: number;
   gpsLongitude?: number;
-  address: {
-    governorate: Governorate;
-    district: string;
-    area?: string;
-    streetName?: string;
-    postalCode?: string;
-  };
+  totalFloors: number;
+  addressGovernorate: number;
+  addressCity: string;
+  addressNeighborhood: string;
+  addressStreet?: string;
+  addressPostalCode?: string;
 }
