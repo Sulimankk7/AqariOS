@@ -171,8 +171,15 @@ export function TenantForm({
               <Input
                 id="occupation"
                 placeholder="e.g. Software Engineer"
+                aria-invalid={!!errors.occupation}
+                aria-describedby={errors.occupation ? 'occupation-error' : undefined}
                 {...register('occupation')}
               />
+              {errors.occupation && (
+                <p id="occupation-error" role="alert" className="text-xs text-destructive">
+                  {errors.occupation.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -180,8 +187,15 @@ export function TenantForm({
               <Input
                 id="employer"
                 placeholder="e.g. Amman Tech Ltd."
+                aria-invalid={!!errors.employer}
+                aria-describedby={errors.employer ? 'employer-error' : undefined}
                 {...register('employer')}
               />
+              {errors.employer && (
+                <p id="employer-error" role="alert" className="text-xs text-destructive">
+                  {errors.employer.message}
+                </p>
+              )}
             </div>
           </div>
 

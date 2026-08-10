@@ -231,33 +231,69 @@ public class RentPaymentRepository : IRentPaymentRepository
     {
         var effectivePageSize = Math.Clamp(pageSize, 1, 200);
 
+        IQueryable<PropertyOS.Domain.Financials.RentPayment> baseQuery;
+
         if (string.IsNullOrWhiteSpace(searchTerm))
         {
-            return _dbContext.RentPayments
+            baseQuery = _dbContext.RentPayments
                 .AsNoTracking()
-                .Where(p => p.CompanyId == companyId)
+                .Where(p => p.CompanyId == companyId && p.DeletedAt == null)
                 .OrderByDescending(p => p.CreatedAt)
                 .ThenBy(p => p.Id)
-                .Take(effectivePageSize)
-                .ProjectToType<RentPaymentDto>()
-                .ToListAsync(cancellationToken);
+                .Take(effectivePageSize);
+        }
+        else
+        {
+            var normalizedSearch = searchTerm.Trim().ToLower();
+            baseQuery = (from p in _dbContext.RentPayments
+                    join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id
+                    join t  in _dbContext.Tenants         on p.TenantId        equals t.Id
+                    where p.CompanyId == companyId
+                          && p.DeletedAt == null
+                          && ((p.ReceiptNumber != null && EF.Functions.ILike(p.ReceiptNumber, $"%{normalizedSearch}%")) ||
+                               EF.Functions.ILike(lc.ContractNumber, $"%{normalizedSearch}%") ||
+                               EF.Functions.ILike(t.Name, $"%{normalizedSearch}%"))
+                    select p)
+                    .AsNoTracking()
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ThenBy(p => p.Id)
+                    .Take(effectivePageSize);
         }
 
-        var normalizedSearch = searchTerm.Trim().ToLower();
-
-        return (from p in _dbContext.RentPayments
-                join c in _dbContext.LeaseContracts on p.LeaseContractId equals c.Id
-                join t in _dbContext.Tenants on p.TenantId equals t.Id
-                where p.CompanyId == companyId &&
-                      ((p.ReceiptNumber != null && EF.Functions.ILike(p.ReceiptNumber, $"%{normalizedSearch}%")) ||
-                       EF.Functions.ILike(c.ContractNumber, $"%{normalizedSearch}%") ||
-                       EF.Functions.ILike(t.Name, $"%{normalizedSearch}%"))
-                select p)
-                .AsNoTracking()
-                .OrderByDescending(p => p.CreatedAt)
-                .ThenBy(p => p.Id)
-                .Take(effectivePageSize)
-                .ProjectToType<RentPaymentDto>()
+        return (from p in baseQuery
+                join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
+                join t  in _dbContext.Tenants         on p.TenantId        equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
+                join a  in _dbContext.Apartments      on p.ApartmentId     equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
+                join b  in _dbContext.Buildings       on p.BuildingId      equals b.Id  into bx  from b  in bx.DefaultIfEmpty()
+                select new RentPaymentDto
+                {
+                    Id                    = p.Id,
+                    CompanyId             = p.CompanyId,
+                    LeaseContractId       = p.LeaseContractId,
+                    TenantId              = p.TenantId,
+                    BuildingId            = p.BuildingId,
+                    ApartmentId           = p.ApartmentId,
+                    PaymentPurpose        = p.PaymentPurpose,
+                    AmountDue             = p.AmountDue,
+                    AmountPaid            = p.AmountPaid,
+                    Currency              = p.Currency,
+                    DueDateStatus         = p.DueDateStatus,
+                    BillingPeriodStart    = p.BillingPeriodStart,
+                    BillingPeriodEnd      = p.BillingPeriodEnd,
+                    DueDate               = p.DueDate,
+                    ReceiptNumber         = p.ReceiptNumber,
+                    PaymentMethod         = p.PaymentMethod,
+                    PaymentReferenceNumber = p.PaymentReferenceNumber,
+                    Notes                 = p.Notes,
+                    CreatedAt             = p.CreatedAt,
+                    UpdatedAt             = p.UpdatedAt,
+                    CreatedBy             = p.CreatedBy,
+                    UpdatedBy             = p.UpdatedBy,
+                    TenantName            = t != null ? t.Name : null,
+                    BuildingName          = b != null ? b.Name : null,
+                    ApartmentNumber       = a != null ? a.UnitNumber : null,
+                    ContractNumber        = lc != null ? lc.ContractNumber : null,
+                })
                 .ToListAsync(cancellationToken);
     }
 
@@ -273,7 +309,7 @@ public class RentPaymentRepository : IRentPaymentRepository
             DueDateStatus.OverdueUnpaid
         };
 
-        return _dbContext.RentPayments
+        var baseQuery = _dbContext.RentPayments
             .AsNoTracking()
             .Where(p => p.CompanyId == companyId
                         && p.PaymentPurpose == PaymentPurpose.ScheduledInstallment
@@ -281,30 +317,129 @@ public class RentPaymentRepository : IRentPaymentRepository
                         && outstandingStatuses.Contains(p.DueDateStatus))
             .OrderBy(p => p.DueDate)
             .ThenBy(p => p.Id)
-            .Take(effectivePageSize)
-            .ProjectToType<RentPaymentDto>()
+            .Take(effectivePageSize);
+
+        return (from p in baseQuery
+                join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
+                join t  in _dbContext.Tenants         on p.TenantId        equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
+                join a  in _dbContext.Apartments      on p.ApartmentId     equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
+                join b  in _dbContext.Buildings       on p.BuildingId      equals b.Id  into bx  from b  in bx.DefaultIfEmpty()
+                select new RentPaymentDto
+                {
+                    Id                    = p.Id,
+                    CompanyId             = p.CompanyId,
+                    LeaseContractId       = p.LeaseContractId,
+                    TenantId              = p.TenantId,
+                    BuildingId            = p.BuildingId,
+                    ApartmentId           = p.ApartmentId,
+                    PaymentPurpose        = p.PaymentPurpose,
+                    AmountDue             = p.AmountDue,
+                    AmountPaid            = p.AmountPaid,
+                    Currency              = p.Currency,
+                    DueDateStatus         = p.DueDateStatus,
+                    BillingPeriodStart    = p.BillingPeriodStart,
+                    BillingPeriodEnd      = p.BillingPeriodEnd,
+                    DueDate               = p.DueDate,
+                    ReceiptNumber         = p.ReceiptNumber,
+                    PaymentMethod         = p.PaymentMethod,
+                    PaymentReferenceNumber = p.PaymentReferenceNumber,
+                    Notes                 = p.Notes,
+                    CreatedAt             = p.CreatedAt,
+                    UpdatedAt             = p.UpdatedAt,
+                    CreatedBy             = p.CreatedBy,
+                    UpdatedBy             = p.UpdatedBy,
+                    TenantName            = t != null ? t.Name : null,
+                    BuildingName          = b != null ? b.Name : null,
+                    ApartmentNumber       = a != null ? a.UnitNumber : null,
+                    ContractNumber        = lc != null ? lc.ContractNumber : null,
+                })
+                .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PropertyOS.Application.Common.Models.KeysetPage<PropertyOS.Application.Financials.Queries.GetPendingPaymentVerifications.PaymentVerificationQueueItemDto>> GetPendingVerificationsAsync(Guid companyId, int pageSize, DateTimeOffset? lastSeenSubmittedAt, Guid? lastSeenId, CancellationToken cancellationToken = default)
+    {
+        var effectivePageSize = Math.Clamp(pageSize, 1, 200);
+
+        var query = from p in _dbContext.RentPayments
+                    join s in _dbContext.Set<PropertyOS.Domain.Financials.PaymentSubmission>()
+                        on p.Id equals s.RentPaymentId
+                    join t in _dbContext.Tenants on p.TenantId equals t.Id into ts
+                    from t in ts.DefaultIfEmpty()
+                    join b in _dbContext.Buildings on p.BuildingId equals b.Id into bs
+                    from b in bs.DefaultIfEmpty()
+                    join a in _dbContext.Apartments on p.ApartmentId equals a.Id into ast
+                    from a in ast.DefaultIfEmpty()
+                    join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id into lcs
+                    from lc in lcs.DefaultIfEmpty()
+                    where p.CompanyId == companyId
+                          && p.DeletedAt == null
+                          && p.DueDateStatus == DueDateStatus.PendingVerification
+                          && s.Status == SubmissionStatus.Pending
+                    select new PropertyOS.Application.Financials.Queries.GetPendingPaymentVerifications.PaymentVerificationQueueItemDto
+                    {
+                        RentPaymentId = p.Id,
+                        PaymentSubmissionId = s.Id,
+                        TenantId = p.TenantId,
+                        TenantName = t != null ? t.Name : null,
+                        BuildingId = p.BuildingId,
+                        BuildingName = b != null ? b.Name : null,
+                        ApartmentId = p.ApartmentId,
+                        ApartmentNumber = a != null ? a.UnitNumber : null,
+                        LeaseContractId = p.LeaseContractId,
+                        ContractNumber = lc != null ? lc.ContractNumber : null,
+                        AmountDue = p.AmountDue,
+                        AmountPaid = p.AmountPaid,
+                        Currency = p.Currency,
+                        PaymentMethod = s.PaymentMethod,
+                        ReferenceNumber = s.ReferenceNumber,
+                        ProofFileId = s.ProofFileId,
+                        SubmittedAt = s.SubmittedAt,
+                        SubmissionStatus = s.Status,
+                        DueDateStatus = p.DueDateStatus
+                    };
+
+        if (lastSeenSubmittedAt.HasValue && lastSeenId.HasValue)
+        {
+            query = query.Where(x => x.SubmittedAt < lastSeenSubmittedAt.Value || (x.SubmittedAt == lastSeenSubmittedAt.Value && x.PaymentSubmissionId < lastSeenId.Value));
+        }
+
+        var items = await query
+            .AsNoTracking()
+            .OrderByDescending(x => x.SubmittedAt)
+            .ThenByDescending(x => x.PaymentSubmissionId)
+            .Take(effectivePageSize + 1)
             .ToListAsync(cancellationToken);
+
+        var hasMore = items.Count > effectivePageSize;
+        if (hasMore)
+        {
+            items.RemoveAt(items.Count - 1);
+        }
+
+        var nextCursor = items.Count > 0 
+            ? PropertyOS.Application.Common.Models.KeysetCursor.Encode(items[^1].SubmittedAt, items[^1].PaymentSubmissionId) 
+            : null;
+
+        return new PropertyOS.Application.Common.Models.KeysetPage<PropertyOS.Application.Financials.Queries.GetPendingPaymentVerifications.PaymentVerificationQueueItemDto>(items, nextCursor, hasMore);
     }
 
     public Task<List<ChequeDetailDto>> GetChequesAsync(ChequeStatus? status, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
     {
         var effectivePageSize = Math.Clamp(pageSize, 1, 200);
 
-        var query = _dbContext.ChequeDetails
+        var baseQuery = _dbContext.ChequeDetails
             .AsNoTracking()
             .Where(c => c.CompanyId == companyId && c.DeletedAt == null);
 
         if (status.HasValue)
-        {
-            query = query.Where(c => c.Status == status.Value);
-        }
+            baseQuery = baseQuery.Where(c => c.Status == status.Value);
 
-        return query
+        baseQuery = baseQuery
             .OrderBy(c => c.DueDate)
             .ThenBy(c => c.Id)
-            .Take(effectivePageSize)
-            .ProjectToType<ChequeDetailDto>()
-            .ToListAsync(cancellationToken);
+            .Take(effectivePageSize);
+
+        return BuildEnrichedChequeQuery(baseQuery).ToListAsync(cancellationToken);
     }
 
     public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default)
@@ -318,29 +453,97 @@ public class RentPaymentRepository : IRentPaymentRepository
             ChequeStatus.Deposited
         };
 
-        return _dbContext.ChequeDetails
+        var baseQuery = _dbContext.ChequeDetails
             .AsNoTracking()
             .Where(c => c.CompanyId == companyId
+                        && c.DeletedAt == null
                         && upcomingStatuses.Contains(c.Status)
                         && c.DueDate >= today
                         && c.DueDate <= limitDate)
-            .OrderBy(c => c.DueDate)
-            .ProjectToType<ChequeDetailDto>()
-            .ToListAsync(cancellationToken);
+            .OrderBy(c => c.DueDate);
+
+        return BuildEnrichedChequeQuery(baseQuery).ToListAsync(cancellationToken);
+    }
+
+    // ── Private Helpers ──────────────────────────────────────────────────────
+
+    private IQueryable<ChequeDetailDto> BuildEnrichedChequeQuery(
+        IQueryable<PropertyOS.Domain.Financials.ChequeDetails> baseQuery)
+    {
+        return from c  in baseQuery
+               join rp in _dbContext.RentPayments   on c.RentPaymentId   equals rp.Id into rps from rp in rps.DefaultIfEmpty()
+               join lc in _dbContext.LeaseContracts on c.LeaseContractId equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
+               join t  in _dbContext.Tenants         on c.TenantId        equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
+               join a  in _dbContext.Apartments      on (rp != null ? rp.ApartmentId : Guid.Empty) equals a.Id into ax from a in ax.DefaultIfEmpty()
+               join b  in _dbContext.Buildings       on (rp != null ? rp.BuildingId  : Guid.Empty) equals b.Id into bx from b in bx.DefaultIfEmpty()
+               select new ChequeDetailDto
+               {
+                   Id                  = c.Id,
+                   CompanyId           = c.CompanyId,
+                   RentPaymentId       = c.RentPaymentId,
+                   LeaseContractId     = c.LeaseContractId,
+                   TenantId            = c.TenantId,
+                   ChequeNumber        = c.ChequeNumber,
+                   BankName            = c.BankName,
+                   BankBranch          = c.BankBranch,
+                   IssueDate           = c.IssueDate,
+                   DueDate             = c.DueDate,
+                   Amount              = c.Amount,
+                   Currency            = c.Currency,
+                   Status              = c.Status,
+                   ReceivedDate        = c.ReceivedDate,
+                   DepositDate         = c.DepositDate,
+                   ClearanceDate       = c.ClearanceDate,
+                   BounceDate          = c.BounceDate,
+                   BounceReason        = c.BounceReason,
+                   BounceFeeCharged    = c.BounceFeeCharged,
+                   CancellationReason  = c.CancellationReason,
+                   ReplacementChequeId = c.ReplacementChequeId,
+                   Notes               = c.Notes,
+                   CreatedAt           = c.CreatedAt,
+                   UpdatedAt           = c.UpdatedAt,
+                   CreatedBy           = c.CreatedBy,
+                   UpdatedBy           = c.UpdatedBy,
+                   TenantName          = t != null ? t.Name : null,
+                   BuildingName        = b != null ? b.Name : null,
+                   ApartmentNumber     = a != null ? a.UnitNumber : null,
+                   ContractNumber      = lc != null ? lc.ContractNumber : null,
+               };
     }
 
     // ── Rent Payment Receipt read-side ───────────────────────────────────────
 
-    public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(
+    public async Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(
         Guid rentPaymentId,
         Guid companyId,
         CancellationToken cancellationToken = default)
     {
-        return _dbContext.RentPaymentReceipts
-            .AsNoTracking()
-            .Where(r => r.RentPaymentId == rentPaymentId && r.CompanyId == companyId && r.DeletedAt == null)
-            .ProjectToType<RentPaymentReceiptDto>()
-            .FirstOrDefaultAsync(cancellationToken);
+        return await (from r in _dbContext.RentPaymentReceipts
+                      join p in _dbContext.RentPayments   on r.RentPaymentId equals p.Id into ps from p in ps.DefaultIfEmpty()
+                      join lc in _dbContext.LeaseContracts on (p != null ? p.LeaseContractId : Guid.Empty) equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
+                      join t  in _dbContext.Tenants         on (p != null ? p.TenantId        : Guid.Empty) equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
+                      join a  in _dbContext.Apartments      on (p != null ? p.ApartmentId     : Guid.Empty) equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
+                      join b  in _dbContext.Buildings       on (p != null ? p.BuildingId      : Guid.Empty) equals b.Id  into bx  from b  in bx.DefaultIfEmpty()
+                      where r.RentPaymentId == rentPaymentId && r.CompanyId == companyId && r.DeletedAt == null
+                      select new RentPaymentReceiptDto
+                      {
+                          Id              = r.Id,
+                          CompanyId       = r.CompanyId,
+                          RentPaymentId   = r.RentPaymentId,
+                          ReceiptNumber   = r.ReceiptNumber,
+                          IssueDate       = r.IssueDate,
+                          IssuedBy        = r.IssuedBy,
+                          Amount          = r.Amount,
+                          Currency        = r.Currency,
+                          Notes           = r.Notes,
+                          CreatedAt       = r.CreatedAt,
+                          TenantName      = t != null ? t.Name : null,
+                          BuildingName    = b != null ? b.Name : null,
+                          ApartmentNumber = a != null ? a.UnitNumber : null,
+                          ContractNumber  = lc != null ? lc.ContractNumber : null,
+                      })
+                      .AsNoTracking()
+                      .FirstOrDefaultAsync(cancellationToken);
     }
 
     public Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(
@@ -348,43 +551,59 @@ public class RentPaymentRepository : IRentPaymentRepository
         Guid companyId,
         CancellationToken cancellationToken = default)
     {
-        // Join receipts → payments to allow filtering by LeaseContractId / TenantId
-        var query =
-            from r in _dbContext.RentPaymentReceipts
-            join p in _dbContext.RentPayments on r.RentPaymentId equals p.Id
-            where r.CompanyId == companyId && r.DeletedAt == null
-            select new { r, p };
+        var baseQuery = from r in _dbContext.RentPaymentReceipts
+                        join p in _dbContext.RentPayments on r.RentPaymentId equals p.Id into ps from p in ps.DefaultIfEmpty()
+                        join lc in _dbContext.LeaseContracts on (p != null ? p.LeaseContractId : Guid.Empty) equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
+                        join t  in _dbContext.Tenants         on (p != null ? p.TenantId        : Guid.Empty) equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
+                        join a  in _dbContext.Apartments      on (p != null ? p.ApartmentId     : Guid.Empty) equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
+                        join b  in _dbContext.Buildings       on (p != null ? p.BuildingId      : Guid.Empty) equals b.Id  into bx  from b  in bx.DefaultIfEmpty()
+                        where r.CompanyId == companyId && r.DeletedAt == null
+                        select new { r, p, lc, t, a, b };
 
-        // ── Filters ─────────────────────────────────────────────────────────
         if (filter.LeaseContractId.HasValue)
-            query = query.Where(x => x.p.LeaseContractId == filter.LeaseContractId.Value);
+            baseQuery = baseQuery.Where(x => x.p != null && x.p.LeaseContractId == filter.LeaseContractId.Value);
 
         if (filter.TenantId.HasValue)
-            query = query.Where(x => x.p.TenantId == filter.TenantId.Value);
+            baseQuery = baseQuery.Where(x => x.p != null && x.p.TenantId == filter.TenantId.Value);
 
         if (filter.DateFrom.HasValue)
-            query = query.Where(x => x.r.IssueDate >= filter.DateFrom.Value);
+            baseQuery = baseQuery.Where(x => x.r.IssueDate >= filter.DateFrom.Value);
 
         if (filter.DateTo.HasValue)
-            query = query.Where(x => x.r.IssueDate <= filter.DateTo.Value);
+            baseQuery = baseQuery.Where(x => x.r.IssueDate <= filter.DateTo.Value);
 
-        // ── Keyset pagination cursor: (IssueDate DESC, Id ASC) ───────────────
         if (filter.LastSeenId.HasValue && filter.LastSeenIssueDate.HasValue)
         {
             var cursorDate = filter.LastSeenIssueDate.Value;
             var cursorId   = filter.LastSeenId.Value;
 
-            query = query.Where(x =>
+            baseQuery = baseQuery.Where(x =>
                 x.r.IssueDate < cursorDate ||
                 (x.r.IssueDate == cursorDate && x.r.Id.CompareTo(cursorId) > 0));
         }
 
-        return query
+        return baseQuery
+            .AsNoTracking()
             .OrderByDescending(x => x.r.IssueDate)
             .ThenBy(x => x.r.Id)
             .Take(Math.Clamp(filter.PageSize, 1, 200))
-            .Select(x => x.r)
-            .ProjectToType<RentPaymentReceiptDto>()
+            .Select(x => new RentPaymentReceiptDto
+            {
+                Id              = x.r.Id,
+                CompanyId       = x.r.CompanyId,
+                RentPaymentId   = x.r.RentPaymentId,
+                ReceiptNumber   = x.r.ReceiptNumber,
+                IssueDate       = x.r.IssueDate,
+                IssuedBy        = x.r.IssuedBy,
+                Amount          = x.r.Amount,
+                Currency        = x.r.Currency,
+                Notes           = x.r.Notes,
+                CreatedAt       = x.r.CreatedAt,
+                TenantName      = x.t != null ? x.t.Name : null,
+                BuildingName    = x.b != null ? x.b.Name : null,
+                ApartmentNumber = x.a != null ? x.a.UnitNumber : null,
+                ContractNumber  = x.lc != null ? x.lc.ContractNumber : null,
+            })
             .ToListAsync(cancellationToken);
     }
 }

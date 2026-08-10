@@ -94,8 +94,8 @@ export function I18nProvider({
   const t = (path: string, params?: Record<string, any>): string => {
     let targetPath = path;
 
-    // Handle pluralization if count param is provided
-    if (params && typeof params.count === "number") {
+    // Handle pluralization if count param is provided and not skipping plural fallback
+    if (params && typeof params.count === "number" && !params._skipPlural) {
       const suffix = getPluralSuffix(params.count, language);
       targetPath = `${path}${suffix}`;
     }
@@ -116,7 +116,7 @@ export function I18nProvider({
           } else {
             // Check without plural suffix if missing
             if (targetPath !== path) {
-              return t(path, params);
+              return t(path, { ...params, _skipPlural: true });
             }
             return path;
           }

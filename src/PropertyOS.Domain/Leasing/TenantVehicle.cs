@@ -38,7 +38,7 @@ public class TenantVehicle : ISoftDeletable
 
         return new TenantVehicle
         {
-            Id = Guid.Empty,
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             TenantId = tenantId,
             PlateNumber = plateNumber.Trim(),
@@ -49,6 +49,29 @@ public class TenantVehicle : ISoftDeletable
             CreatedBy = createdBy,
             UpdatedBy = createdBy
         };
+    }
+
+    public void UpdateDetails(
+        string plateNumber,
+        string makeModel,
+        string color,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        if (DeletedAt.HasValue)
+            throw new InvalidOperationException("Cannot update a deleted vehicle.");
+        if (string.IsNullOrWhiteSpace(plateNumber))
+            throw new ArgumentException("PlateNumber is required.", nameof(plateNumber));
+        if (string.IsNullOrWhiteSpace(makeModel))
+            throw new ArgumentException("MakeModel is required.", nameof(makeModel));
+        if (string.IsNullOrWhiteSpace(color))
+            throw new ArgumentException("Color is required.", nameof(color));
+
+        PlateNumber = plateNumber.Trim();
+        MakeModel = makeModel.Trim();
+        Color = color.Trim();
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
     }
 
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)

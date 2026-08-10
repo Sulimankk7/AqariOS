@@ -13,6 +13,8 @@ using MediatR;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.DTOs.Identity;
 using PropertyOS.Application.Identity;
+using PropertyOS.Api.Models.Identity;
+using PropertyOS.Application.Identity.Commands.ActivateTenantAccount;
 using PropertyOS.Application.Identity.Commands.Register;
 
 namespace PropertyOS.Api.Controllers;
@@ -346,6 +348,44 @@ public class AuthController : ControllerBase
                 title: "Profile Not Found",
                 detail: ex.Message,
                 statusCode: StatusCodes.Status404NotFound);
+        }
+    }
+
+    /// <summary>
+    /// Public endpoint allowing an invited tenant to activate their account and set their initial password.
+    /// </summary>
+    /// <param name="dto">Tenant account activation parameters.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Login response containing JWT tokens and user profile.</returns>
+    [HttpPost("tenant-activate")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthLoginLimit")]
+    [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<LoginResponseDto>> ActivateTenant(
+        [FromBody] ActivateTenantAccountRequest dto,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var command = new ActivateTenantAccountCommand(
+                ActivationToken: dto.ActivationToken,
+                Password: dto.Password
+            );
+
+            var response = await _mediator.Send(command, cancellationToken);
+            SetRefreshTokenCookie(response.RefreshToken);
+
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Problem(
+                title: "Activation Failed",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status401Unauthorized);
         }
     }
 

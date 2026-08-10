@@ -75,6 +75,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
     // ---------------------------------------------------------------------------
 
     public DbSet<PropertyOS.Domain.Financials.RentPayment> RentPayments => Set<PropertyOS.Domain.Financials.RentPayment>();
+    public DbSet<PropertyOS.Domain.Financials.PaymentSubmission> PaymentSubmissions => Set<PropertyOS.Domain.Financials.PaymentSubmission>();
     public DbSet<PropertyOS.Domain.Financials.ChequeDetails> ChequeDetails => Set<PropertyOS.Domain.Financials.ChequeDetails>();
     public DbSet<PropertyOS.Domain.Financials.PaymentAllocation> PaymentAllocations => Set<PropertyOS.Domain.Financials.PaymentAllocation>();
 
@@ -175,6 +176,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>(name: "due_date_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>(name: "cheque_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>(name: "allocation_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.SubmissionStatus>(name: "submission_status_enum");
 
         // Module 7
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>(name: "expense_category_enum");

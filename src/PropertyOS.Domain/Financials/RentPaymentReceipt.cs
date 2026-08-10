@@ -14,6 +14,7 @@ public class RentPaymentReceipt : ISoftDeletable
     public decimal Amount { get; private set; }
     public string Currency { get; private set; } = "JOD";
     public string? Notes { get; private set; }
+    public Guid? FileId { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -38,6 +39,7 @@ public class RentPaymentReceipt : ISoftDeletable
         decimal amount,
         string currency,
         string? notes,
+        Guid? fileId,
         DateTimeOffset now,
         Guid? createdBy)
     {
@@ -69,6 +71,7 @@ public class RentPaymentReceipt : ISoftDeletable
             Amount = amount,
             Currency = currency.Trim().ToUpper(),
             Notes = notes?.Trim(),
+            FileId = fileId,
             CreatedAt = now,
             UpdatedAt = now,
             CreatedBy = createdBy,

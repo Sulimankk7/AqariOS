@@ -16,6 +16,8 @@ using PropertyOS.Application.Leasing.Queries.GetLeaseHistoryForTenant;
 using PropertyOS.Application.Leasing.Queries.GetTenantById;
 using PropertyOS.Application.Leasing.Queries.SearchTenants;
 using PropertyOS.Application.Leasing.Security;
+using Microsoft.Extensions.Hosting;
+using PropertyOS.Application.Leasing.Commands.ProvisionTenantAccount;
 
 namespace PropertyOS.Api.Leasing;
 
@@ -182,5 +184,42 @@ public class TenantsController : ControllerBase
         var query = new GetLeaseHistoryForTenantQuery(TenantId: tenantId, PageSize: pageSize);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Provisions a User identity account for an existing tenant person record.
+    /// Staff/Manager authorized endpoint.
+    /// </summary>
+    /// <param name="tenantId">Tenant person record unique identifier.</param>
+    /// <param name="request">Account provisioning options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Provisioning response containing tenant user identifiers and activation state.</returns>
+    [HttpPost("api/v{version:apiVersion}/leasing/tenants/{tenantId:guid}/account")]
+    [Authorize(Policy = PropertyOS.Application.Leasing.Security.LeasingPermissions.Create)]
+    [ProducesResponseType(typeof(ProvisionTenantAccountResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ProvisionAccount(
+        [FromRoute] Guid tenantId,
+        [FromBody] ProvisionTenantAccountRequest? request,
+        [FromServices] IHostEnvironment environment,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new ProvisionTenantAccountCommand(
+            TenantId: tenantId,
+            Email: request?.Email
+        );
+
+        var response = await _mediator.Send(command, cancellationToken);
+
+        if (!environment.IsDevelopment())
+        {
+            response.ActivationToken = null;
+        }
+
+        return CreatedAtAction(nameof(GetById), new { tenantId = response.TenantId }, response);
     }
 }

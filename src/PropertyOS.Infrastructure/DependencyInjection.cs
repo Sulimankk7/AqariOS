@@ -100,6 +100,7 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum", null);
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum", null);
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.SubmissionStatus>("submission_status_enum", null);
 
         // Module 7 enums
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum", null);
@@ -185,6 +186,7 @@ public static class DependencyInjection
         services.AddScoped<ICompanyReceiptSequenceRepository, CompanyReceiptSequenceRepository>();
         services.AddScoped<IEfawateercomTransactionRepository, EfawateercomTransactionRepository>();
         services.AddScoped<IEfawateercomGateway, PropertyOS.Infrastructure.Payments.NullEfawateercomGateway>();
+        services.AddScoped<IReceiptPdfGenerator, PropertyOS.Infrastructure.Files.Generators.QuestPdfReceiptGenerator>();
         services.AddScoped<IMaintenanceRequestRepository, MaintenanceRequestRepository>();
         services.AddScoped<IMaintenanceQueries, MaintenanceQueries>();
 
@@ -339,6 +341,7 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.SubmissionStatus>("submission_status_enum");
 
                     // Module 7
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");

@@ -9,7 +9,8 @@
  */
 
 import { useState } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, Navigate } from "react-router";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2 } from "lucide-react";
 import { AuthLeftPanel } from "@/features/auth/components/AuthLeftPanel";
@@ -20,6 +21,16 @@ import { useTheme } from "@/shared/theme";
 
 export function AuthLayout() {
   const location = useLocation();
+  const { isAuthenticated, authStatus, user } = useAuth();
+
+  if (authStatus === "authenticated" && user?.roleCode) {
+    if (user.roleCode === "TENANT") {
+      return <Navigate to="/tenant/dashboard" replace />;
+    }
+    if (user.roleCode === "COMPANY_ADMIN") {
+      return <Navigate to={ROUTES.dashboard.root} replace />;
+    }
+  }
 
   // Bilingual system language state (en/ar)
   const [lang, setLang] = useState<"en" | "ar">("en");

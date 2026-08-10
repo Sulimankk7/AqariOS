@@ -17,6 +17,9 @@ public class RecordManualRentPaymentCommandValidator : AbstractValidator<RecordM
             .IsInEnum().WithMessage("Method must be a valid payment method.");
 
         RuleFor(v => v.PaymentReferenceNumber)
+            .NotEmpty()
+            .When(v => v.PaymentMethod == PaymentMethod.CliQ)
+            .WithMessage("PaymentReferenceNumber is required when the payment method is CliQ.")
             .MaximumLength(255).WithMessage("PaymentReferenceNumber must not exceed 255 characters.");
 
         RuleFor(v => v.Cheque)

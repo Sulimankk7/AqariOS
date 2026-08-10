@@ -20,9 +20,12 @@ export enum CompanyType {
 // ── Backend DTOs ─────────────────────────────────────────────────────────────
 
 export interface UserCompanyRoleDto {
+  id: string;
   companyId: string;
-  companyName: string;
-  role: string;
+  roleId: string;
+  roleCode: string;
+  roleName: string;
+  status: string;
 }
 
 export interface UserProfileDto {

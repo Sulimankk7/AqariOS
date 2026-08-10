@@ -25,6 +25,10 @@ import { ModulePlaceholder } from "@/shared/components/layout/ModulePlaceholder"
 import { ROUTES } from "@/config/routes";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
+import { TenantLayout } from "@/app/layouts/TenantLayout";
+import { TenantDashboardPage } from "@/features/tenantPortal/pages/TenantDashboardPage";
+import { TenantProfilePage } from "@/features/tenantPortal/pages/TenantProfilePage";
+
 // Lucide icons for placeholders
 import {
   Car,
@@ -74,12 +78,32 @@ import CreateTenantPage from "@/features/tenants/pages/CreateTenantPage";
 import EditTenantPage from "@/features/tenants/pages/EditTenantPage";
 import TenantDetailsPage from "@/features/tenants/pages/TenantDetailsPage";
 
-/** Root redirect — sends authenticated users to /dashboard, others to /auth/login */
+import { OwnerPaymentsWorkspace } from "@/features/payments";
+
+import { AuthLoadingScreen } from "@/features/auth/components/AuthLoadingScreen";
+
+/** Root redirect — sends authenticated users to their respective dashboard, others to /auth/login */
 function RootRedirect() {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated
-    ? <Navigate to={ROUTES.dashboard.root} replace />
-    : <Navigate to={ROUTES.auth.login} replace />;
+  const { isAuthenticated, authStatus, user } = useAuth();
+  
+  if (authStatus === "initializing") {
+    return <AuthLoadingScreen />;
+  }
+
+  if (!isAuthenticated || !user || !user.roleCode || authStatus === "unsupported_role") {
+    return <Navigate to={ROUTES.auth.login} replace />;
+  }
+
+  if (user.roleCode === "TENANT") {
+    return <Navigate to="/tenant/dashboard" replace />;
+  }
+
+  if (user.roleCode === "COMPANY_ADMIN") {
+    return <Navigate to={ROUTES.dashboard.root} replace />;
+  }
+
+  // Unsupported role fallback (fails closed)
+  return <Navigate to={ROUTES.auth.login} replace />;
 }
 
 export function AppRouter() {
@@ -99,8 +123,8 @@ export function AppRouter() {
           <Route path="reset-password" element={<ResetPasswordPage />} />
         </Route>
 
-        {/* ── Protected App Routes ────────────────────────────────────────── */}
-        <Route element={<ProtectedRoute />}>
+        {/* ── Protected Owner Routes ────────────────────────────────────────── */}
+        <Route element={<ProtectedRoute allowedRoles={["COMPANY_ADMIN"]} />}>
           <Route element={<AppLayout />}>
 
             {/* Dashboard */}
@@ -157,17 +181,10 @@ export function AppRouter() {
               <Route path=":id/edit" element={<EditTenantPage />} />
             </Route>
 
+            {/* Payments */}
+            <Route path={ROUTES.payments.root} element={<OwnerPaymentsWorkspace />} />
+
             {/* Finance */}
-            <Route
-              path={ROUTES.payments.root}
-              element={
-                <ModulePlaceholder
-                  title="Payments"
-                  description="Process rent collections, invoicing, and payment tracking."
-                  icon={Wallet}
-                />
-              }
-            />
             <Route
               path={ROUTES.financialOperations.root}
               element={
@@ -252,6 +269,14 @@ export function AppRouter() {
                 />
               }
             />
+          </Route>
+        </Route>
+
+        {/* ── Protected Tenant Routes ────────────────────────────────────────── */}
+        <Route element={<ProtectedRoute allowedRoles={["TENANT"]} />}>
+          <Route element={<TenantLayout />}>
+            <Route path="/tenant/dashboard" element={<TenantDashboardPage />} />
+            <Route path="/tenant/profile" element={<TenantProfilePage />} />
           </Route>
         </Route>
 

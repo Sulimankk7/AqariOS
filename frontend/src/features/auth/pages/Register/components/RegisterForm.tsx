@@ -55,7 +55,7 @@ export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isMismatch || !agreedTerms) return;
+    if (isLoading || isMismatch || !agreedTerms) return;
 
     setErrorMessage(null);
     setIsLoading(true);
@@ -63,23 +63,31 @@ export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
     try {
       const selectedCountry = COUNTRY_CODES.find((c) => c.isoCode === selectedIsoCode) ?? COUNTRY_CODES[0];
       const cleanedLocalPhone = phone.replace(/\s+/g, "").replace(/^0+/, "");
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const mockUser = {
-        id: "usr_mock_456",
-        name: fullName,
-        email: email,
-        role: "admin",
-      };
+      const fullPhone = phone.trim() ? `${selectedCountry.dialCode}${cleanedLocalPhone}` : undefined;
 
-      login(mockUser);
+      const response = await authApi.register({
+        fullName: fullName.trim(),
+        companyName: companyName.trim(),
+        displayName: displayName.trim() || undefined,
+        companyType: companyType !== "" ? companyType : CompanyType.IndividualOwner,
+        email: email.trim() || undefined,
+        phone: fullPhone,
+        password,
+        countryCode: selectedIsoCode,
+        preferredLanguage: prefLanguage || "ar",
+      });
+
+      const verifiedUser = await login(response.accessToken, response.user);
 
       if (onFeedbackMessage) {
         onFeedbackMessage("Registration successful! Welcome to AqariOS.");
       }
-      navigate(ROUTES.dashboard.root);
-    } catch (err) {
-      setErrorMessage("An unexpected error occurred during registration.");
+      
+      const targetPath = verifiedUser.roleCode === "TENANT" ? "/tenant/dashboard" : ROUTES.dashboard.root;
+      navigate(targetPath, { replace: true });
+    } catch (err: any) {
+      const errorMsg = err?.detail || err?.message || "An unexpected error occurred during registration.";
+      setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }

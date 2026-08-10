@@ -159,6 +159,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceComment, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.MaintenanceComment, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.TenantPortalAccess, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.TenantPortalAccess));
+
     options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.DocumentsUpload, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.DocumentsUpload, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 

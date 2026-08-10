@@ -49,25 +49,28 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
         emailOrPhone: identifier, 
         password 
       });
-      
-      const { storage, STORAGE_KEYS } = await import("@/shared/services/storage");
-      storage.set(STORAGE_KEYS.accessToken, response.accessToken);
 
-      const userProfile = {
-        id: response.user.id,
-        name: response.user.fullName,
-        email: response.user.email || response.user.phone || identifier,
-        role: response.user.companyRoles?.[0]?.roleName || "user",
-      };
-
-      login(userProfile);
+      const verifiedUser = await login(response.accessToken, response.user);
 
       if (onFeedbackMessage) {
         onFeedbackMessage("Authentication successful. Welcome back!");
       }
       
       const returnUrl = searchParams.get("returnUrl");
-      const targetPath = returnUrl && returnUrl.startsWith("/") ? returnUrl : ROUTES.dashboard.root;
+      let targetPath: string;
+
+      if (returnUrl && returnUrl.startsWith("/")) {
+        if (verifiedUser.roleCode === "TENANT" && !returnUrl.startsWith("/tenant")) {
+          targetPath = "/tenant/dashboard";
+        } else if (verifiedUser.roleCode === "COMPANY_ADMIN" && returnUrl.startsWith("/tenant")) {
+          targetPath = ROUTES.dashboard.root;
+        } else {
+          targetPath = returnUrl;
+        }
+      } else {
+        targetPath = verifiedUser.roleCode === "TENANT" ? "/tenant/dashboard" : ROUTES.dashboard.root;
+      }
+
       navigate(targetPath, { replace: true });
     } catch (err: any) {
       const errorMsg = err?.detail || err?.message || "An unexpected error occurred during login.";

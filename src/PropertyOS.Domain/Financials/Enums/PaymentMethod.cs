@@ -5,5 +5,6 @@ public enum PaymentMethod
     Cash,
     BankTransfer,
     Cheque,
-    Efawateercom
+    Efawateercom,
+    CliQ
 }

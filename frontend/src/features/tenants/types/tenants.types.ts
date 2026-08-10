@@ -61,4 +61,40 @@ export interface UpdateTenantRequest {
   employer?: string | null;
 }
 
+export interface CreateTenantFamilyMemberRequest {
+  name: string;
+  relationshipType: string;
+  ageBracket?: string | null;
+}
+
+export interface UpdateTenantFamilyMemberRequest {
+  name: string;
+  relationshipType: string;
+  ageBracket?: string | null;
+}
+
+export interface CreateTenantEmergencyContactRequest {
+  name: string;
+  relationshipType: string;
+  phone: string;
+}
+
+export interface UpdateTenantEmergencyContactRequest {
+  name: string;
+  relationshipType: string;
+  phone: string;
+}
+
+export interface CreateTenantVehicleRequest {
+  plateNumber: string;
+  makeModel: string;
+  color: string;
+}
+
+export interface UpdateTenantVehicleRequest {
+  plateNumber: string;
+  makeModel: string;
+  color: string;
+}
+
 export { type LeaseContractDto };

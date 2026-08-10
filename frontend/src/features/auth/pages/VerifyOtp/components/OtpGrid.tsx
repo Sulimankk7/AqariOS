@@ -101,23 +101,26 @@ export function OtpGrid({ lang, onFeedbackMessage }: OtpGridProps) {
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      
-      const mockUser = {
-        id: "usr_mock_otp",
-        name: "OTP User",
-        email: "user@aqarios.com",
-        role: "admin",
-      };
+      const fullPhone = `${countryCode}${phoneNumber.replace(/\s+/g, "").replace(/^0+/, "")}`;
+      const code = digits.join("");
 
-      login(mockUser);
+      const response = await authApi.verifyOtp({
+        phone: fullPhone,
+        code,
+        purpose: 0,
+      });
+
+      const verifiedUser = await login(response.accessToken, response.user);
 
       if (onFeedbackMessage) {
         onFeedbackMessage("Verification successful. Welcome!");
       }
-      navigate(ROUTES.dashboard.root);
-    } catch (err) {
-      setErrorMessage("Invalid OTP. Please try again.");
+
+      const targetPath = verifiedUser.roleCode === "TENANT" ? "/tenant/dashboard" : ROUTES.dashboard.root;
+      navigate(targetPath, { replace: true });
+    } catch (err: any) {
+      const errorMsg = err?.detail || err?.message || "Invalid OTP. Please try again.";
+      setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }

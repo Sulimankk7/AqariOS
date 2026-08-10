@@ -65,6 +65,11 @@ internal sealed class RentPaymentReceiptConfiguration : IEntityTypeConfiguration
             .HasColumnType("text")
             .IsRequired(false);
 
+        builder.Property(r => r.FileId)
+            .HasColumnName("file_id")
+            .HasColumnType("uuid")
+            .IsRequired(false);
+
         builder.Property(r => r.CreatedAt)
             .HasColumnName("created_at")
             .HasColumnType("timestamp with time zone")

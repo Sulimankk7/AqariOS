@@ -26,7 +26,8 @@ import {
   LeaseContractDto,
 } from '../types/leasing.types';
 import { useTenantsLookup, useCreateLease, useUpdateDraftLease } from '../hooks/useLeasing';
-import { useApartments } from '@/features/apartments/hooks/useApartments';
+import { useBuildings } from '@/features/buildings/hooks/useBuildings';
+import { useApartments, useApartment } from '@/features/apartments/hooks/useApartments';
 import { getLeasingTranslation } from '../constants/translations';
 import {
   paymentFrequencyToLabel,
@@ -54,7 +55,40 @@ export function LeaseContractForm({
   const t = (key: string) => getLeasingTranslation(key, language);
 
   const { data: tenants, isLoading: isLoadingTenants } = useTenantsLookup('');
-  const { data: apartments, isLoading: isLoadingApartments } = useApartments();
+  const { data: buildings, isLoading: isLoadingBuildings } = useBuildings();
+
+  const [selectedBuildingId, setSelectedBuildingId] = React.useState<string>('');
+
+  // Fetch initial apartment details if editing an existing lease to determine buildingId
+  const initialApartmentId = initialValues?.apartmentId;
+  const { data: initialApartment } = useApartment(initialApartmentId || '');
+
+  React.useEffect(() => {
+    if (initialApartment?.buildingId) {
+      setSelectedBuildingId(initialApartment.buildingId);
+    }
+  }, [initialApartment]);
+
+  // Fetch apartments only for the selected building
+  const {
+    data: apartments,
+    isLoading: isLoadingApartments,
+    isError: isErrorApartments,
+    refetch: refetchApartments,
+  } = useApartments(
+    selectedBuildingId ? { buildingId: selectedBuildingId } : undefined
+  );
+
+  const hasNoApartments = !!selectedBuildingId && !isLoadingApartments && !isErrorApartments && apartments?.length === 0;
+  const isApartmentDisabled = !selectedBuildingId || isLoadingApartments || isErrorApartments || hasNoApartments;
+
+  const getApartmentPlaceholder = () => {
+    if (!selectedBuildingId) return t('selectBuildingFirst');
+    if (isLoadingApartments) return t('loading');
+    if (isErrorApartments) return t('failedToLoadApartments');
+    if (hasNoApartments) return t('noApartmentsInBuilding');
+    return t('selectApartment');
+  };
 
   const createMutation = useCreateLease();
   const updateMutation = useUpdateDraftLease();
@@ -177,33 +211,114 @@ export function LeaseContractForm({
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Building Selection (Step 1) */}
+            <div className="space-y-2">
+              <Label htmlFor="buildingId">{t('building')} *</Label>
+              <Select
+                value={selectedBuildingId}
+                onValueChange={(val) => {
+                  setSelectedBuildingId(val);
+                  // Clear selected apartment when building changes to prevent stale selection
+                  setValue('apartmentId', '', { shouldValidate: true });
+                }}
+                disabled={isLoadingBuildings}
+              >
+                <SelectTrigger id="buildingId" aria-required="true">
+                  <SelectValue placeholder={t('selectBuilding')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {buildings?.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name} ({b.internalCode})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Apartment Selection (Step 2 - Cascading) */}
             <div className="space-y-2">
               <Label htmlFor="apartmentId">{t('apartment')} *</Label>
               <Select
                 value={selectedApartmentId}
                 onValueChange={(val) => setValue('apartmentId', val, { shouldValidate: true })}
-                disabled={isLoadingApartments}
+                disabled={isApartmentDisabled}
               >
                 <SelectTrigger
                   id="apartmentId"
                   aria-required="true"
-                  aria-invalid={!!errors.apartmentId}
-                  aria-describedby={errors.apartmentId ? 'apartmentId-error' : undefined}
+                  aria-invalid={!!errors.apartmentId || isErrorApartments}
+                  aria-describedby={
+                    errors.apartmentId
+                      ? 'apartmentId-error'
+                      : isErrorApartments
+                      ? 'apartmentId-load-error'
+                      : hasNoApartments
+                      ? 'apartmentId-empty-alert'
+                      : undefined
+                  }
                 >
-                  <SelectValue placeholder={t('selectApartment')} />
+                  <SelectValue placeholder={getApartmentPlaceholder()} />
                 </SelectTrigger>
                 <SelectContent>
-                  {apartments?.map((apt) => (
-                    <SelectItem key={apt.id} value={apt.id}>
-                      Unit {apt.unitNumber} ({apt.areaSqm} m²)
-                    </SelectItem>
-                  ))}
+                  {apartments && apartments.length > 0 ? (
+                    apartments.map((apt) => (
+                      <SelectItem key={apt.id} value={apt.id}>
+                        Unit {apt.unitNumber} ({apt.areaSqm} m²)
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-xs text-muted-foreground text-center">
+                      {getApartmentPlaceholder()}
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
+
+              {/* Form Validation Error */}
               {errors.apartmentId && (
                 <p id="apartmentId-error" role="alert" className="text-xs text-destructive">
                   {errors.apartmentId.message}
                 </p>
+              )}
+
+              {/* Network / Query Loading Error Alert */}
+              {isErrorApartments && (
+                <Alert
+                  id="apartmentId-load-error"
+                  variant="destructive"
+                  className="mt-2 py-2 px-3 text-xs flex items-center justify-between gap-2"
+                  role="alert"
+                  aria-live="assertive"
+                >
+                  <AlertDescription className="text-xs font-medium">
+                    {t('failedToLoadApartments')}
+                  </AlertDescription>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => refetchApartments()}
+                    className="h-7 text-xs px-2.5 bg-background text-foreground border-destructive/40 hover:bg-destructive/10"
+                  >
+                    {t('retry')}
+                  </Button>
+                </Alert>
+              )}
+
+              {/* Empty State Alert (No Apartments in selected building) */}
+              {hasNoApartments && (
+                <Alert
+                  id="apartmentId-empty-alert"
+                  variant="default"
+                  className="mt-2 py-2 px-3 text-xs border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
+                    {t('cannotCreateContractNoApartment')}
+                  </AlertDescription>
+                </Alert>
               )}
             </div>
 

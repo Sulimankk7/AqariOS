@@ -179,6 +179,50 @@ public class PermissionCatalogSeeder : IPermissionCatalogSeeder
                 _logger.LogInformation("Reconciled COMPANY_ADMIN role grants: {GrantedCount} new role-permission grants added.", grantedCount);
             }
 
+            // 3. Reconcile System TENANT Role & Permissions
+            var tenantRole = await _dbContext.Roles
+                .FirstOrDefaultAsync(r => r.Code == "TENANT" && r.IsSystem && r.CompanyId == null && r.DeletedAt == null, cancellationToken);
+
+            if (tenantRole == null)
+            {
+                tenantRole = new Role
+                {
+                    Id = Guid.CreateVersion7(),
+                    Code = "TENANT",
+                    NameEn = "Tenant",
+                    NameAr = "مستأجر",
+                    IsSystem = true,
+                    CompanyId = null,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                _dbContext.Roles.Add(tenantRole);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Created system TENANT role.");
+            }
+
+            var tenantPortalPerm = await _dbContext.Permissions
+                .FirstOrDefaultAsync(p => p.Key == PlatformPermissions.TenantPortalAccess && !p.IsDeprecated, cancellationToken);
+
+            if (tenantPortalPerm != null)
+            {
+                var hasGrant = await _dbContext.RolePermissions
+                    .AnyAsync(rp => rp.RoleId == tenantRole.Id && rp.PermissionId == tenantPortalPerm.Id, cancellationToken);
+
+                if (!hasGrant)
+                {
+                    _dbContext.RolePermissions.Add(new RolePermission
+                    {
+                        Id = Guid.CreateVersion7(),
+                        RoleId = tenantRole.Id,
+                        PermissionId = tenantPortalPerm.Id,
+                        GrantedAt = now
+                    });
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                    _logger.LogInformation("Granted '{Permission}' to system TENANT role.", PlatformPermissions.TenantPortalAccess);
+                }
+            }
+
             _logger.LogInformation("Platform RBAC Permission Catalog synchronization completed successfully.");
         }
         catch (Exception ex)

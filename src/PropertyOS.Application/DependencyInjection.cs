@@ -34,6 +34,7 @@ public static class DependencyInjection
 
         services.AddScoped<PropertyOS.Application.Files.Services.IFileValidationService, PropertyOS.Application.Files.Services.FileValidationService>();
         services.AddScoped<PropertyOS.Application.Documents.Services.IDocumentCategorySeeder, PropertyOS.Application.Documents.Services.DocumentCategorySeeder>();
+        services.AddScoped<PropertyOS.Application.Development.IDevelopmentPaymentVerificationSeedService, PropertyOS.Application.Development.DevelopmentPaymentVerificationSeedService>();
 
         return services;
     }

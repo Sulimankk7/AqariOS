@@ -48,7 +48,13 @@ export const dictionary = {
     tableBaseRent: 'Base Rent',
     tableOwnership: 'Ownership',
     tableOccupancy: 'Status',
-    searchPlaceholder: 'Search apartments by unit number...',
+    searchPlaceholder: 'Search apartments by unit number, building name, or status...',
+    totalApartments: 'Total Apartments',
+    occupiedApartments: 'Occupied',
+    vacantApartments: 'Vacant',
+    unassignedBuilding: 'Unassigned Building',
+    expandAll: 'Expand All',
+    collapseAll: 'Collapse All',
 
     // Actions & Buttons
     save: 'Save Apartment',
@@ -139,7 +145,13 @@ export const dictionary = {
     tableBaseRent: 'الإيجار الأساسي',
     tableOwnership: 'الملكية',
     tableOccupancy: 'الحالة',
-    searchPlaceholder: 'ابحث برقم الشقة...',
+    searchPlaceholder: 'ابحث برقم الشقة، اسم العمارة، أو حالة الإشغال...',
+    totalApartments: 'إجمالي الشقق',
+    occupiedApartments: 'مشغولة',
+    vacantApartments: 'شاغرة',
+    unassignedBuilding: 'عمارة غير محددة',
+    expandAll: 'توسيع الكل',
+    collapseAll: 'طي الكل',
 
     // Actions & Buttons
     save: 'حفظ الشقة',

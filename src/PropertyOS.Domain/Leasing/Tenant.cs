@@ -131,4 +131,21 @@ public class Tenant : ISoftDeletable
         UpdatedAt = deletedAt;
         UpdatedBy = deletedBy;
     }
+
+    /// <summary>
+    /// Links the tenant record to a User identity account.
+    /// Throws InvalidOperationException if the tenant is already linked or deleted.
+    /// </summary>
+    public void LinkUser(Guid userId)
+    {
+        if (DeletedAt.HasValue)
+            throw new InvalidOperationException("Cannot link a user to a deleted tenant.");
+        if (UserId.HasValue)
+            throw new InvalidOperationException("Tenant account is already linked to a user.");
+        if (userId == Guid.Empty)
+            throw new ArgumentException("UserId is required.", nameof(userId));
+
+        UserId = userId;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
 }

@@ -40,7 +40,7 @@ public class TenantEmergencyContact : ISoftDeletable
 
         return new TenantEmergencyContact
         {
-            Id = Guid.Empty,
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             TenantId = tenantId,
             Name = name.Trim(),
@@ -51,6 +51,29 @@ public class TenantEmergencyContact : ISoftDeletable
             CreatedBy = createdBy,
             UpdatedBy = createdBy
         };
+    }
+
+    public void UpdateDetails(
+        string name,
+        string relationshipType,
+        string phone,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        if (DeletedAt.HasValue)
+            throw new InvalidOperationException("Cannot update a deleted emergency contact.");
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Name is required.", nameof(name));
+        if (string.IsNullOrWhiteSpace(relationshipType))
+            throw new ArgumentException("RelationshipType is required.", nameof(relationshipType));
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new ArgumentException("Phone is required.", nameof(phone));
+
+        Name = name.Trim();
+        RelationshipType = relationshipType.Trim();
+        Phone = phone.Trim();
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
     }
 
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)

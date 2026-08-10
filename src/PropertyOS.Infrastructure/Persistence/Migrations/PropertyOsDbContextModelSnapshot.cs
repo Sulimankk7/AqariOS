@@ -34,7 +34,7 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "currency_code_enum", new[] { "jod", "usd", "eur", "aed", "sar" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "delivery_channel_enum", new[] { "email", "sms", "whats_app", "in_app" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "delivery_status_enum", new[] { "pending", "sent", "delivered", "failed" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "due_date_status_enum", new[] { "pending", "paid", "partially_paid", "late", "overdue_unpaid", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "due_date_status_enum", new[] { "pending", "pending_verification", "paid", "partially_paid", "late", "overdue_unpaid", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "efawateercom_status_enum", new[] { "pending", "sent", "success", "failed", "timeout", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "expense_category_enum", new[] { "building", "shared", "emergency", "utility_common_area", "maintenance", "cleaning", "security", "elevator", "water_tank", "generator", "administrative", "other" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "expense_payment_method_enum", new[] { "cash", "bank_transfer", "cheque", "other" });
@@ -58,10 +58,11 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "parking_assignment_status_enum", new[] { "active", "ended" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "parking_type_enum", new[] { "standard", "covered", "visitor", "disabled_access" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment_frequency_enum", new[] { "monthly", "quarterly", "semi_annual", "annual" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment_method_enum", new[] { "cash", "bank_transfer", "cheque", "efawateercom" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment_method_enum", new[] { "cash", "bank_transfer", "cheque", "efawateercom", "cli_q" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment_purpose_enum", new[] { "scheduled_installment", "unallocated_receipt", "adjustment" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "receipt_reset_policy_enum", new[] { "never", "yearly", "monthly" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "revoke_reason_enum", new[] { "rotated", "logout", "theft_detected", "admin_revoked", "expired" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "submission_status_enum", new[] { "pending", "approved", "rejected" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "subscription_status_enum", new[] { "trialing", "active", "past_due", "suspended", "cancelled", "expired" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant_type_enum", new[] { "personal", "corporate" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "termination_type_enum", new[] { "normal_expiration", "early_termination", "mutual_agreement", "tenant_request", "owner_request", "legal_eviction" });
@@ -1456,6 +1457,115 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertyOS.Domain.Financials.PaymentSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v7()");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("payment_method_enum")
+                        .HasColumnName("payment_method");
+
+                    b.Property<Guid?>("ProofFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proof_file_id");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("reference_number");
+
+                    b.Property<DateTimeOffset?>("RejectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rejected_at");
+
+                    b.Property<Guid?>("RejectedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("rejected_by");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<Guid>("RentPaymentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("rent_payment_id");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("submission_status_enum")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<Guid>("SubmittedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submitted_by");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<DateTimeOffset?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.Property<Guid?>("VerifiedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("verified_by");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_payment_submissions_company_id");
+
+                    b.HasIndex("RentPaymentId")
+                        .HasDatabaseName("ix_payment_submissions_rent_payment_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_payment_submissions_status");
+
+                    b.ToTable("payment_submissions", (string)null);
+                });
+
             modelBuilder.Entity("PropertyOS.Domain.Financials.RentPayment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1682,6 +1792,10 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
 
                     b.Property<DateOnly>("IssueDate")
                         .HasColumnType("date")
@@ -2424,7 +2538,6 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasColumnName("description");
 
                     b.Property<int>("DocumentType")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("contract_document_type_enum")
                         .HasColumnName("document_type")
                         .HasDefaultValueSql("'other'");
@@ -5524,6 +5637,15 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_payment_allocations_rent_payments_receiving_payment");
                 });
 
+            modelBuilder.Entity("PropertyOS.Domain.Financials.PaymentSubmission", b =>
+                {
+                    b.HasOne("PropertyOS.Domain.Financials.RentPayment", null)
+                        .WithMany("Submissions")
+                        .HasForeignKey("RentPaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PropertyOS.Domain.Financials.RentPayment", b =>
                 {
                     b.HasOne("PropertyOS.Domain.Properties.Building", null)
@@ -6536,6 +6658,8 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("PropertyOS.Domain.Financials.RentPayment", b =>
                 {
                     b.Navigation("Receipt");
+
+                    b.Navigation("Submissions");
                 });
 
             modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.Permission", b =>

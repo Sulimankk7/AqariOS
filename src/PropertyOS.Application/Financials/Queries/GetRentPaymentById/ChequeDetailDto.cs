@@ -35,4 +35,10 @@ public class ChequeDetailDto
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? CreatedBy { get; set; }
     public Guid? UpdatedBy { get; set; }
+
+    // Read-side display enrichment — populated by join projection, never from domain writes.
+    public string? TenantName { get; set; }
+    public string? BuildingName { get; set; }
+    public string? ApartmentNumber { get; set; }
+    public string? ContractNumber { get; set; }
 }

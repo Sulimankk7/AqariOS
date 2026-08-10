@@ -1,6 +1,7 @@
 using System;
 using PropertyOS.Domain.Common;
 using PropertyOS.Domain.Financials.Enums;
+using PropertyOS.Domain.Financials.Events;
 
 namespace PropertyOS.Domain.Financials;
 
@@ -28,8 +29,14 @@ public class RentPayment : ISoftDeletable
     public DueDateStatus DueDateStatus { get; private set; }
     public string? Notes { get; private set; }
 
-    // Child entity
+    // Child entities
     public RentPaymentReceipt? Receipt { get; private set; }
+
+    private readonly List<PaymentSubmission> _submissions = new();
+    public IReadOnlyCollection<PaymentSubmission> Submissions => _submissions.AsReadOnly();
+
+    private readonly List<IDomainEvent> _domainEvents = new();
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -147,7 +154,7 @@ public class RentPayment : ISoftDeletable
     /// the returned receipt to the context (repository AddReceiptAsync): it carries a
     /// client-generated ID, so navigation-only discovery would mistake it for an existing row.
     /// </summary>
-    public RentPaymentReceipt IssueReceipt(string receiptNumber, DateTimeOffset issuedAt, Guid? issuedBy, string? notes = null)
+    public RentPaymentReceipt IssueReceipt(string receiptNumber, DateTimeOffset issuedAt, Guid? issuedBy, string? notes = null, Guid? fileId = null)
     {
         if (Receipt != null && Receipt.DeletedAt == null)
             throw new InvalidOperationException("A receipt has already been issued for this payment.");
@@ -182,6 +189,7 @@ public class RentPayment : ISoftDeletable
             amount: AmountDue,
             currency: Currency,
             notes: notes,
+            fileId: fileId,
             now: issuedAt,
             createdBy: issuedBy
         );
@@ -204,5 +212,55 @@ public class RentPayment : ISoftDeletable
         {
             Receipt.SoftDelete(deletedAt, deletedBy);
         }
+    }
+
+    public void SubmitForVerification(PaymentMethod method, string? reference, Guid? proofFileId, Guid submittedBy, DateTimeOffset submittedAt)
+    {
+        if (_submissions.Any(s => s.Status == SubmissionStatus.Pending))
+            throw new InvalidOperationException("A payment submission is already pending verification.");
+
+        if (DueDateStatus == DueDateStatus.Paid)
+            throw new InvalidOperationException("Cannot submit a verification for an already paid obligation.");
+
+        var submission = PaymentSubmission.Create(CompanyId, Id, method, reference, proofFileId, submittedBy, submittedAt);
+        _submissions.Add(submission);
+
+        DueDateStatus = DueDateStatus.PendingVerification;
+        UpdatedAt = submittedAt;
+        UpdatedBy = submittedBy;
+
+        _domainEvents.Add(new RentPaymentSubmittedEvent(Id, submission.Id));
+    }
+
+    public void ApproveSubmission(Guid submissionId, Guid verifiedBy, DateTimeOffset verifiedAt)
+    {
+        var submission = _submissions.FirstOrDefault(s => s.Id == submissionId)
+            ?? throw new ArgumentException("Submission not found.", nameof(submissionId));
+
+        submission.Approve(verifiedBy, verifiedAt);
+
+        // Financial settlement is delegated to the canonical Module 6 orchestrator (RecordManualRentPaymentCommand)
+        // by the application layer upon successful approval. Approval only updates the submission state.
+
+        UpdatedAt = verifiedAt;
+        UpdatedBy = verifiedBy;
+
+        _domainEvents.Add(new RentPaymentApprovedEvent(Id, submission.Id, verifiedBy));
+    }
+
+    public void RejectSubmission(Guid submissionId, string reason, Guid rejectedBy, DateTimeOffset rejectedAt)
+    {
+        var submission = _submissions.FirstOrDefault(s => s.Id == submissionId)
+            ?? throw new ArgumentException("Submission not found.", nameof(submissionId));
+
+        submission.Reject(reason, rejectedBy, rejectedAt);
+
+        // Revert financial state
+        DueDateStatus = DueDateStatus.Pending;
+
+        UpdatedAt = rejectedAt;
+        UpdatedBy = rejectedBy;
+
+        _domainEvents.Add(new RentPaymentRejectedEvent(Id, submission.Id, reason, rejectedBy));
     }
 }

@@ -6,6 +6,7 @@
  * 2. Cross-Tab Session Synchronization: Uses BroadcastChannel and Storage Events to sync login/logout/invalidation across open tabs instantly.
  * 3. Graceful Session Expiration UX: Displays a blocking 3-second SessionExpiredModal before redirecting.
  * 4. Single Source of Truth: Centralized login, logout, refresh, and storage operations.
+ * 5. Strict Role Resolution: Resolves canonical roleCode (COMPANY_ADMIN | TENANT) without default fallbacks.
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
@@ -16,29 +17,64 @@ import { authApi } from "@/features/auth/api/auth.api";
 import { AuthLoadingScreen } from "@/features/auth/components/AuthLoadingScreen";
 import { SessionExpiredModal } from "@/features/auth/components/SessionExpiredModal";
 import { ROUTES } from "@/config/routes";
+import type { UserProfileDto } from "@/features/auth/types/auth.types";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+
+export type AppRole = "COMPANY_ADMIN" | "TENANT";
 
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
   avatar?: string;
-  role?: string;
+  roleCode: AppRole;
   companyId?: string;
-  companyName?: string;
 }
 
-export type AuthStatus = "initializing" | "authenticated" | "unauthenticated";
+export type AuthStatus = "initializing" | "authenticated" | "unauthenticated" | "unsupported_role";
 
 export interface AuthContextValue {
   authStatus: AuthStatus;
   isAuthenticated: boolean;
   isLoading: boolean;
   user: UserProfile | null;
-  login: (userData: UserProfile) => void;
+  login: (accessToken: string, profileDto?: UserProfileDto) => Promise<UserProfile>;
   logout: () => void;
   invalidateSession: (returnUrl?: string) => void;
+}
+
+// ── Role Resolution Helper ─────────────────────────────────────────────────────
+
+/**
+ * Resolves the canonical roleCode from UserProfileDto.
+ * Never defaults to COMPANY_ADMIN or user.
+ * Evaluates activeCompanyId first if present, otherwise finds a valid system role.
+ */
+export function resolveUserRole(profile: UserProfileDto): { roleCode: AppRole | undefined; companyId: string | undefined } {
+  if (!profile || !profile.companyRoles || profile.companyRoles.length === 0) {
+    return { roleCode: undefined, companyId: undefined };
+  }
+
+  if (profile.activeCompanyId) {
+    const matchingRole = profile.companyRoles.find((r) => r.companyId === profile.activeCompanyId);
+    if (matchingRole && (matchingRole.roleCode === "COMPANY_ADMIN" || matchingRole.roleCode === "TENANT")) {
+      return {
+        roleCode: matchingRole.roleCode as AppRole,
+        companyId: matchingRole.companyId,
+      };
+    }
+  }
+
+  const validRole = profile.companyRoles.find((r) => r.roleCode === "COMPANY_ADMIN" || r.roleCode === "TENANT");
+  if (validRole) {
+    return {
+      roleCode: validRole.roleCode as AppRole,
+      companyId: validRole.companyId,
+    };
+  }
+
+  return { roleCode: undefined, companyId: undefined };
 }
 
 // ── Context ────────────────────────────────────────────────────────────────────
@@ -115,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Requirement 2: Startup Session Validation
+   * Startup Session Validation
    * Validates access token against backend API on startup before marking user authenticated.
    */
   useEffect(() => {
@@ -123,7 +159,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initializeSession() {
       const token = storage.get<string>(STORAGE_KEYS.accessToken);
-      const rawUser = localStorage.getItem(AUTH_USER_KEY);
 
       if (!token) {
         purgeStorage();
@@ -135,15 +170,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        // Validate session with backend /api/v1/auth/me endpoint
         const profile = await authApi.getProfile();
+        const { roleCode, companyId } = resolveUserRole(profile);
+
+        if (!roleCode) {
+          purgeStorage();
+          if (isMounted) {
+            setUser(null);
+            setAuthStatus("unsupported_role");
+          }
+          return;
+        }
+
         const verifiedUser: UserProfile = {
           id: profile.id,
           name: profile.fullName,
           email: profile.email || profile.phone || "",
-          role: profile.companyRoles?.[0]?.roleName || "user",
-          companyId: profile.companyRoles?.[0]?.companyId,
-          companyName: profile.companyRoles?.[0]?.companyName,
+          roleCode,
+          companyId,
         };
 
         if (isMounted) {
@@ -152,39 +196,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAuthStatus("authenticated");
         }
       } catch (err: any) {
-        // If GET /me fails with 401, attempt a silent token refresh
         if (err?.status === 401) {
           try {
             const refreshRes = await authApi.refreshToken();
             storage.set(STORAGE_KEYS.accessToken, refreshRes.accessToken);
             
             const profile = await authApi.getProfile();
+            const { roleCode, companyId } = resolveUserRole(profile);
+
+            if (!roleCode) {
+              purgeStorage();
+              if (isMounted) {
+                setUser(null);
+                setAuthStatus("unsupported_role");
+              }
+              return;
+            }
+
             const verifiedUser: UserProfile = {
               id: profile.id,
               name: profile.fullName,
               email: profile.email || profile.phone || "",
-              role: profile.companyRoles?.[0]?.roleName || "user",
+              roleCode,
+              companyId,
             };
 
             if (isMounted) {
               localStorage.setItem(AUTH_USER_KEY, JSON.stringify(verifiedUser));
               setUser(verifiedUser);
-              setAuthStatus("authenticated");
-            }
-          } catch {
-            // Refresh failed — clear invalid session
-            purgeStorage();
-            if (isMounted) {
-              setUser(null);
-              setAuthStatus("unauthenticated");
-            }
-          }
-        } else if (rawUser) {
-          // Fallback for network error (offline start with existing token)
-          try {
-            const parsed = JSON.parse(rawUser);
-            if (isMounted) {
-              setUser(parsed);
               setAuthStatus("authenticated");
             }
           } catch {
@@ -195,6 +234,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } else {
+          const rawUser = localStorage.getItem(AUTH_USER_KEY);
+          if (rawUser) {
+            try {
+              const parsed: UserProfile = JSON.parse(rawUser);
+              if (parsed && (parsed.roleCode === "COMPANY_ADMIN" || parsed.roleCode === "TENANT")) {
+                if (isMounted) {
+                  setUser(parsed);
+                  setAuthStatus("authenticated");
+                }
+                return;
+              }
+            } catch {
+              // Ignore
+            }
+          }
           purgeStorage();
           if (isMounted) {
             setUser(null);
@@ -212,8 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Requirement 1: Cross-Tab Session Synchronization
-   * Listens for BroadcastChannel messages & localStorage changes across open tabs.
+   * Cross-Tab Session Synchronization
    */
   useEffect(() => {
     const handleSyncLogout = () => {
@@ -238,7 +291,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       resetUnauthorizedState();
     };
 
-    // 1. Storage Event listener for tab cross-sync
     const handleStorageEvent = (e: StorageEvent) => {
       if (e.key === AUTH_USER_KEY && !e.newValue) {
         handleSyncLogout();
@@ -253,7 +305,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     window.addEventListener("storage", handleStorageEvent);
 
-    // 2. BroadcastChannel listener for active tab messaging
     let authChannel: BroadcastChannel | null = null;
     if (typeof BroadcastChannel !== "undefined") {
       try {
@@ -276,9 +327,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [queryClient]);
 
-  /**
-   * Performs the physical redirection to Login page.
-   */
   const executeLoginRedirect = useCallback((targetReturnUrl?: string) => {
     setSessionExpiredModalOpen(false);
     const currentPath = window.location.pathname;
@@ -295,12 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.replace(loginRedirectUrl);
   }, []);
 
-  /**
-   * Requirement 3: Session Expiration UX
-   * Triggered when a 401 occurs. Opens SessionExpiredModal for 3 seconds before redirecting.
-   */
   const invalidateSession = useCallback((explicitReturnUrl?: string) => {
-    // Cancel queries and purge storage synchronously
     try {
       queryClient.cancelQueries();
       queryClient.clear();
@@ -312,7 +355,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setAuthStatus("unauthenticated");
 
-    // Broadcast invalidation event to other tabs
     broadcastAuthEvent("SESSION_INVALIDATED");
 
     const currentPath = window.location.pathname;
@@ -320,14 +362,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Open blocking dialog for graceful UX
     setPendingReturnUrl(explicitReturnUrl || currentPath + window.location.search);
     setSessionExpiredModalOpen(true);
   }, [queryClient, broadcastAuthEvent]);
 
-  /**
-   * Register global 401 Unauthorized handler with HttpClient
-   */
   useEffect(() => {
     registerUnauthorizedHandler((returnUrl) => {
       invalidateSession(returnUrl);
@@ -335,23 +373,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [invalidateSession]);
 
   /**
-   * Login helper — persists user, broadcasts event, resets unauthorized state.
+   * Atomic Login Helper — Purges old state/cache, resolves canonical roleCode, and commits state.
    */
-  const login = useCallback((userData: UserProfile) => {
+  const login = useCallback(async (accessToken: string, profileDto?: UserProfileDto): Promise<UserProfile> => {
+    // 1. Synchronously purge previous session and clear query cache
     try {
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userData));
+      queryClient.cancelQueries();
+      queryClient.clear();
     } catch {
-      // Storage unavailable
+      // Fail-safe
     }
-    resetUnauthorizedState();
-    setUser(userData);
-    setAuthStatus("authenticated");
-    broadcastAuthEvent("LOGIN", userData);
-  }, [broadcastAuthEvent]);
 
-  /**
-   * Explicit user-initiated logout.
-   */
+    // 2. Persist token
+    storage.set(STORAGE_KEYS.accessToken, accessToken);
+
+    // 3. Obtain profile if not supplied or roles missing
+    let profile = profileDto;
+    if (!profile || !profile.companyRoles || profile.companyRoles.length === 0) {
+      profile = await authApi.getProfile();
+    }
+
+    // 4. Resolve roleCode canonically
+    const { roleCode, companyId } = resolveUserRole(profile);
+
+    if (!roleCode) {
+      purgeStorage();
+      setUser(null);
+      setAuthStatus("unsupported_role");
+      throw new Error("UNSUPPORTED_ROLE");
+    }
+
+    const verifiedUser: UserProfile = {
+      id: profile.id,
+      name: profile.fullName,
+      email: profile.email || profile.phone || "",
+      roleCode,
+      companyId,
+    };
+
+    // 5. Commit state atomically
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(verifiedUser));
+    resetUnauthorizedState();
+    setUser(verifiedUser);
+    setAuthStatus("authenticated");
+    broadcastAuthEvent("LOGIN", verifiedUser);
+
+    return verifiedUser;
+  }, [queryClient, broadcastAuthEvent]);
+
   const logout = useCallback(() => {
     try {
       queryClient.cancelQueries();
@@ -370,7 +439,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [queryClient, broadcastAuthEvent]);
 
-  // Requirement 2: Render full-screen loading state during startup initialization to avoid flicker
   if (authStatus === "initializing") {
     return <AuthLoadingScreen />;
   }
@@ -379,7 +447,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         authStatus,
-        isAuthenticated: authStatus === "authenticated" && !!user,
+        isAuthenticated: authStatus === "authenticated" && !!user && !!user.roleCode,
         isLoading: authStatus === "initializing",
         user,
         login,
@@ -389,7 +457,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
 
-      {/* Requirement 3: Blocking 3-second Session Expired Dialog */}
       <SessionExpiredModal
         isOpen={sessionExpiredModalOpen}
         onConfirm={() => executeLoginRedirect(pendingReturnUrl)}
@@ -397,8 +464,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-// ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);

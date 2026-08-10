@@ -26,6 +26,11 @@ public class TenantRepository : ITenantRepository
         await _dbContext.Tenants.AddAsync(tenant, cancellationToken);
     }
 
+    public Task<Tenant?> GetByUserIdAsync(Guid companyId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Tenants.FirstOrDefaultAsync(t => t.CompanyId == companyId && t.UserId == userId && t.DeletedAt == null, cancellationToken);
+    }
+
     public Task<bool> ExistsByNationalIdAsync(Guid companyId, string nationalId, Guid? excludeTenantId = null, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Tenants
@@ -155,5 +160,152 @@ public class TenantRepository : ITenantRepository
                 UpdatedBy = t.UpdatedBy
             })
             .ToListAsync(cancellationToken);
+    }
+
+    public Task<TenantFamilyMember?> GetFamilyMemberByIdAsync(Guid tenantId, Guid familyMemberId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantFamilyMembers
+            .FirstOrDefaultAsync(fm => fm.Id == familyMemberId && fm.TenantId == tenantId && fm.CompanyId == companyId && fm.DeletedAt == null, cancellationToken);
+    }
+
+    public Task<TenantFamilyMemberDto?> GetFamilyMemberDtoByIdAsync(Guid tenantId, Guid familyMemberId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantFamilyMembers
+            .AsNoTracking()
+            .Where(fm => fm.Id == familyMemberId && fm.TenantId == tenantId && fm.CompanyId == companyId && fm.DeletedAt == null)
+            .Select(fm => new TenantFamilyMemberDto
+            {
+                Id = fm.Id,
+                Name = fm.Name,
+                RelationshipType = fm.RelationshipType,
+                AgeBracket = fm.AgeBracket,
+                CreatedAt = fm.CreatedAt
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<List<TenantFamilyMemberDto>> GetFamilyMembersForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantFamilyMembers
+            .AsNoTracking()
+            .Where(fm => fm.TenantId == tenantId && fm.CompanyId == companyId && fm.DeletedAt == null)
+            .OrderBy(fm => fm.CreatedAt)
+            .Select(fm => new TenantFamilyMemberDto
+            {
+                Id = fm.Id,
+                Name = fm.Name,
+                RelationshipType = fm.RelationshipType,
+                AgeBracket = fm.AgeBracket,
+                CreatedAt = fm.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task AddFamilyMemberAsync(TenantFamilyMember familyMember, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.TenantFamilyMembers.AddAsync(familyMember, cancellationToken);
+    }
+
+    public Task<TenantEmergencyContact?> GetEmergencyContactByIdAsync(Guid tenantId, Guid contactId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantEmergencyContacts
+            .FirstOrDefaultAsync(ec => ec.Id == contactId && ec.TenantId == tenantId && ec.CompanyId == companyId && ec.DeletedAt == null, cancellationToken);
+    }
+
+    public Task<TenantEmergencyContactDto?> GetEmergencyContactDtoByIdAsync(Guid tenantId, Guid contactId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantEmergencyContacts
+            .AsNoTracking()
+            .Where(ec => ec.Id == contactId && ec.TenantId == tenantId && ec.CompanyId == companyId && ec.DeletedAt == null)
+            .Select(ec => new TenantEmergencyContactDto
+            {
+                Id = ec.Id,
+                Name = ec.Name,
+                RelationshipType = ec.RelationshipType,
+                Phone = ec.Phone,
+                CreatedAt = ec.CreatedAt
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<List<TenantEmergencyContactDto>> GetEmergencyContactsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantEmergencyContacts
+            .AsNoTracking()
+            .Where(ec => ec.TenantId == tenantId && ec.CompanyId == companyId && ec.DeletedAt == null)
+            .OrderBy(ec => ec.CreatedAt)
+            .Select(ec => new TenantEmergencyContactDto
+            {
+                Id = ec.Id,
+                Name = ec.Name,
+                RelationshipType = ec.RelationshipType,
+                Phone = ec.Phone,
+                CreatedAt = ec.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task AddEmergencyContactAsync(TenantEmergencyContact contact, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.TenantEmergencyContacts.AddAsync(contact, cancellationToken);
+    }
+
+    public Task<TenantVehicle?> GetVehicleByIdAsync(Guid tenantId, Guid vehicleId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantVehicles
+            .FirstOrDefaultAsync(v => v.Id == vehicleId && v.TenantId == tenantId && v.CompanyId == companyId && v.DeletedAt == null, cancellationToken);
+    }
+
+    public Task<TenantVehicleDto?> GetVehicleDtoByIdAsync(Guid tenantId, Guid vehicleId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantVehicles
+            .AsNoTracking()
+            .Where(v => v.Id == vehicleId && v.TenantId == tenantId && v.CompanyId == companyId && v.DeletedAt == null)
+            .Select(v => new TenantVehicleDto
+            {
+                Id = v.Id,
+                PlateNumber = v.PlateNumber,
+                MakeModel = v.MakeModel,
+                Color = v.Color,
+                CreatedAt = v.CreatedAt
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<List<TenantVehicleDto>> GetVehiclesForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.TenantVehicles
+            .AsNoTracking()
+            .Where(v => v.TenantId == tenantId && v.CompanyId == companyId && v.DeletedAt == null)
+            .OrderBy(v => v.CreatedAt)
+            .Select(v => new TenantVehicleDto
+            {
+                Id = v.Id,
+                PlateNumber = v.PlateNumber,
+                MakeModel = v.MakeModel,
+                Color = v.Color,
+                CreatedAt = v.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task AddVehicleAsync(TenantVehicle vehicle, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.TenantVehicles.AddAsync(vehicle, cancellationToken);
+    }
+
+    public Task<bool> ExistsByPlateNumberAsync(Guid companyId, string plateNumber, Guid? excludeVehicleId = null, CancellationToken cancellationToken = default)
+    {
+        var trimmed = plateNumber.Trim();
+        var query = _dbContext.TenantVehicles
+            .AsNoTracking()
+            .Where(v => v.CompanyId == companyId && v.DeletedAt == null && v.PlateNumber == trimmed);
+
+        if (excludeVehicleId.HasValue)
+        {
+            query = query.Where(v => v.Id != excludeVehicleId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
     }
 }

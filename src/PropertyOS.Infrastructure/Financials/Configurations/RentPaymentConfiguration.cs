@@ -184,6 +184,16 @@ internal sealed class RentPaymentConfiguration : IEntityTypeConfiguration<RentPa
             .HasConstraintName("fk_rent_payments_tenants_company_tenant")
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(p => p.Receipt)
+            .WithOne()
+            .HasForeignKey<RentPaymentReceipt>(r => r.RentPaymentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(p => p.Submissions)
+            .WithOne()
+            .HasForeignKey(s => s.RentPaymentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne<Building>()
             .WithMany()
             .HasForeignKey(p => p.BuildingId)

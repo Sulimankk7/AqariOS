@@ -59,11 +59,16 @@ public static class PlatformPermissions
     public const string NotificationsManageTemplates = "notifications.manage_templates";
     public const string NotificationsViewAll = "notifications.view_all";
 
+    // Module 5 — Tenant Portal Self-Service
+    public const string TenantPortalAccess = "tenant.portal.access";
+
     /// <summary>
     /// Complete catalog of all active platform permission definitions.
     /// </summary>
     public static readonly IReadOnlyList<PermissionDefinition> Catalog = new List<PermissionDefinition>
     {
+        new(TenantPortalAccess, "Leasing", "Access tenant portal self-service capabilities", "الوصول إلى خدمات بوابة المستأجر الذاتية"),
+
         new(CompanyManage, "Identity", "Manage company settings and tenant parameters", "إدارة إعدادات الشركة ومعايير المستأجر"),
 
         new(PropertiesRead, "Properties", "View property, floor, apartment, and parking inventory", "عرض عقارات وطوابق وشقق ومواقف السيارات"),

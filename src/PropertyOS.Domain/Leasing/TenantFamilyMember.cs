@@ -39,7 +39,7 @@ public class TenantFamilyMember : ISoftDeletable
 
         return new TenantFamilyMember
         {
-            Id = Guid.Empty,
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             TenantId = tenantId,
             Name = name.Trim(),
@@ -50,6 +50,27 @@ public class TenantFamilyMember : ISoftDeletable
             CreatedBy = createdBy,
             UpdatedBy = createdBy
         };
+    }
+
+    public void UpdateDetails(
+        string name,
+        string relationshipType,
+        string? ageBracket,
+        DateTimeOffset updatedAt,
+        Guid? updatedBy)
+    {
+        if (DeletedAt.HasValue)
+            throw new InvalidOperationException("Cannot update a deleted family member.");
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Name is required.", nameof(name));
+        if (string.IsNullOrWhiteSpace(relationshipType))
+            throw new ArgumentException("RelationshipType is required.", nameof(relationshipType));
+
+        Name = name.Trim();
+        RelationshipType = relationshipType.Trim();
+        AgeBracket = string.IsNullOrWhiteSpace(ageBracket) ? null : ageBracket.Trim();
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
     }
 
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)
