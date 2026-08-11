@@ -34,6 +34,7 @@ import { useTranslation } from "@/shared/i18n";
 import { useTheme } from "@/shared/theme";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ROUTES } from "@/config/routes";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 
 export interface TopbarProps {
   onOpenMobileNav: () => void;
@@ -247,49 +248,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
         </div>
 
         {/* Notification Bell */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowNotificationMenu((prev) => !prev);
-              setShowCompanyMenu(false);
-              setShowThemeMenu(false);
-              setShowUserMenu(false);
-            }}
-            aria-label="Notifications"
-            aria-expanded={showNotificationMenu}
-            className="w-9 h-9 flex items-center justify-center relative rounded-lg border border-border/60 hover:bg-secondary text-foreground transition-all cursor-pointer"
-            title="Notifications"
-          >
-            <Bell className="w-4 h-4 text-foreground" />
-            <span
-              className="absolute top-2 end-2 w-2 h-2 rounded-full bg-destructive ring-2 ring-card animate-pulse"
-              aria-label="Unread notifications"
-            />
-          </button>
-
-          {showNotificationMenu && (
-            <div
-              className="absolute end-0 top-full mt-1.5 w-72 sm:w-80 rounded-xl border border-border bg-card shadow-xl p-3 text-xs z-50 animate-in fade-in-50 zoom-in-95 duration-100"
-              role="dialog"
-              aria-label="Notifications panel"
-            >
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
-                <span className="font-semibold text-foreground flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5 text-primary" />
-                  {t("common.notifications")}
-                </span>
-                <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
-                  0 New
-                </span>
-              </div>
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2 text-center">
-                <Bell className="w-8 h-8 opacity-25" />
-                <p className="font-medium text-foreground">{t("common.noNotifications") || "All caught up!"}</p>
-                <p className="text-[11px] text-muted-foreground">You have no unread notifications right now.</p>
-              </div>
-            </div>
-          )}
-        </div>
+        <NotificationBell />
 
         {/* Separator */}
         <div className="h-5 w-[1px] bg-border mx-1 hidden sm:block" />

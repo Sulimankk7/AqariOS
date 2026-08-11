@@ -9,6 +9,8 @@ using PropertyOS.Domain.Identity.Enums;
 using PropertyOS.Domain.Properties.Enums;
 using PropertyOS.Domain.Subscriptions.Enums;
 using PropertyOS.Domain.Maintenance.Enums;
+using PropertyOS.Domain.Common.Enums;
+using PropertyOS.Domain.Marketplace.Enums;
 using PropertyOS.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -138,6 +140,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.SubmissionStatus>("submission_status_enum");
 
         // Module 7
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
@@ -149,6 +152,19 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<MaintenanceCategory>("maintenance_category_enum");
         dataSourceBuilder.MapEnum<MaintenancePriority>("maintenance_priority_enum");
         dataSourceBuilder.MapEnum<MaintenanceStatus>("maintenance_status_enum");
+        
+        // Module 9
+        dataSourceBuilder.MapEnum<CurrencyCode>("currency_code_enum");
+        dataSourceBuilder.MapEnum<ListingStatus>("listing_status_enum");
+        dataSourceBuilder.MapEnum<ViewingRequestStatus>("viewing_request_status_enum");
+
+        // Module 11
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationType>("notification_type_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationStatus>("notification_status_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
+
         _dataSource = dataSourceBuilder.Build();
 
         AppUserConnectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
@@ -196,6 +212,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.SubmissionStatus>("submission_status_enum");
 
         // Module 7
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
@@ -207,6 +224,19 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<MaintenanceCategory>("maintenance_category_enum");
         appUserDataSourceBuilder.MapEnum<MaintenancePriority>("maintenance_priority_enum");
         appUserDataSourceBuilder.MapEnum<MaintenanceStatus>("maintenance_status_enum");
+        
+        // Module 9
+        appUserDataSourceBuilder.MapEnum<CurrencyCode>("currency_code_enum");
+        appUserDataSourceBuilder.MapEnum<ListingStatus>("listing_status_enum");
+        appUserDataSourceBuilder.MapEnum<ViewingRequestStatus>("viewing_request_status_enum");
+
+        // Module 11
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationType>("notification_type_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationStatus>("notification_status_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
+
         AppUserDataSource = appUserDataSourceBuilder.Build();
 
         // 3. Create the test Context backed by the mapped DataSource.
@@ -249,12 +279,30 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.SubmissionStatus>("submission_status_enum");
 
                 // Module 7
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
+
+                // Module 8
+                o.MapEnum<MaintenanceCategory>("maintenance_category_enum");
+                o.MapEnum<MaintenancePriority>("maintenance_priority_enum");
+                o.MapEnum<MaintenanceStatus>("maintenance_status_enum");
+
+                // Module 9
+                o.MapEnum<CurrencyCode>("currency_code_enum");
+                o.MapEnum<ListingStatus>("listing_status_enum");
+                o.MapEnum<ViewingRequestStatus>("viewing_request_status_enum");
+
+                // Module 11
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationType>("notification_type_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationStatus>("notification_status_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
             })
             .LogSqlWhenRequested()
             .Options;
@@ -300,12 +348,30 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.DueDateStatus>("due_date_status_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ChequeStatus>("cheque_status_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.AllocationStatus>("allocation_status_enum");
+                o.MapEnum<PropertyOS.Domain.Financials.Enums.SubmissionStatus>("submission_status_enum");
 
                 // Module 7
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpenseCategory>("expense_category_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ExpensePaymentMethod>("expense_payment_method_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.ReceiptResetPolicy>("receipt_reset_policy_enum");
                 o.MapEnum<PropertyOS.Domain.Financials.Enums.EfawateercomStatus>("efawateercom_status_enum");
+
+                // Module 8
+                o.MapEnum<MaintenanceCategory>("maintenance_category_enum");
+                o.MapEnum<MaintenancePriority>("maintenance_priority_enum");
+                o.MapEnum<MaintenanceStatus>("maintenance_status_enum");
+
+                // Module 9
+                o.MapEnum<CurrencyCode>("currency_code_enum");
+                o.MapEnum<ListingStatus>("listing_status_enum");
+                o.MapEnum<ViewingRequestStatus>("viewing_request_status_enum");
+
+                // Module 11
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationType>("notification_type_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationStatus>("notification_status_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
+                o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
             })
             .Options;
 

@@ -117,6 +117,7 @@ public class RecordManualRentPaymentCommandHandlerTests
         public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<PropertyOS.Application.Common.Models.KeysetPage<PropertyOS.Application.Financials.Queries.GetPendingPaymentVerifications.PaymentVerificationQueueItemDto>> GetPendingVerificationsAsync(Guid companyId, int pageSize, DateTimeOffset? lastSeenSubmittedAt, Guid? lastSeenId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<ChequeDetailDto>> GetChequesAsync(ChequeStatus? status, Guid companyId, int pageSize, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -534,7 +535,7 @@ public class RecordManualRentPaymentCommandHandlerTests
             paymentFrequency: PaymentFrequency.Monthly,
             paymentDueDay: 1,
             createdAt: DateTimeOffset.UtcNow,
-            createdBy: userCtx.UserId.Value
+            createdBy: userCtx.UserId ?? Guid.NewGuid()
         );
 
         leaseRepo.Contracts[contract.Id] = contract;
@@ -552,7 +553,7 @@ public class RecordManualRentPaymentCommandHandlerTests
             billingPeriodEnd: DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
             dueDate: DateOnly.FromDateTime(DateTime.UtcNow),
             createdAt: DateTimeOffset.UtcNow,
-            createdBy: userCtx.UserId.Value
+            createdBy: userCtx.UserId ?? Guid.NewGuid()
         );
 
         rentRepo.Payments.Add(obligation);
@@ -570,7 +571,7 @@ public class RecordManualRentPaymentCommandHandlerTests
             billingPeriodEnd: null,
             dueDate: null,
             createdAt: DateTimeOffset.UtcNow,
-            createdBy: userCtx.UserId.Value
+            createdBy: userCtx.UserId ?? Guid.NewGuid()
         );
 
         // Add receiving payment to repository (in-memory ChangeTracker state)
@@ -584,5 +585,78 @@ public class RecordManualRentPaymentCommandHandlerTests
         Assert.Contains(lockedPayments, p => p.Id == obligation.Id);
         Assert.Contains(lockedPayments, p => p.Id == receivingPayment.Id);
     }
+
+    [Fact]
+    public void Validator_CliqMethodWithoutReferenceNumber_Fails()
+    {
+        var validator = new RecordManualRentPaymentCommandValidator();
+
+        var command = new RecordManualRentPaymentCommand(
+            LeaseContractId: Guid.NewGuid(),
+            Amount: 100m,
+            PaymentMethod: PaymentMethod.CliQ,
+            PaymentReferenceNumber: null
+        );
+
+        var result = validator.Validate(command);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(RecordManualRentPaymentCommand.PaymentReferenceNumber));
+    }
+
+    [Fact]
+    public void Validator_CliqMethodWithReferenceNumber_Passes()
+    {
+        var validator = new RecordManualRentPaymentCommandValidator();
+
+        var command = new RecordManualRentPaymentCommand(
+            LeaseContractId: Guid.NewGuid(),
+            Amount: 100m,
+            PaymentMethod: PaymentMethod.CliQ,
+            PaymentReferenceNumber: "CLIQ-TXN-998822"
+        );
+
+        var result = validator.Validate(command);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Handle_CliqPayment_SetsPaymentMethodAndReferenceNumber()
+    {
+        var companyId = Guid.NewGuid();
+        var (handler, contractRepo, paymentRepo, _, _) = CreateSut(companyId);
+
+        var contract = LeaseContract.Create(
+            companyId: companyId,
+            buildingId: Guid.NewGuid(),
+            apartmentId: Guid.NewGuid(),
+            tenantId: Guid.NewGuid(),
+            contractNumber: "LC-CLIQ-1",
+            startDate: DateOnly.FromDateTime(DateTime.UtcNow),
+            endDate: DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
+            monthlyRentAmount: 500m,
+            paymentFrequency: PaymentFrequency.Monthly,
+            paymentDueDay: 1,
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: Guid.NewGuid()
+        );
+        contractRepo.Contracts[contract.Id] = contract;
+
+        var command = new RecordManualRentPaymentCommand(
+            LeaseContractId: contract.Id,
+            Amount: 500m,
+            PaymentMethod: PaymentMethod.CliQ,
+            PaymentReferenceNumber: "CLIQ-REF-12345"
+        );
+
+        var paymentId = await handler.Handle(command, CancellationToken.None);
+
+        Assert.NotEqual(Guid.Empty, paymentId);
+        var createdPayment = Assert.Single(paymentRepo.Payments);
+        Assert.Equal(PaymentMethod.CliQ, createdPayment.PaymentMethod);
+        Assert.Equal("CLIQ-REF-12345", createdPayment.PaymentReferenceNumber);
+    }
 }
+
 

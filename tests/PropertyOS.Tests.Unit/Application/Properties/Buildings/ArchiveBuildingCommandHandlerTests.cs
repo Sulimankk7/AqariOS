@@ -7,6 +7,7 @@ using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Properties;
 using PropertyOS.Application.Properties.Buildings.Commands.ArchiveBuilding;
+using PropertyOS.Application.Properties.Buildings.Services;
 using PropertyOS.Domain.Properties;
 using Xunit;
 
@@ -15,8 +16,10 @@ namespace PropertyOS.Tests.Unit.Application.Properties.Buildings;
 public class ArchiveBuildingCommandHandlerTests
 {
     private readonly IBuildingRepository _buildingRepository = Substitute.For<IBuildingRepository>();
+    private readonly IBuildingArchiveDependencyChecker _dependencyChecker = Substitute.For<IBuildingArchiveDependencyChecker>();
     private readonly ITenantContext _tenantContext = Substitute.For<ITenantContext>();
     private readonly ICurrentUserContext _currentUserContext = Substitute.For<ICurrentUserContext>();
+    private readonly Microsoft.Extensions.Logging.ILogger<ArchiveBuildingCommandHandler> _logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<ArchiveBuildingCommandHandler>>();
     private readonly ArchiveBuildingCommandHandler _handler;
 
     private static readonly Guid CompanyId = Guid.NewGuid();
@@ -29,8 +32,10 @@ public class ArchiveBuildingCommandHandlerTests
 
         _handler = new ArchiveBuildingCommandHandler(
             _buildingRepository,
+            _dependencyChecker,
             _tenantContext,
-            _currentUserContext);
+            _currentUserContext,
+            _logger);
     }
 
     [Fact]

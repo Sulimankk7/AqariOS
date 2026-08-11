@@ -22,11 +22,18 @@ namespace PropertyOS.Tests.Unit.Api.Controllers.Properties;
 public class BuildingsControllerTests
 {
     private readonly ISender _mediator = Substitute.For<ISender>();
+    private readonly Microsoft.Extensions.Logging.ILogger<BuildingsController> _logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<BuildingsController>>();
     private readonly BuildingsController _controller;
 
     public BuildingsControllerTests()
     {
-        _controller = new BuildingsController(_mediator);
+        _controller = new BuildingsController(_mediator, _logger)
+        {
+            ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     [Fact]

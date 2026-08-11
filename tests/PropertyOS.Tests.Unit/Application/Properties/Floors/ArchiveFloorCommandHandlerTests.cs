@@ -7,6 +7,7 @@ using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Properties;
 using PropertyOS.Application.Properties.Floors.Commands.ArchiveFloor;
+using PropertyOS.Application.Properties.Floors.Services;
 using PropertyOS.Domain.Properties;
 using PropertyOS.Domain.Properties.Enums;
 using Xunit;
@@ -16,8 +17,10 @@ namespace PropertyOS.Tests.Unit.Application.Properties.Floors;
 public class ArchiveFloorCommandHandlerTests
 {
     private readonly IFloorRepository _floorRepository = Substitute.For<IFloorRepository>();
+    private readonly IFloorArchiveDependencyChecker _dependencyChecker = Substitute.For<IFloorArchiveDependencyChecker>();
     private readonly ITenantContext _tenantContext = Substitute.For<ITenantContext>();
     private readonly ICurrentUserContext _currentUserContext = Substitute.For<ICurrentUserContext>();
+    private readonly Microsoft.Extensions.Logging.ILogger<ArchiveFloorCommandHandler> _logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<ArchiveFloorCommandHandler>>();
     private readonly ArchiveFloorCommandHandler _handler;
 
     private static readonly Guid CompanyId = Guid.NewGuid();
@@ -31,8 +34,10 @@ public class ArchiveFloorCommandHandlerTests
 
         _handler = new ArchiveFloorCommandHandler(
             _floorRepository,
+            _dependencyChecker,
             _tenantContext,
-            _currentUserContext);
+            _currentUserContext,
+            _logger);
     }
 
     [Fact]
