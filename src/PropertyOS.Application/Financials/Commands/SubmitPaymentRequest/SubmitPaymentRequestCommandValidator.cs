@@ -24,8 +24,23 @@ public class SubmitPaymentRequestCommandValidator : AbstractValidator<SubmitPaym
 
         When(v => v.PaymentMethod == PaymentMethod.Cheque, () =>
         {
-            RuleFor(v => v.ReferenceNumber)
-                .NotEmpty().WithMessage("Cheque number is required.");
+            RuleFor(v => v.ChequeDetails)
+                .NotNull().WithMessage("Cheque details (cheque number, bank name, issue date, and due date) are required when the payment method is Cheque.");
+
+            When(v => v.ChequeDetails != null, () =>
+            {
+                RuleFor(v => v.ChequeDetails!.ChequeNumber)
+                    .NotEmpty().WithMessage("Cheque number is required.")
+                    .MaximumLength(100).WithMessage("Cheque number must not exceed 100 characters.");
+
+                RuleFor(v => v.ChequeDetails!.BankName)
+                    .NotEmpty().WithMessage("Bank name is required.")
+                    .MaximumLength(255).WithMessage("Bank name must not exceed 255 characters.");
+
+                RuleFor(v => v.ChequeDetails!)
+                    .Must(c => c.DueDate >= c.IssueDate)
+                    .WithMessage("Cheque due date cannot be before its issue date.");
+            });
         });
     }
 }

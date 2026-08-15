@@ -6,6 +6,7 @@ export interface TenantDto {
   name: string;
   nationalId: string;
   phone: string;
+  email?: string | null;
   occupation?: string | null;
   employer?: string | null;
   userId?: string | null;
@@ -49,6 +50,7 @@ export interface CreateTenantRequest {
   name: string;
   nationalId: string;
   phone: string;
+  email: string;
   occupation?: string | null;
   employer?: string | null;
 }
@@ -57,6 +59,7 @@ export interface UpdateTenantRequest {
   name: string;
   nationalId: string;
   phone: string;
+  email?: string | null;
   occupation?: string | null;
   employer?: string | null;
 }
@@ -95,6 +98,27 @@ export interface UpdateTenantVehicleRequest {
   plateNumber: string;
   makeModel: string;
   color: string;
+}
+
+export enum TenantProvisioningContactMethod {
+  Phone = 'Phone',
+  Email = 'Email',
+}
+
+export interface ProvisionTenantAccountRequest {
+  contactMethod?: TenantProvisioningContactMethod;
+  phone?: string | null;
+  email?: string | null;
+}
+
+export interface ProvisionTenantAccountResponseDto {
+  tenantId: string;
+  userId: string;
+  companyId: string;
+  activationToken?: string | null;
+  expiresAt: string;
+  emailSent?: boolean;
+  smsSent?: boolean;
 }
 
 export { type LeaseContractDto };

@@ -13,7 +13,7 @@ using PropertyOS.Domain.Financials;
 
 namespace PropertyOS.Application.Financials.Commands.ApprovePaymentSubmission;
 
-public class ApprovePaymentSubmissionCommandHandler : IRequestHandler<ApprovePaymentSubmissionCommand>
+public class ApprovePaymentSubmissionCommandHandler : IRequestHandler<ApprovePaymentSubmissionCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserContext _currentUser;
@@ -35,7 +35,7 @@ public class ApprovePaymentSubmissionCommandHandler : IRequestHandler<ApprovePay
         _sender = sender;
     }
 
-    public async Task Handle(ApprovePaymentSubmissionCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(ApprovePaymentSubmissionCommand request, CancellationToken cancellationToken)
     {
         var rentPayment = await _context.RentPayments
             .Include(rp => rp.Submissions)
@@ -49,25 +49,56 @@ public class ApprovePaymentSubmissionCommandHandler : IRequestHandler<ApprovePay
 
         rentPayment.ApproveSubmission(request.SubmissionId, verifiedBy, verifiedAt);
 
-        await _context.SaveChangesAsync(cancellationToken);
-
         var submission = rentPayment.Submissions.First(s => s.Id == request.SubmissionId);
 
-        // Invoke the canonical Module 6 financial engine to handle the actual settlement
+        // Invoke the canonical Module 6 financial engine to handle the actual settlement.
+        // Allocation targets MUST be ScheduledInstallments per core domain rule.
         var amountToAllocate = rentPayment.AmountDue - rentPayment.AmountPaid;
         if (amountToAllocate > 0)
         {
+            System.Collections.Generic.List<AllocationDetail>? allocations = null;
+            if (rentPayment.PaymentPurpose == PropertyOS.Domain.Financials.Enums.PaymentPurpose.ScheduledInstallment)
+            {
+                allocations = new System.Collections.Generic.List<AllocationDetail>
+                {
+                    new AllocationDetail(rentPayment.Id, amountToAllocate)
+                };
+            }
+
+            ManualChequeDetails? chequeDetails = null;
+            if (submission.PaymentMethod == PropertyOS.Domain.Financials.Enums.PaymentMethod.Cheque)
+            {
+                if (string.IsNullOrWhiteSpace(submission.ChequeNumber) ||
+                    string.IsNullOrWhiteSpace(submission.BankName) ||
+                    !submission.ChequeIssueDate.HasValue ||
+                    !submission.ChequeDueDate.HasValue)
+                {
+                    throw new BusinessRuleException(
+                        "Cheque details are required before this payment can be approved.",
+                        "CHEQUE_DETAILS_REQUIRED");
+                }
+
+                var issueDate = submission.ChequeIssueDate.Value;
+                var dueDate = submission.ChequeDueDate.Value;
+
+                chequeDetails = new ManualChequeDetails(
+                    ChequeNumber: submission.ChequeNumber,
+                    BankName: submission.BankName,
+                    BankBranch: null,
+                    IssueDate: issueDate,
+                    DueDate: dueDate >= issueDate ? dueDate : issueDate,
+                    ReceivedDate: DateOnly.FromDateTime(submission.SubmittedAt.DateTime)
+                );
+            }
+
             var recordPaymentCommand = new RecordManualRentPaymentCommand(
                 LeaseContractId: rentPayment.LeaseContractId,
                 Amount: amountToAllocate,
                 PaymentMethod: submission.PaymentMethod,
                 PaymentReferenceNumber: submission.ReferenceNumber,
                 Notes: "Payment submitted via Tenant Portal and approved by owner",
-                Cheque: null, // Note: Tenant portal cheque submissions would require mapping ChequeDetails if implemented later
-                Allocations: new System.Collections.Generic.List<AllocationDetail>
-                {
-                    new AllocationDetail(rentPayment.Id, amountToAllocate)
-                }
+                Cheque: chequeDetails,
+                Allocations: allocations
             );
 
             await _sender.Send(recordPaymentCommand, cancellationToken);
@@ -82,5 +113,7 @@ public class ApprovePaymentSubmissionCommandHandler : IRequestHandler<ApprovePay
             
             await _publisher.Publish(notification, cancellationToken);
         }
+
+        return Unit.Value;
     }
 }

@@ -8,4 +8,5 @@ public record SubmitPaymentRequestCommand(
     Guid RentPaymentId,
     PaymentMethod PaymentMethod,
     string? ReferenceNumber,
-    Guid? ProofFileId) : IRequest<Guid>;
+    Guid? ProofFileId,
+    ChequeSubmissionInput? ChequeDetails = null) : IRequest<Guid>;

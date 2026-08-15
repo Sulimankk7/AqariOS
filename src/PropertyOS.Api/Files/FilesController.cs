@@ -168,6 +168,26 @@ public class FilesController : ControllerBase
         return File(stream, "application/octet-stream");
     }
 
+    /// <summary>
+    /// Generates a signed capability URL for downloading or previewing a file by its FileStorage ID.
+    /// Requires caller authentication and company boundary containment.
+    /// </summary>
+    [HttpGet("api/v{version:apiVersion}/files/{id:guid}/download-url")]
+    [Authorize]
+    [ProducesResponseType(typeof(FileDownloadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDownloadUrl(
+        [FromRoute] Guid id,
+        [FromQuery] bool inline = true,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new PropertyOS.Application.Files.Queries.GetFileDownloadUrl.GetFileDownloadUrlQuery(FileId: id, Inline: inline);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+
 
     /// <summary>
     /// Key tail is "{fileId}-{sanitizedFilename}"; strip the 36-char GUID prefix when present.

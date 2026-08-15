@@ -18,6 +18,8 @@ import type {
   OtpRequestDto,
   OtpVerifyDto,
   UserProfileDto,
+  ActivateTenantAccountRequestDto,
+  TenantActivationStatusDto,
 } from "@/features/auth/types/auth.types";
 
 export const authApi = {
@@ -67,5 +69,21 @@ export const authApi = {
    */
   getProfile(): Promise<UserProfileDto> {
     return http.get<UserProfileDto>("/api/v1/auth/me");
+  },
+
+  /**
+   * Preflight validation of tenant activation token state.
+   * GET /api/v1/auth/tenant-activation-status?token=...
+   */
+  getTenantActivationStatus(token: string): Promise<TenantActivationStatusDto> {
+    return http.get<TenantActivationStatusDto>(`/api/v1/auth/tenant-activation-status?token=${encodeURIComponent(token)}`);
+  },
+
+  /**
+   * Activates a tenant account using activation token and sets initial password.
+   * POST /api/v1/auth/tenant-activate
+   */
+  activateTenant(dto: ActivateTenantAccountRequestDto): Promise<LoginResponseDto> {
+    return http.post<LoginResponseDto>("/api/v1/auth/tenant-activate", dto);
   },
 };

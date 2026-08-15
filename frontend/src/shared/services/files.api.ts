@@ -36,10 +36,23 @@ export interface FileStorageDto {
   createdAt: string;
 }
 
+export interface FileDownloadUrlResponse {
+  fileId: string;
+  downloadUrl: string;
+  expirationMinutes: number;
+  mimeType: string;
+  originalFilename: string;
+}
+
 export const filesApi = {
   /** Phase 1: Metadata upload request */
   requestUpload: (payload: UploadFileRequestPayload): Promise<UploadFileRequestResponse> => {
     return http.post<UploadFileRequestResponse>('/api/v1/files/upload-request', payload);
+  },
+
+  /** Get signed download URL by FileStorage ID */
+  getFileDownloadUrl: (fileId: string, inline: boolean = true): Promise<FileDownloadUrlResponse> => {
+    return http.get<FileDownloadUrlResponse>(`/api/v1/files/${fileId}/download-url?inline=${inline}`);
   },
 
   /** Phase 2: Binary upload to signed URL with progress tracking */

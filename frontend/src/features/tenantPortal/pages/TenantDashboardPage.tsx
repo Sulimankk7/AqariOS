@@ -1,64 +1,73 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@/shared/i18n";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
-import { tenantPortalApi } from "../api/tenantPortal.api";
+import { useTenantProfile } from "../hooks/useTenantProfile";
 import {
   useUnreadNotificationCount,
   useMyNotifications,
+  useMarkNotificationAsRead,
 } from "@/features/notifications/hooks/useNotifications";
+import { SubmitPaymentVerificationModal } from "../components/SubmitPaymentVerificationModal";
 import {
   UserCircle,
   Bell,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Check,
   Users,
   Car,
   ShieldCheck,
   ArrowUpRight,
+  CreditCard,
 } from "lucide-react";
 
 export function TenantDashboardPage() {
   const { t, language } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const userId = user?.id;
 
   const isRtl = language === "ar";
   const ChevronIcon = isRtl ? ChevronLeft : ChevronRight;
 
-  const { data: profile } = useQuery({
-    queryKey: ["tenant", userId, "profile"],
-    queryFn: () => tenantPortalApi.getProfile(),
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: profile } = useTenantProfile();
 
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: recentNotifications = [] } = useMyNotifications({ pageSize: 5 });
+  const markAsRead = useMarkNotificationAsRead();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const handleNotificationClick = (n: { id: string; status: number; readAt?: string | null }) => {
+    setExpandedId((prev) => (prev === n.id ? null : n.id));
+    if (n.status === 0 || !n.readAt) {
+      markAsRead.mutate(n.id);
+    }
+  };
 
   return (
     <PageContainer
-      title={t("tenant.dashboard.title", "Dashboard")}
-      description={t("tenant.dashboard.subtitle", "Overview of your account and services")}
+      title={t("tenant.dashboard.title", "Tenant Portal")}
+      description={t("tenant.dashboard.subtitle", "Welcome to your AqariOS Tenant Self-Service Portal.")}
     >
-      <div className="space-y-6">
-        {/* Welcome Header Hero Card */}
-        <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+      <div className="max-w-4xl space-y-4">
+        {/* Welcome Hero Card */}
+        <div className="p-6 rounded-2xl bg-card border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/15 text-primary border border-primary/20">
-                {t("tenant.dashboard.accountActive", "Account Active & Verified")}
-              </span>
+            <div className="flex items-center gap-2 text-brand-green-600 dark:text-brand-green-400 font-semibold text-xs uppercase tracking-wider">
+              <ShieldCheck className="w-4 h-4" />
+              <span>{t("tenant.dashboard.verifiedRole", "Authenticated Tenant Session")}</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight pt-1">
-              {t("tenant.welcomeUser", "Welcome, {{name}}", { name: user?.name || profile?.name || "Tenant" })}
+            <h2 className="text-xl font-bold text-foreground">
+              {isRtl
+                ? `مرحباً بك، ${profile?.name || user?.name || ""}`
+                : `Welcome back, ${profile?.name || user?.name || ""}`}
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {t("tenant.welcomeSubtitle", "Tenant Self-Service Portal — View your profile details and notifications.")}
+            <p className="text-xs text-muted-foreground max-w-xl">
+              {t("tenant.dashboard.welcomeDesc", "Manage your tenant profile, notifications, active lease contract, and payment verification.")}
             </p>
           </div>
 
@@ -73,7 +82,7 @@ export function TenantDashboardPage() {
         </div>
 
         {/* Available Features Quick Navigation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Profile Card */}
           <div
             onClick={() => navigate("/tenant/profile")}
@@ -107,6 +116,32 @@ export function TenantDashboardPage() {
                 </span>
               </div>
             )}
+          </div>
+
+          {/* Submit Payment Proof Card */}
+          <div
+            onClick={() => navigate("/tenant/payments")}
+            className="p-5 rounded-xl border border-border bg-card hover:bg-secondary/40 transition-all cursor-pointer group shadow-2xs flex flex-col justify-between space-y-3"
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-10 h-10 rounded-xl bg-brand-green-900/10 text-brand-green-600 dark:text-brand-green-400 flex items-center justify-center font-bold">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                {t("paymentVerification.modalTitle", "Submit Payment Proof")}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                {t("paymentVerification.modalSubtitle", "Upload your receipt and submit payment details for property management review.")}
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground">
+              <span>{isRtl ? "إرسال إيصال وتحويل" : "Submit receipt & transfer ref"}</span>
+            </div>
           </div>
 
           {/* Notifications Card */}
@@ -156,20 +191,85 @@ export function TenantDashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {recentNotifications.map((n) => (
-                <div
-                  key={n.id}
-                  className="p-3 rounded-lg border border-border/60 bg-secondary/20 flex items-start justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-0.5">
-                    <p className="font-semibold text-foreground">{n.subject}</p>
-                    <p className="text-muted-foreground text-[11.5px] line-clamp-1">{n.body}</p>
+              {recentNotifications.map((n) => {
+                const isUnread = n.status === 0 || !n.readAt;
+                const isExpanded = expandedId === n.id;
+
+                return (
+                  <div
+                    key={n.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
+                    aria-label={`${n.subject} - ${isUnread ? t("tenant.notifications.unreadStatus", "Unread") : t("tenant.notifications.readStatus", "Read")}`}
+                    onClick={() => handleNotificationClick(n)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleNotificationClick(n);
+                      }
+                    }}
+                    className={`p-3 rounded-lg border transition-all cursor-pointer select-none text-xs ${
+                      isUnread
+                        ? "border-primary/25 bg-primary/5 hover:bg-primary/10 shadow-2xs"
+                        : "border-border/60 bg-secondary/20 hover:bg-secondary/40 opacity-90"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div
+                        className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                          isUnread ? "bg-primary" : "bg-transparent"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`font-semibold ${isUnread ? "text-foreground" : "text-muted-foreground"}`}>
+                            {n.subject}
+                          </p>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {new Date(n.createdAt).toLocaleDateString(isRtl ? "ar-JO" : "en-US", {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            {isExpanded ? (
+                              <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                            ) : (
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Message body */}
+                        {isExpanded ? (
+                          <div className="mt-2 space-y-2 text-foreground/90 leading-relaxed break-words whitespace-pre-wrap animate-in fade-in-50 duration-150">
+                            <p className="p-2.5 rounded bg-background/60 border border-border/40 text-[11.5px] leading-relaxed">
+                              {n.body}
+                            </p>
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40">
+                              <span className="flex items-center gap-1 font-medium text-primary">
+                                <Check className="w-3 h-3" aria-hidden="true" />
+                                {t("tenant.notifications.readStatus", "Read")}
+                              </span>
+                              <span className="font-mono">
+                                {new Date(n.createdAt).toLocaleDateString(isRtl ? "ar-JO" : "en-US")}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-[11.5px] line-clamp-1 mt-0.5 leading-snug">
+                            {n.body}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0 font-mono">
-                    {new Date(n.createdAt).toLocaleDateString(isRtl ? "ar-JO" : "en-US")}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PropertyOS.Application.Notifications;
 using PropertyOS.Application.Notifications.Queries.Common;
 using PropertyOS.Domain.Notifications;
+using PropertyOS.Domain.Notifications.Enums;
 using PropertyOS.Infrastructure.Persistence;
 
 namespace PropertyOS.Infrastructure.Notifications.Repositories;
@@ -137,23 +138,23 @@ internal sealed class NotificationRepository : INotificationRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<System.Collections.Generic.List<Guid>> GetDispatchCandidateIdsAsync(int batchSize, Guid? afterId, CancellationToken cancellationToken)
+    public async Task<System.Collections.Generic.List<Guid>> GetDispatchCandidateIdsAsync(Guid companyId, int batchSize, Guid? afterId, CancellationToken cancellationToken)
     {
-        // No CompanyId predicate: this query is only ever executed inside a
-        // company-scoped transaction opened by DispatchNotificationsJob, where RLS
-        // (app.current_company_id) constrains visibility. Retry cap is app policy
-        // (NotificationDispatchPolicy.MaxDeliveryAttempts) — the domain has no
-        // max-attempt constant.
+        // Enforce CompanyId predicate explicitly across both branches to guarantee
+        // strict multi-tenant isolation regardless of RLS environment settings.
+        // Retry cap is app policy (NotificationDispatchPolicy.MaxDeliveryAttempts).
         //
         // The former single OR/EXISTS predicate is split into two index-friendly
         // branches unioned server-side:
-        //   1. Pending notifications (status column).
-        //   2. Retryable-Failed notifications, driven from the deliveries side
+        //   1. Pending notifications (status column) for companyId.
+        //   2. Retryable-Failed notifications for companyId, driven from the deliveries side
         //      (delivery_status = 'failed' AND attempt_count < cap) joined back to
-        //      non-cancelled parents.
+        //      non-cancelled parents for companyId.
         // UNION deduplicates; ordering by Id with the keyset (Id > afterId) makes the
         // sweep a strictly advancing cursor.
-        IQueryable<Notification> candidates = _context.Notifications;
+        IQueryable<Notification> candidates = _context.Notifications
+            .Where(n => n.CompanyId == companyId);
+
         if (afterId.HasValue)
         {
             var cursor = afterId.Value;
@@ -166,7 +167,8 @@ internal sealed class NotificationRepository : INotificationRepository
             .Select(n => n.Id);
 
         var retryableFailedIds = _context.NotificationDeliveries
-            .Where(d => d.DeliveryStatus == Domain.Notifications.Enums.DeliveryStatus.Failed
+            .Where(d => d.CompanyId == companyId
+                && d.DeliveryStatus == Domain.Notifications.Enums.DeliveryStatus.Failed
                 && d.AttemptCount < NotificationDispatchPolicy.MaxDeliveryAttempts)
             .Join(
                 candidates.Where(n => n.DeletedAt == null
@@ -178,7 +180,7 @@ internal sealed class NotificationRepository : INotificationRepository
         return await pendingIds
             .Union(retryableFailedIds)
             .OrderBy(id => id)
-            .Take(batchSize)
+            .Take(ClampPageSize(batchSize))
             .ToListAsync(cancellationToken);
     }
 
@@ -192,6 +194,35 @@ internal sealed class NotificationRepository : INotificationRepository
     {
         _context.Notifications.Update(notification);
         return Task.CompletedTask;
+    }
+
+    public async Task<DateTimeOffset> GetDatabaseTimestampAsync(CancellationToken cancellationToken)
+    {
+        return await _context.Database
+            .SqlQuery<DateTimeOffset>($"SELECT transaction_timestamp() AS \"Value\"")
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<int> MarkAllAsReadAsync(Guid userId, Guid companyId, DateTimeOffset readAt, CancellationToken cancellationToken)
+    {
+        var unreadNotifications = await _context.Notifications
+            .Where(n => n.RecipientUserId == userId
+                     && n.CompanyId == companyId
+                     && n.ReadAt == null
+                     && n.Status == NotificationStatus.Sent
+                     && n.DeletedAt == null)
+            .ToListAsync(cancellationToken);
+
+        if (unreadNotifications.Count == 0)
+            return 0;
+
+        foreach (var notification in unreadNotifications)
+        {
+            notification.MarkAsRead(readAt);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return unreadNotifications.Count;
     }
 
     private static int ClampPageSize(int pageSize)

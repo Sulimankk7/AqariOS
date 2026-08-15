@@ -266,5 +266,45 @@ public class LeaseContractRepository : ILeaseContractRepository
         return await _dbContext.ContractDocuments
             .FirstOrDefaultAsync(d => d.Id == documentId && d.LeaseContractId == leaseContractId && d.CompanyId == companyId, cancellationToken);
     }
+
+    public async Task<PropertyOS.Application.Leasing.Queries.GetMyActiveLease.TenantLeaseDto?> GetActiveLeaseByTenantIdAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        var activeLeases = await (from c in _dbContext.LeaseContracts.AsNoTracking()
+                                  join a in _dbContext.Apartments.AsNoTracking() on c.ApartmentId equals a.Id
+                                  join b in _dbContext.Buildings.AsNoTracking() on c.BuildingId equals b.Id
+                                  where c.CompanyId == companyId
+                                     && c.TenantId == tenantId
+                                     && c.Status == PropertyOS.Domain.Leasing.Enums.ContractStatus.Active
+                                  select new PropertyOS.Application.Leasing.Queries.GetMyActiveLease.TenantLeaseDto(
+                                      c.Id,
+                                      c.ContractNumber,
+                                      c.StartDate,
+                                      c.EndDate,
+                                      c.SignedDate,
+                                      c.MonthlyRentAmount,
+                                      c.Currency,
+                                      c.SecurityDepositAmount,
+                                      c.PaymentFrequency.ToString(),
+                                      c.PaymentDueDay,
+                                      c.Status.ToString(),
+                                      c.LegalRegime.ToString(),
+                                      c.TenantType.ToString(),
+                                      a.Id,
+                                      a.UnitNumber,
+                                      a.Bedrooms,
+                                      a.Bathrooms,
+                                      a.AreaSqm,
+                                      b.Id,
+                                      b.Name
+                                  ))
+                                  .ToListAsync(cancellationToken);
+
+        if (activeLeases.Count > 1)
+        {
+            throw new InvalidOperationException($"Data integrity violation: Multiple active lease contracts found for tenant {tenantId}.");
+        }
+
+        return activeLeases.SingleOrDefault();
+    }
 }
 

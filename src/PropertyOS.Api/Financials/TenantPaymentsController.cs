@@ -33,7 +33,8 @@ public class TenantPaymentsController : ControllerBase
             id,
             request.PaymentMethod,
             request.ReferenceNumber,
-            request.ProofFileId);
+            request.ProofFileId,
+            request.ChequeDetails);
 
         var submissionId = await _sender.Send(command);
         return Ok(submissionId);
@@ -43,4 +44,5 @@ public class TenantPaymentsController : ControllerBase
 public record SubmitPaymentVerificationRequest(
     PaymentMethod PaymentMethod,
     string? ReferenceNumber,
-    Guid? ProofFileId);
+    Guid? ProofFileId,
+    ChequeSubmissionInput? ChequeDetails = null);

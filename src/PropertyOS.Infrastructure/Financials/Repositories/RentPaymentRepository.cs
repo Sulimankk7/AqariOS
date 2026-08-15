@@ -221,7 +221,10 @@ public class RentPaymentRepository : IRentPaymentRepository
     {
         return _dbContext.RentPayments
             .AsNoTracking()
-            .Where(p => p.TenantId == tenantId && p.CompanyId == companyId)
+            .Where(p => p.TenantId == tenantId 
+                     && p.CompanyId == companyId 
+                     && p.PaymentPurpose == PaymentPurpose.ScheduledInstallment 
+                     && p.DeletedAt == null)
             .OrderByDescending(p => p.DueDate)
             .ProjectToType<RentPaymentDto>()
             .ToListAsync(cancellationToken);
@@ -356,6 +359,97 @@ public class RentPaymentRepository : IRentPaymentRepository
                 .ToListAsync(cancellationToken);
     }
 
+    public Task<List<RentPaymentDto>> GetPaymentsAsync(
+        RentPaymentFilterOptions filter,
+        Guid companyId,
+        CancellationToken cancellationToken = default)
+    {
+        var baseQuery = from p in _dbContext.RentPayments
+                        join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
+                        join t  in _dbContext.Tenants         on p.TenantId        equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
+                        join a  in _dbContext.Apartments      on p.ApartmentId     equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
+                        join b  in _dbContext.Buildings       on p.BuildingId      equals b.Id  into bx  from b  in bx.DefaultIfEmpty()
+                        where p.CompanyId == companyId && p.DeletedAt == null
+                        select new { p, lc, t, a, b };
+
+        if (filter.BuildingId.HasValue)
+        {
+            baseQuery = baseQuery.Where(x => x.p.BuildingId == filter.BuildingId.Value);
+        }
+
+        if (filter.Status.HasValue)
+        {
+            baseQuery = baseQuery.Where(x => x.p.DueDateStatus == filter.Status.Value);
+        }
+
+        if (filter.DateFrom.HasValue)
+        {
+            baseQuery = baseQuery.Where(x => x.p.DueDate.HasValue && x.p.DueDate.Value >= filter.DateFrom.Value);
+        }
+
+        if (filter.DateTo.HasValue)
+        {
+            baseQuery = baseQuery.Where(x => x.p.DueDate.HasValue && x.p.DueDate.Value <= filter.DateTo.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+        {
+            var normalizedSearch = filter.SearchTerm.Trim();
+            baseQuery = baseQuery.Where(x =>
+                (x.p.ReceiptNumber != null && EF.Functions.ILike(x.p.ReceiptNumber, $"%{normalizedSearch}%")) ||
+                (x.lc != null && EF.Functions.ILike(x.lc.ContractNumber, $"%{normalizedSearch}%")) ||
+                (x.t != null && EF.Functions.ILike(x.t.Name, $"%{normalizedSearch}%")));
+        }
+
+        if (filter.LastSeenId.HasValue && filter.LastSeenDueDate.HasValue)
+        {
+            var cursorDate = filter.LastSeenDueDate.Value;
+            var cursorId   = filter.LastSeenId.Value;
+
+            baseQuery = baseQuery.Where(x =>
+                (x.p.DueDate.HasValue && x.p.DueDate.Value < cursorDate) ||
+                (x.p.DueDate.HasValue && x.p.DueDate.Value == cursorDate && x.p.Id.CompareTo(cursorId) > 0));
+        }
+
+        var effectivePageSize = Math.Clamp(filter.PageSize, 1, 200);
+
+        return baseQuery
+            .AsNoTracking()
+            .OrderByDescending(x => x.p.DueDate)
+            .ThenBy(x => x.p.Id)
+            .Take(effectivePageSize)
+            .Select(x => new RentPaymentDto
+            {
+                Id                     = x.p.Id,
+                CompanyId              = x.p.CompanyId,
+                LeaseContractId        = x.p.LeaseContractId,
+                TenantId               = x.p.TenantId,
+                BuildingId             = x.p.BuildingId,
+                ApartmentId            = x.p.ApartmentId,
+                PaymentPurpose         = x.p.PaymentPurpose,
+                AmountDue              = x.p.AmountDue,
+                AmountPaid             = x.p.AmountPaid,
+                Currency               = x.p.Currency,
+                DueDateStatus          = x.p.DueDateStatus,
+                BillingPeriodStart     = x.p.BillingPeriodStart,
+                BillingPeriodEnd       = x.p.BillingPeriodEnd,
+                DueDate                = x.p.DueDate,
+                ReceiptNumber          = x.p.ReceiptNumber,
+                PaymentMethod          = x.p.PaymentMethod,
+                PaymentReferenceNumber = x.p.PaymentReferenceNumber,
+                Notes                  = x.p.Notes,
+                CreatedAt              = x.p.CreatedAt,
+                UpdatedAt              = x.p.UpdatedAt,
+                CreatedBy              = x.p.CreatedBy,
+                UpdatedBy              = x.p.UpdatedBy,
+                TenantName             = x.t != null ? x.t.Name : null,
+                BuildingName           = x.b != null ? x.b.Name : null,
+                ApartmentNumber        = x.a != null ? x.a.UnitNumber : null,
+                ContractNumber         = x.lc != null ? x.lc.ContractNumber : null,
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<PropertyOS.Application.Common.Models.KeysetPage<PropertyOS.Application.Financials.Queries.GetPendingPaymentVerifications.PaymentVerificationQueueItemDto>> GetPendingVerificationsAsync(Guid companyId, int pageSize, DateTimeOffset? lastSeenSubmittedAt, Guid? lastSeenId, CancellationToken cancellationToken = default)
     {
         var effectivePageSize = Math.Clamp(pageSize, 1, 200);
@@ -393,6 +487,10 @@ public class RentPaymentRepository : IRentPaymentRepository
                         PaymentMethod = s.PaymentMethod,
                         ReferenceNumber = s.ReferenceNumber,
                         ProofFileId = s.ProofFileId,
+                        ChequeNumber = s.ChequeNumber,
+                        BankName = s.BankName,
+                        ChequeIssueDate = s.ChequeIssueDate,
+                        ChequeDueDate = s.ChequeDueDate,
                         SubmittedAt = s.SubmittedAt,
                         SubmissionStatus = s.Status,
                         DueDateStatus = p.DueDateStatus
@@ -536,6 +634,7 @@ public class RentPaymentRepository : IRentPaymentRepository
                           Amount          = r.Amount,
                           Currency        = r.Currency,
                           Notes           = r.Notes,
+                          FileId          = r.FileId,
                           CreatedAt       = r.CreatedAt,
                           TenantName      = t != null ? t.Name : null,
                           BuildingName    = b != null ? b.Name : null,
@@ -598,6 +697,7 @@ public class RentPaymentRepository : IRentPaymentRepository
                 Amount          = x.r.Amount,
                 Currency        = x.r.Currency,
                 Notes           = x.r.Notes,
+                FileId          = x.r.FileId,
                 CreatedAt       = x.r.CreatedAt,
                 TenantName      = x.t != null ? x.t.Name : null,
                 BuildingName    = x.b != null ? x.b.Name : null,

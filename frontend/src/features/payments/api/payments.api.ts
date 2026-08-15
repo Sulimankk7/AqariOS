@@ -1,5 +1,5 @@
 import { http } from '@/shared/lib/http';
-import { KeysetPage, PaymentVerificationQueueItem, RentPaymentDetail } from '../types/payments.types';
+import { KeysetPage, PaymentVerificationQueueItem, RentPaymentDetail, RentPaymentReceiptDto } from '../types/payments.types';
 
 export const paymentsApi = {
   getPendingVerifications: async (cursor?: string | null, pageSize: number = 50): Promise<KeysetPage<PaymentVerificationQueueItem>> => {
@@ -16,6 +16,17 @@ export const paymentsApi = {
     return await http.get(`/api/v1/rent-payments/${paymentId}`);
   },
 
+  getReceiptByRentPaymentId: async (paymentId: string): Promise<RentPaymentReceiptDto | null> => {
+    try {
+      return await http.get<RentPaymentReceiptDto>(`/api/v1/rent-payments/${paymentId}/receipt`);
+    } catch (err: any) {
+      if (err?.status === 404 || err?.statusCode === 404) {
+        return null;
+      }
+      throw err;
+    }
+  },
+
   approveSubmission: async (paymentId: string, submissionId: string): Promise<void> => {
     await http.post(`/api/v1/owner/payments/${paymentId}/submissions/${submissionId}/approve`);
   },
@@ -24,3 +35,4 @@ export const paymentsApi = {
     await http.post(`/api/v1/owner/payments/${paymentId}/submissions/${submissionId}/reject`, { reason });
   },
 };
+

@@ -41,6 +41,12 @@ internal sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(t => t.Email)
+            .HasColumnName("email")
+            .HasColumnType("character varying(255)")
+            .HasMaxLength(255)
+            .IsRequired(false);
+
         builder.Property(t => t.Occupation)
             .HasColumnName("occupation")
             .HasColumnType("character varying(100)")
@@ -91,6 +97,10 @@ internal sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
 
         builder.HasIndex(t => new { t.CompanyId, t.Phone })
             .HasDatabaseName("idx_tenants_company_phone")
+            .HasFilter("deleted_at IS NULL");
+
+        builder.HasIndex(t => new { t.CompanyId, t.Email })
+            .HasDatabaseName("idx_tenants_company_email")
             .HasFilter("deleted_at IS NULL");
 
         builder.HasQueryFilter(t => t.DeletedAt == null);

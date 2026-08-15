@@ -14,15 +14,18 @@ using PropertyOS.Application.Financials.Commands.GenerateScheduledInstallments;
 using PropertyOS.Application.Financials.Commands.IssueRentPaymentReceipt;
 using PropertyOS.Application.Financials.Commands.RecordManualRentPayment;
 using PropertyOS.Application.Financials.Commands.RecordPaymentAllocation;
+using PropertyOS.Application.Financials.Commands.RemindRentPayment;
 using PropertyOS.Application.Financials.Queries.Common;
 using PropertyOS.Application.Financials.Queries.GetOutstandingRentPayments;
 using PropertyOS.Application.Financials.Queries.GetRentPaymentById;
 using PropertyOS.Application.Financials.Queries.GetRentPaymentReceiptByRentPaymentId;
 using PropertyOS.Application.Financials.Queries.GetRentPaymentReceipts;
+using PropertyOS.Application.Financials.Queries.GetRentPayments;
 using PropertyOS.Application.Financials.Queries.GetRentPaymentsForLease;
 using PropertyOS.Application.Financials.Queries.GetRentPaymentsForTenant;
 using PropertyOS.Application.Financials.Queries.SearchRentPayments;
 using PropertyOS.Application.Financials.Security;
+using PropertyOS.Domain.Financials.Enums;
 
 namespace PropertyOS.Api.Financials;
 
@@ -139,6 +142,49 @@ public class RentPaymentsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var query = new GetOutstandingRentPaymentsQuery(PageSize: pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Gets rent payments, keyset-paginated (DueDate DESC, Id ASC) with optional filters.
+    /// </summary>
+    /// <param name="buildingId">Optional building filter.</param>
+    /// <param name="status">Optional payment due date status filter.</param>
+    /// <param name="dateFrom">Optional due-date lower bound (inclusive).</param>
+    /// <param name="dateTo">Optional due-date upper bound (inclusive).</param>
+    /// <param name="searchTerm">Optional free-text search term matching tenant name, contract number, or receipt number.</param>
+    /// <param name="lastSeenId">Keyset cursor: ID of the last payment on the previous page.</param>
+    /// <param name="lastSeenDueDate">Keyset cursor: due date of the last payment on the previous page.</param>
+    /// <param name="pageSize">Page size (1..200, default 50).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Page of rent payments.</returns>
+    [HttpGet("api/v{version:apiVersion}/rent-payments")]
+    [ProducesResponseType(typeof(List<RentPaymentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Get(
+        [FromQuery] Guid? buildingId = null,
+        [FromQuery] DueDateStatus? status = null,
+        [FromQuery] DateOnly? dateFrom = null,
+        [FromQuery] DateOnly? dateTo = null,
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] Guid? lastSeenId = null,
+        [FromQuery] DateOnly? lastSeenDueDate = null,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetRentPaymentsQuery(
+            BuildingId: buildingId,
+            Status: status,
+            DateFrom: dateFrom,
+            DateTo: dateTo,
+            SearchTerm: searchTerm,
+            LastSeenId: lastSeenId,
+            LastSeenDueDate: lastSeenDueDate,
+            PageSize: pageSize
+        );
+
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
@@ -318,5 +364,27 @@ public class RentPaymentsController : ControllerBase
         var command = new GenerateScheduledInstallmentsCommand(LeaseContractId: leaseId);
         await _mediator.Send(command, cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Sends an outstanding rent payment reminder to the associated tenant.
+    /// </summary>
+    /// <param name="id">Rent payment unique identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Reminder dispatch confirmation response.</returns>
+    [HttpPost("api/v{version:apiVersion}/rent-payments/{id:guid}/remind")]
+    [Authorize(Policy = FinancialsPermissions.PaymentsApprove)]
+    [ProducesResponseType(typeof(RemindRentPaymentResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> RemindTenant(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new RemindRentPaymentCommand(RentPaymentId: id);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
     }
 }

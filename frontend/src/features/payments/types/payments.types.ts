@@ -15,6 +15,10 @@ export interface PaymentVerificationQueueItem {
   paymentMethod: string;
   referenceNumber: string | null;
   proofFileId: string | null;
+  chequeNumber?: string | null;
+  bankName?: string | null;
+  chequeIssueDate?: string | null;
+  chequeDueDate?: string | null;
   submittedAt: string;
   submissionStatus: string;
   dueDateStatus: string;
@@ -31,6 +35,10 @@ export interface PaymentSubmissionDto {
   paymentMethod: string;
   referenceNumber: string | null;
   proofFileId: string | null;
+  chequeNumber?: string | null;
+  bankName?: string | null;
+  chequeIssueDate?: string | null;
+  chequeDueDate?: string | null;
   status: string;
   submittedAt: string;
   verifiedAt: string | null;
@@ -55,4 +63,22 @@ export interface RentPaymentDetail {
   receiptNumber: string | null;
   notes: string | null;
   submissions: PaymentSubmissionDto[];
+}
+
+export interface RentPaymentReceiptDto {
+  id: string;
+  companyId: string;
+  rentPaymentId: string;
+  receiptNumber: string;
+  issueDate: string;
+  issuedBy?: string | null;
+  amount: number;
+  currency: string;
+  notes?: string | null;
+  fileId?: string | null;
+  createdAt: string;
+  tenantName?: string | null;
+  buildingName?: string | null;
+  apartmentNumber?: string | null;
+  contractNumber?: string | null;
 }

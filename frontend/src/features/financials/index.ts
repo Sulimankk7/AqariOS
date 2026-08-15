@@ -1,5 +1,12 @@
 /**
- * Financials Feature Module Placeholder.
- * This directory will contain all financial management components, pages, api hooks, and state.
+ * Financials Feature Module.
  */
-export {};
+
+export * from './types/financials.types';
+export * from './api/financials.api';
+export * from './hooks/useRentPayments';
+export * from './components/FinancialSummaryCards';
+export * from './components/RentPaymentFilters';
+export * from './components/RentCollectionTable';
+export * from './components/FinancialPaymentDetailsDrawer';
+export * from './pages/FinancialOperationsPage';

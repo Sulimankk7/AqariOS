@@ -41,7 +41,7 @@ public class SubmitPaymentRequestCommandHandlerTests
         var companyId = Guid.NewGuid();
         var tenantUserId = Guid.NewGuid();
         
-        var tenant = Tenant.Create(companyId, "Test Tenant", "123", "0790000000", DateTimeOffset.UtcNow, null, null, null, tenantUserId);
+        var tenant = Tenant.Create(companyId, "Test Tenant", "123", "0790000000", DateTimeOffset.UtcNow, null, userId: tenantUserId);
         var rentPayment = RentPayment.Create(companyId, Guid.NewGuid(), tenant.Id, Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
 
         await dbContext.Tenants.AddAsync(tenant);
@@ -79,8 +79,8 @@ public class SubmitPaymentRequestCommandHandlerTests
         var companyId = Guid.NewGuid();
         var attackingUserId = Guid.NewGuid();
         
-        var victimTenant = Tenant.Create(companyId, "Victim", "456", "0790000001", DateTimeOffset.UtcNow, null, null, null, Guid.NewGuid());
-        var attackerTenant = Tenant.Create(companyId, "Attacker", "123", "0790000000", DateTimeOffset.UtcNow, null, null, null, attackingUserId);
+        var victimTenant = Tenant.Create(companyId, "Victim", "456", "0790000001", DateTimeOffset.UtcNow, null, userId: Guid.NewGuid());
+        var attackerTenant = Tenant.Create(companyId, "Attacker", "123", "0790000000", DateTimeOffset.UtcNow, null, userId: attackingUserId);
         var rentPayment = RentPayment.Create(companyId, Guid.NewGuid(), victimTenant.Id, Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
 
         await dbContext.Tenants.AddRangeAsync(attackerTenant, victimTenant);
@@ -111,7 +111,7 @@ public class SubmitPaymentRequestCommandHandlerTests
         var companyId2 = Guid.NewGuid();
         var tenantUserId = Guid.NewGuid();
         
-        var tenant = Tenant.Create(companyId2, "Test Tenant", "123", "0790000000", DateTimeOffset.UtcNow, null, null, null, tenantUserId);
+        var tenant = Tenant.Create(companyId2, "Test Tenant", "123", "0790000000", DateTimeOffset.UtcNow, null, userId: tenantUserId);
         var rentPayment = RentPayment.Create(companyId1, Guid.NewGuid(), tenant.Id, Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
 
         await dbContext.Tenants.AddAsync(tenant);

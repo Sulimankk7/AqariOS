@@ -139,18 +139,46 @@ public class NotificationDeliveryDomainTests
     }
 
     [Fact]
-    public void MarkAsFailed_AfterAttempt_SetsStatusAndFailureReason()
+    public void MarkAsFailed_AfterAttempt_SetsStatusAndFailureReasonAndSentAt()
     {
         // Arrange
         var delivery = CreateTestDelivery();
-        delivery.RecordAttempt(DateTimeOffset.UtcNow.AddSeconds(-30));
+        var failureTime = DateTimeOffset.UtcNow;
+        delivery.RecordAttempt(failureTime.AddSeconds(-30));
 
         // Act
-        delivery.MarkAsFailed("  SMTP connection refused  ", DateTimeOffset.UtcNow);
+        delivery.MarkAsFailed("  SMTP connection refused  ", failureTime);
 
         // Assert
         Assert.Equal(DeliveryStatus.Failed, delivery.DeliveryStatus);
         Assert.Equal("SMTP connection refused", delivery.FailureReason);
+        Assert.NotNull(delivery.SentAt);
+        Assert.Equal(failureTime, delivery.SentAt);
+        Assert.Equal(failureTime, delivery.UpdatedAt);
+    }
+
+    [Fact]
+    public void MarkAsFailed_RetryAfterInitialFailure_PreservesOrUpdatesSentAt()
+    {
+        // Arrange
+        var delivery = CreateTestDelivery();
+        var attempt1Time = DateTimeOffset.UtcNow.AddMinutes(-10);
+        delivery.RecordAttempt(attempt1Time);
+        delivery.MarkAsFailed("Gateway timeout", attempt1Time);
+
+        Assert.Equal(attempt1Time, delivery.SentAt);
+
+        // Act (Retry attempt 2)
+        var attempt2Time = DateTimeOffset.UtcNow;
+        delivery.RecordAttempt(attempt2Time);
+        delivery.MarkAsFailed("Rate limit exceeded", attempt2Time);
+
+        // Assert
+        Assert.Equal(DeliveryStatus.Failed, delivery.DeliveryStatus);
+        Assert.Equal("Rate limit exceeded", delivery.FailureReason);
+        Assert.NotNull(delivery.SentAt);
+        Assert.Equal(attempt2Time, delivery.SentAt); // Refreshed to reflect latest attempt
+        Assert.Equal(attempt2Time, delivery.UpdatedAt);
     }
 
     private static NotificationDelivery CreateTestDelivery(DeliveryChannel channel = DeliveryChannel.Email)

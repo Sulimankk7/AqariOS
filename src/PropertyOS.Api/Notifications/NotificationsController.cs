@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PropertyOS.Api.Models.Notifications;
 using PropertyOS.Application.Notifications.Commands.CreateNotification;
+using PropertyOS.Application.Notifications.Commands.MarkAllNotificationsAsRead;
 using PropertyOS.Application.Notifications.Commands.MarkNotificationAsRead;
 using PropertyOS.Application.Notifications.Commands.UpdateNotificationDelivery;
 using PropertyOS.Application.Notifications.Queries.Common;
@@ -100,6 +101,22 @@ public class NotificationsController : ControllerBase
         var command = new MarkNotificationAsReadCommand(NotificationId: id);
         await _mediator.Send(command, cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Marks all unread notifications belonging to the current user as read.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The number of notifications marked as read.</returns>
+    [HttpPatch("api/v{version:apiVersion}/notifications/me/read-all")]
+    [ProducesResponseType(typeof(MarkAllNotificationsAsReadResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> MarkAllAsRead(
+        CancellationToken cancellationToken = default)
+    {
+        var command = new MarkAllNotificationsAsReadCommand();
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>

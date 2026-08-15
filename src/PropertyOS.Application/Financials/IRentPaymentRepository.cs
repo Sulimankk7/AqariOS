@@ -73,6 +73,7 @@ public interface IRentPaymentRepository
     Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default);
     Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default);
     Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default);
+    Task<List<RentPaymentDto>> GetPaymentsAsync(RentPaymentFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default);
     Task<PropertyOS.Application.Common.Models.KeysetPage<PropertyOS.Application.Financials.Queries.GetPendingPaymentVerifications.PaymentVerificationQueueItemDto>> GetPendingVerificationsAsync(Guid companyId, int pageSize, DateTimeOffset? lastSeenSubmittedAt, Guid? lastSeenId, CancellationToken cancellationToken = default);
     Task<List<ChequeDetailDto>> GetChequesAsync(ChequeStatus? status, Guid companyId, int pageSize, CancellationToken cancellationToken = default);
     Task<List<ChequeDetailDto>> GetUpcomingChequesAsync(int daysAhead, Guid companyId, CancellationToken cancellationToken = default);
@@ -81,6 +82,17 @@ public interface IRentPaymentRepository
     Task<RentPaymentReceiptDto?> GetReceiptByRentPaymentIdAsync(Guid rentPaymentId, Guid companyId, CancellationToken cancellationToken = default);
     Task<List<RentPaymentReceiptDto>> GetReceiptsAsync(RentPaymentReceiptFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default);
 }
+
+public record RentPaymentFilterOptions(
+    Guid? BuildingId = null,
+    DueDateStatus? Status = null,
+    DateOnly? DateFrom = null,
+    DateOnly? DateTo = null,
+    string? SearchTerm = null,
+    Guid? LastSeenId = null,
+    DateOnly? LastSeenDueDate = null,
+    int PageSize = 50
+);
 
 public record RentPaymentReceiptFilterOptions(
     Guid? LeaseContractId = null,

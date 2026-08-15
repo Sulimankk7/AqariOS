@@ -9,4 +9,6 @@ public class ProvisionTenantAccountResponseDto
     public Guid CompanyId { get; set; }
     public string? ActivationToken { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
+    public bool EmailSent { get; set; }
+    public bool SmsSent { get; set; }
 }

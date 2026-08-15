@@ -28,6 +28,8 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { TenantLayout } from "@/app/layouts/TenantLayout";
 import { TenantDashboardPage } from "@/features/tenantPortal/pages/TenantDashboardPage";
 import { TenantProfilePage } from "@/features/tenantPortal/pages/TenantProfilePage";
+import { TenantLeasePage } from "@/features/tenantPortal/pages/TenantLeasePage";
+import { TenantPaymentsPage } from "@/features/tenantPortal/pages/TenantPaymentsPage";
 
 // Lucide icons for placeholders
 import {
@@ -52,6 +54,7 @@ import PhoneOtpPage from "@/features/auth/pages/PhoneOtp";
 import VerifyOtpPage from "@/features/auth/pages/VerifyOtp";
 import ForgotPasswordPage from "@/features/auth/pages/ForgotPassword";
 import ResetPasswordPage from "@/features/auth/pages/ResetPassword";
+import ActivateTenantPage from "@/features/auth/pages/ActivateTenant";
 
 // Real page implementations
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
@@ -79,6 +82,7 @@ import EditTenantPage from "@/features/tenants/pages/EditTenantPage";
 import TenantDetailsPage from "@/features/tenants/pages/TenantDetailsPage";
 
 import { OwnerPaymentsWorkspace } from "@/features/payments";
+import { FinancialOperationsPage } from "@/features/financials";
 
 import { AuthLoadingScreen } from "@/features/auth/components/AuthLoadingScreen";
 
@@ -121,6 +125,7 @@ export function AppRouter() {
           <Route path="verify" element={<VerifyOtpPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />
+          <Route path="activate" element={<ActivateTenantPage />} />
         </Route>
 
         {/* ── Protected Owner Routes ────────────────────────────────────────── */}
@@ -185,16 +190,7 @@ export function AppRouter() {
             <Route path={ROUTES.payments.root} element={<OwnerPaymentsWorkspace />} />
 
             {/* Finance */}
-            <Route
-              path={ROUTES.financialOperations.root}
-              element={
-                <ModulePlaceholder
-                  title="Financial Operations"
-                  description="Accounting, expense management, and financial reporting."
-                  icon={Calculator}
-                />
-              }
-            />
+            <Route path={ROUTES.financialOperations.root} element={<FinancialOperationsPage />} />
 
             {/* Operations */}
             <Route
@@ -276,6 +272,8 @@ export function AppRouter() {
         <Route element={<ProtectedRoute allowedRoles={["TENANT"]} />}>
           <Route element={<TenantLayout />}>
             <Route path="/tenant/dashboard" element={<TenantDashboardPage />} />
+            <Route path="/tenant/lease" element={<TenantLeasePage />} />
+            <Route path="/tenant/payments" element={<TenantPaymentsPage />} />
             <Route path="/tenant/profile" element={<TenantProfilePage />} />
           </Route>
         </Route>

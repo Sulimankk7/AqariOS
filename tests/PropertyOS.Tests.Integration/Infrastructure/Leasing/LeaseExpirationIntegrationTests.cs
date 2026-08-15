@@ -532,6 +532,8 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
         {
             cfg.RegisterServicesFromAssembly(typeof(PropertyOS.Application.Leasing.Commands.ExpireLeaseContract.ExpireLeaseContractCommand).Assembly);
         });
+        services.AddScoped<PropertyOS.Application.Common.Interfaces.IPostCommitRegistrar,
+            PropertyOS.Infrastructure.Persistence.Behaviors.PostCommitRegistrar>();
         services.AddTransient(typeof(MediatR.IPipelineBehavior<,>),
             typeof(PropertyOS.Infrastructure.Persistence.Behaviors.TransactionBehavior<,>));
 

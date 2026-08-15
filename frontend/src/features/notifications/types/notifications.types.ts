@@ -41,3 +41,8 @@ export interface GetMyNotificationsParams {
   lastSeenId?: string;
   pageSize?: number;
 }
+
+export interface MarkAllNotificationsAsReadResult {
+  markedCount: number;
+}
+

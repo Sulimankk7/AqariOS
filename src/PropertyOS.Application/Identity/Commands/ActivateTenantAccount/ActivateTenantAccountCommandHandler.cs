@@ -44,7 +44,7 @@ public class ActivateTenantAccountCommandHandler : IRequestHandler<ActivateTenan
 
         if (user == null)
         {
-            throw new UnauthorizedAccessException("Activation token is invalid.");
+            throw new UnauthorizedAccessException("Activation token is invalid or has already been used.");
         }
 
         if (user.PasswordResetExpiresAt.HasValue && user.PasswordResetExpiresAt.Value <= DateTimeOffset.UtcNow)

@@ -21,6 +21,10 @@ public class PaymentVerificationQueueItemDto
     public PaymentMethod PaymentMethod { get; set; }
     public string? ReferenceNumber { get; set; }
     public Guid? ProofFileId { get; set; }
+    public string? ChequeNumber { get; set; }
+    public string? BankName { get; set; }
+    public DateOnly? ChequeIssueDate { get; set; }
+    public DateOnly? ChequeDueDate { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }
     public SubmissionStatus SubmissionStatus { get; set; }
     public DueDateStatus DueDateStatus { get; set; }

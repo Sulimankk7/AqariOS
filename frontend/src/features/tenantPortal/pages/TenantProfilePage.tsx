@@ -1,12 +1,12 @@
 import React from "react";
 import { useTranslation } from "@/shared/i18n";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
-import { useQuery } from "@tanstack/react-query";
-import { tenantPortalApi } from "../api/tenantPortal.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useTenantProfile } from "../hooks/useTenantProfile";
 import {
   User,
   Phone,
+  Mail,
   CreditCard,
   Briefcase,
   Building,
@@ -22,26 +22,20 @@ import {
 export function TenantProfilePage() {
   const { t, language } = useTranslation();
   const { user } = useAuth();
-  const userId = user?.id;
 
   const {
     data: profile,
     isLoading,
     isError,
     refetch,
-  } = useQuery({
-    queryKey: ["tenant", userId, "profile"],
-    queryFn: () => tenantPortalApi.getProfile(),
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-  });
+  } = useTenantProfile();
 
   return (
     <PageContainer
       title={t("tenant.profile.title", "My Profile")}
       description={t("tenant.profile.subtitle", "Your official profile recorded with property management")}
     >
-      <div className="space-y-6">
+      <div className="max-w-4xl space-y-4">
         {/* Read-Only Status Banner */}
         <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -88,7 +82,7 @@ export function TenantProfilePage() {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                 <div className="space-y-1">
                   <span className="text-muted-foreground block">
                     {t("tenant.profile.fullName", "Full Name")}
@@ -111,8 +105,17 @@ export function TenantProfilePage() {
                   <span className="text-muted-foreground block">
                     {t("tenant.profile.phone", "Phone Number")}
                   </span>
-                  <span className="font-medium text-foreground block font-mono">
+                  <span className="font-medium text-foreground block font-mono" dir="ltr">
                     {profile.phone}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-muted-foreground block">
+                    {t("tenant.profile.email", "Email")}
+                  </span>
+                  <span className="font-medium text-foreground block truncate" dir="ltr">
+                    {profile.email || "—"}
                   </span>
                 </div>
               </div>

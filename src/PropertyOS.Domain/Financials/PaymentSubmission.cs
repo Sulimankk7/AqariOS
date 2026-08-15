@@ -12,6 +12,10 @@ public class PaymentSubmission : ISoftDeletable
     public PaymentMethod PaymentMethod { get; private set; }
     public string? ReferenceNumber { get; private set; }
     public Guid? ProofFileId { get; private set; }
+    public string? ChequeNumber { get; private set; }
+    public string? BankName { get; private set; }
+    public DateOnly? ChequeIssueDate { get; private set; }
+    public DateOnly? ChequeDueDate { get; private set; }
     public SubmissionStatus Status { get; private set; }
 
     public Guid SubmittedBy { get; private set; }
@@ -44,7 +48,11 @@ public class PaymentSubmission : ISoftDeletable
         string? referenceNumber,
         Guid? proofFileId,
         Guid submittedBy,
-        DateTimeOffset submittedAt)
+        DateTimeOffset submittedAt,
+        string? chequeNumber = null,
+        string? bankName = null,
+        DateOnly? chequeIssueDate = null,
+        DateOnly? chequeDueDate = null)
     {
         return new PaymentSubmission
         {
@@ -54,6 +62,10 @@ public class PaymentSubmission : ISoftDeletable
             PaymentMethod = paymentMethod,
             ReferenceNumber = referenceNumber,
             ProofFileId = proofFileId,
+            ChequeNumber = chequeNumber,
+            BankName = bankName,
+            ChequeIssueDate = chequeIssueDate,
+            ChequeDueDate = chequeDueDate,
             Status = SubmissionStatus.Pending,
             SubmittedBy = submittedBy,
             SubmittedAt = submittedAt,

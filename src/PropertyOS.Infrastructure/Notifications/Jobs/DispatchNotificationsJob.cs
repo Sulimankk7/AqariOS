@@ -199,7 +199,7 @@ public class DispatchNotificationsJob
                         .GetRequiredService<INotificationRepository>();
 
                     return await notificationRepo.GetDispatchCandidateIdsAsync(
-                        batchSize, afterNotificationId, ct);
+                        companyId, batchSize, afterNotificationId, ct);
                 }, cancellationToken);
             }
 

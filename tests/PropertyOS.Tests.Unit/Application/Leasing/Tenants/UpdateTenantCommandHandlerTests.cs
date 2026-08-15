@@ -23,6 +23,7 @@ public class UpdateTenantCommandHandlerTests
         Name: "Updated Name",
         NationalId: "2222222222",
         Phone: "00962791234567",
+        Email: " updated.email@example.com ",
         Occupation: "Teacher",
         Employer: "School");
 
@@ -84,6 +85,7 @@ public class UpdateTenantCommandHandlerTests
         Assert.Equal("Updated Name", tenant.Name);
         Assert.Equal("2222222222", tenant.NationalId);
         Assert.Equal("+962791234567", tenant.Phone); // E.164-normalized
+        Assert.Equal("updated.email@example.com", tenant.Email);
         Assert.Equal("Teacher", tenant.Occupation);
         Assert.Equal("School", tenant.Employer);
         Assert.Equal(userCtx.UserId, tenant.UpdatedBy);

@@ -46,6 +46,7 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, G
             phone: phone,
             createdAt: DateTimeOffset.UtcNow,
             createdBy: _currentUserContext.UserId,
+            email: request.Email,
             occupation: request.Occupation,
             employer: request.Employer,
             userId: null

@@ -13,15 +13,18 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     private readonly PropertyOsDbContext _dbContext;
     private readonly ILogger<TransactionBehavior<TRequest, TResponse>> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IPostCommitRegistrar _postCommitRegistrar;
 
     public TransactionBehavior(
         PropertyOsDbContext dbContext,
         ILogger<TransactionBehavior<TRequest, TResponse>> logger,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        IPostCommitRegistrar postCommitRegistrar)
     {
         _dbContext = dbContext;
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _postCommitRegistrar = postCommitRegistrar;
     }
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
@@ -42,221 +45,95 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 
         return await strategy.ExecuteAsync(async () =>
         {
-            // 3. BeginTransactionAsync
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-            _logger.LogInformation(
-                "[DIAG:TransactionBehavior] Transaction opened. TransactionId={TransactionId} RequestType={RequestType}",
-                transaction.TransactionId, typeof(TRequest).Name);
+            TResponse response;
+            bool commitSucceeded = false;
 
-            try
+            await using (var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken))
             {
-                // 4. Execute next()
-                var response = await next();
-
-                // -----------------------------------------------------------------------
-                // DIAGNOSTIC: Dump all change-tracker entries before SaveChangesAsync.
-                // -----------------------------------------------------------------------
-                var entries = _dbContext.ChangeTracker.Entries().ToList();
                 _logger.LogInformation(
-                    "[DIAG:TransactionBehavior] ChangeTracker has {EntryCount} tracked entries before SaveChangesAsync.",
-                    entries.Count);
+                    "[DIAG:TransactionBehavior] Transaction opened. TransactionId={TransactionId} RequestType={RequestType}",
+                    transaction.TransactionId, typeof(TRequest).Name);
 
-                // Collect Building IDs now, before SaveChanges clears Modified state.
-                var buildingIds = entries
-                    .Where(e => e.Entity is Building)
-                    .Select(e => ((Building)e.Entity).Id)
-                    .ToList();
-
-                foreach (var entry in entries)
-                {
-                    _logger.LogInformation(
-                        "[DIAG:TransactionBehavior] Entry: EntityType={EntityType} EntityState={EntityState}",
-                        entry.Entity.GetType().Name, entry.State);
-
-                    if (entry.State == EntityState.Modified)
-                    {
-                        foreach (var prop in entry.Properties.Where(p => p.IsModified))
-                        {
-                            _logger.LogInformation(
-                                "[DIAG:TransactionBehavior]   Modified property: {PropertyName} | OriginalValue={OriginalValue} | CurrentValue={CurrentValue}",
-                                prop.Metadata.Name,
-                                prop.OriginalValue ?? "(null)",
-                                prop.CurrentValue ?? "(null)");
-                        }
-                    }
-
-                    // Log DeletedAt snapshot for every ISoftDeletable regardless of state.
-                    if (entry.Entity is PropertyOS.Domain.Common.ISoftDeletable)
-                    {
-                        var deletedAtProp = entry.Properties.FirstOrDefault(p => p.Metadata.Name == "DeletedAt");
-                        if (deletedAtProp != null)
-                        {
-                            _logger.LogInformation(
-                                "[DIAG:TransactionBehavior]   ISoftDeletable: EntityType={EntityType} DeletedAt.OriginalValue={OriginalValue} DeletedAt.CurrentValue={CurrentValue} DeletedAt.IsModified={IsModified}",
-                                entry.Entity.GetType().Name,
-                                deletedAtProp.OriginalValue ?? "(null)",
-                                deletedAtProp.CurrentValue ?? "(null)",
-                                deletedAtProp.IsModified);
-                        }
-                    }
-                }
-
-                // -----------------------------------------------------------------------
-                // DIAGNOSTIC: SaveChangesAsync — capture return value (rows affected).
-                // -----------------------------------------------------------------------
-                int rowsAffected;
                 try
                 {
-                    rowsAffected = await _dbContext.SaveChangesAsync(cancellationToken);
+                    // 4. Execute next()
+                    response = await next();
+
+                    var entries = _dbContext.ChangeTracker.Entries().ToList();
+                    _logger.LogInformation(
+                        "[DIAG:TransactionBehavior] ChangeTracker has {EntryCount} tracked entries before SaveChangesAsync.",
+                        entries.Count);
+
+                    var buildingIds = entries
+                        .Where(e => e.Entity is Building)
+                        .Select(e => ((Building)e.Entity).Id)
+                        .ToList();
+
+                    int rowsAffected = await _dbContext.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation(
+                        "[DIAG:TransactionBehavior] SaveChangesAsync completed. RowsAffected={RowsAffected} TransactionId={TransactionId}",
+                        rowsAffected, transaction.TransactionId);
+
+                    // 6. CommitTransactionAsync — Database transaction boundary
+                    await transaction.CommitAsync(cancellationToken);
+                    commitSucceeded = true;
+                    _logger.LogInformation(
+                        "[DIAG:TransactionBehavior] Transaction committed. TransactionId={TransactionId}",
+                        transaction.TransactionId);
                 }
-                catch (DbUpdateConcurrencyException concurrencyEx)
+                catch (Exception ex) when (ex is not DbUpdateConcurrencyException)
                 {
                     _logger.LogError(
-                        concurrencyEx,
-                        "[DIAG:TransactionBehavior] DbUpdateConcurrencyException caught during SaveChangesAsync. " +
-                        "EF Core issued an UPDATE but 0 rows were affected. " +
-                        "Likely cause: xmin mismatch (optimistic concurrency) or RLS blocked the UPDATE.");
+                        ex,
+                        "[DIAG:TransactionBehavior] Exception caught — rolling back transaction. " +
+                        "TransactionId={TransactionId} ExceptionType={ExceptionType} Message={Message}",
+                        transaction.TransactionId, ex.GetType().Name, ex.Message);
 
-                    foreach (var efEntry in concurrencyEx.Entries)
+                    _postCommitRegistrar?.Clear();
+                    await transaction.RollbackAsync(cancellationToken);
+                    throw;
+                }
+                catch
+                {
+                    _postCommitRegistrar?.Clear();
+                    await transaction.RollbackAsync(cancellationToken);
+                    throw;
+                }
+            }
+
+            // -----------------------------------------------------------------------
+            // POST-COMMIT EXECUTION: Isolated from the DB transaction try/catch block.
+            // Runs ONLY when commitSucceeded == true.
+            // Any post-commit exception or cancellation is handled independently and
+            // will NEVER trigger RollbackAsync or convert a committed account into HTTP 500.
+            // -----------------------------------------------------------------------
+            if (commitSucceeded && _postCommitRegistrar != null && _postCommitRegistrar.Actions.Any())
+            {
+                var actionsToExecute = _postCommitRegistrar.Actions.ToList();
+                _postCommitRegistrar.Clear();
+
+                _logger.LogInformation(
+                    "[DIAG:TransactionBehavior] Database transaction committed successfully. Executing {ActionCount} registered post-commit actions.",
+                    actionsToExecute.Count);
+
+                foreach (var postCommitAction in actionsToExecute)
+                {
+                    try
+                    {
+                        await postCommitAction(cancellationToken);
+                    }
+                    catch (Exception postCommitEx)
                     {
                         _logger.LogError(
-                            "[DIAG:TransactionBehavior]   ConcurrencyException Entry: EntityType={EntityType}",
-                            efEntry.Entity.GetType().Name);
-                    }
-
-                    throw;
-                }
-                catch (Exception saveEx)
-                {
-                    _logger.LogError(
-                        saveEx,
-                        "[DIAG:TransactionBehavior] Exception during SaveChangesAsync: {ExceptionType} — {Message}",
-                        saveEx.GetType().Name, saveEx.Message);
-                    throw;
-                }
-
-                _logger.LogInformation(
-                    "[DIAG:TransactionBehavior] SaveChangesAsync completed. RowsAffected={RowsAffected} TransactionId={TransactionId}",
-                    rowsAffected, transaction.TransactionId);
-
-                if (rowsAffected == 0 && entries.Any(e => e.State != EntityState.Unchanged && e.State != EntityState.Detached))
-                {
-                    _logger.LogWarning(
-                        "[DIAG:TransactionBehavior] WARNING: SaveChangesAsync returned 0 rows affected, " +
-                        "but the ChangeTracker had non-Unchanged entries BEFORE the call. " +
-                        "Possible causes: all entries were already Unchanged by the time SaveChanges ran, " +
-                        "xmin concurrency suppressed the UPDATE silently, or RLS rejected the UPDATE without throwing.");
-                }
-
-                // -----------------------------------------------------------------------
-                // DIAGNOSTIC STEP 1: Re-query using the SAME DbContext — inside transaction.
-                // AsNoTracking() bypasses the identity cache.
-                // IgnoreQueryFilters() disables the global soft-delete filter (b.DeletedAt == null).
-                // Running inside the same transaction means PostgreSQL READ COMMITTED will
-                // return the uncommitted write made by SaveChangesAsync in this transaction.
-                // If the row shows DeletedAt=(null) here, SaveChangesAsync generated NO UPDATE.
-                // The EF Core Database.Command logger emits the SQL for this SELECT.
-                // -----------------------------------------------------------------------
-                if (buildingIds.Any())
-                {
-                    _logger.LogInformation(
-                        "[DIAG:TransactionBehavior] === POST-SAVE VERIFICATION (same DbContext, INSIDE transaction) ===");
-
-                    foreach (var buildingId in buildingIds)
-                    {
-                        var sameCtxBuilding = await _dbContext.Buildings
-                            .AsNoTracking()
-                            .IgnoreQueryFilters()
-                            .FirstOrDefaultAsync(b => b.Id == buildingId, cancellationToken);
-
-                        if (sameCtxBuilding is null)
-                        {
-                            _logger.LogWarning(
-                                "[DIAG:TransactionBehavior] SAME-CTX: Building Id={BuildingId} NOT FOUND with IgnoreQueryFilters. Row may not exist.",
-                                buildingId);
-                        }
-                        else
-                        {
-                            _logger.LogInformation(
-                                "[DIAG:TransactionBehavior] SAME-CTX: Id={Id} | DeletedAt={DeletedAt} | DeletedBy={DeletedBy} | IsActive={IsActive} | UpdatedAt={UpdatedAt}",
-                                sameCtxBuilding.Id,
-                                sameCtxBuilding.DeletedAt?.ToString("o") ?? "(null)",
-                                sameCtxBuilding.DeletedBy?.ToString() ?? "(null)",
-                                sameCtxBuilding.IsActive,
-                                sameCtxBuilding.UpdatedAt.ToString("o"));
-                        }
+                            postCommitEx,
+                            "[DIAG:TransactionBehavior] Non-fatal exception or cancellation executing post-commit action for request {RequestType}.",
+                            typeof(TRequest).Name);
                     }
                 }
-
-                // 6. CommitTransactionAsync
-                await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation(
-                    "[DIAG:TransactionBehavior] Transaction committed. TransactionId={TransactionId}",
-                    transaction.TransactionId);
-
-                // -----------------------------------------------------------------------
-                // DIAGNOSTIC STEP 2: Re-query using a BRAND-NEW DbContext (fresh DI scope).
-                // Completely independent: fresh connection, fresh change tracker, no shared state.
-                // Runs AFTER CommitAsync — if the commit reached PostgreSQL, this MUST see the
-                // updated row. If DeletedAt is still (null) here, the commit never persisted.
-                // The fresh scope also gets a fresh TenantSessionInterceptor — its query
-                // executes WITHOUT app.current_company_id set (no active transaction), so RLS
-                // will either reject it or read row without SET LOCAL in scope.
-                // We use IgnoreQueryFilters() to bypass the soft-delete EF filter.
-                // -----------------------------------------------------------------------
-                if (buildingIds.Any())
-                {
-                    _logger.LogInformation(
-                        "[DIAG:TransactionBehavior] === POST-COMMIT VERIFICATION (fresh DbContext, OUTSIDE transaction) ===");
-
-                    await using var scope = _scopeFactory.CreateAsyncScope();
-                    var freshContext = scope.ServiceProvider.GetRequiredService<PropertyOsDbContext>();
-
-                    foreach (var buildingId in buildingIds)
-                    {
-                        var freshBuilding = await freshContext.Buildings
-                            .AsNoTracking()
-                            .IgnoreQueryFilters()
-                            .FirstOrDefaultAsync(b => b.Id == buildingId, cancellationToken);
-
-                        if (freshBuilding is null)
-                        {
-                            _logger.LogWarning(
-                                "[DIAG:TransactionBehavior] FRESH-CTX: Building Id={BuildingId} NOT FOUND with IgnoreQueryFilters. Row absent in PostgreSQL.",
-                                buildingId);
-                        }
-                        else
-                        {
-                            _logger.LogInformation(
-                                "[DIAG:TransactionBehavior] FRESH-CTX: Id={Id} | DeletedAt={DeletedAt} | DeletedBy={DeletedBy} | IsActive={IsActive} | UpdatedAt={UpdatedAt}",
-                                freshBuilding.Id,
-                                freshBuilding.DeletedAt?.ToString("o") ?? "(null)",
-                                freshBuilding.DeletedBy?.ToString() ?? "(null)",
-                                freshBuilding.IsActive,
-                                freshBuilding.UpdatedAt.ToString("o"));
-                        }
-                    }
-                }
-
-                return response;
             }
-            catch (Exception ex) when (ex is not DbUpdateConcurrencyException)
-            {
-                _logger.LogError(
-                    ex,
-                    "[DIAG:TransactionBehavior] Exception caught — rolling back transaction. " +
-                    "TransactionId={TransactionId} ExceptionType={ExceptionType} Message={Message}",
-                    transaction.TransactionId, ex.GetType().Name, ex.Message);
 
-                // 7. If any failure occurs, RollbackTransactionAsync and rethrow
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
+            return response;
         });
     }
 }

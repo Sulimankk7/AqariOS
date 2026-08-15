@@ -91,13 +91,15 @@ export function I18nProvider({
   };
 
   /** Dot-notation translation lookup with pluralization and interpolation */
-  const t = (path: string, params?: Record<string, any>): string => {
-    let targetPath = path;
+  const t = (path: any, params?: Record<string, any>): string => {
+    if (path === null || path === undefined) return "";
+    const strPath = String(path);
+    let targetPath = strPath;
 
     // Handle pluralization if count param is provided and not skipping plural fallback
     if (params && typeof params.count === "number" && !params._skipPlural) {
       const suffix = getPluralSuffix(params.count, language);
-      targetPath = `${path}${suffix}`;
+      targetPath = `${strPath}${suffix}`;
     }
 
     const dict = translations[language] || translations.en;

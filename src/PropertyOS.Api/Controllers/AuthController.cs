@@ -16,6 +16,7 @@ using PropertyOS.Application.Identity;
 using PropertyOS.Api.Models.Identity;
 using PropertyOS.Application.Identity.Commands.ActivateTenantAccount;
 using PropertyOS.Application.Identity.Commands.Register;
+using PropertyOS.Application.Identity.Queries.ValidateTenantActivationToken;
 
 namespace PropertyOS.Api.Controllers;
 
@@ -349,6 +350,24 @@ public class AuthController : ControllerBase
                 detail: ex.Message,
                 statusCode: StatusCodes.Status404NotFound);
         }
+    }
+
+    /// <summary>
+    /// Validates a tenant activation token before rendering the password setup form.
+    /// </summary>
+    /// <param name="token">Raw activation token from email or SMS link.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Token validation status and human-friendly state.</returns>
+    [HttpGet("tenant-activation-status")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(TenantActivationStatusDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<TenantActivationStatusDto>> GetTenantActivationStatus(
+        [FromQuery] string? token,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new ValidateTenantActivationTokenQuery(token);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>

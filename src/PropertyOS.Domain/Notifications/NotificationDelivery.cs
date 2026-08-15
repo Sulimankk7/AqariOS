@@ -82,9 +82,6 @@ public class NotificationDelivery
         UpdatedAt = deliveredAt;
     }
 
-    // TODO: Specification Issue #1 - The module spec contradicts itself on whether 'failed' requires 'sent_at'
-    // §11.3 requires it. §11.7 says it correctly allows pending->failed without it.
-    // Leaving this method implementation paused as-is until the specification is resolved.
     public void MarkAsFailed(string reason, DateTimeOffset updatedAt)
     {
         if (string.IsNullOrWhiteSpace(reason))
@@ -95,6 +92,7 @@ public class NotificationDelivery
 
         DeliveryStatus = DeliveryStatus.Failed;
         FailureReason = reason.Trim();
+        SentAt = updatedAt;
         UpdatedAt = updatedAt;
     }
 }

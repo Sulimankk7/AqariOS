@@ -13,6 +13,7 @@ public class CreateTenantCommandHandlerTests
         Name: "Ahmad Odeh",
         NationalId: " 9901234567 ",
         Phone: "0096279 123 4567",
+        Email: " Ahmad.Odeh@Example.com ",
         Occupation: "Engineer",
         Employer: "Acme");
 
@@ -35,6 +36,7 @@ public class CreateTenantCommandHandlerTests
         Assert.Equal("Ahmad Odeh", tenant.Name);
         Assert.Equal("9901234567", tenant.NationalId);       // trimmed
         Assert.Equal("+962791234567", tenant.Phone);          // E.164-normalized
+        Assert.Equal("ahmad.odeh@example.com", tenant.Email); // trimmed & lowercased
         Assert.Equal("Engineer", tenant.Occupation);
         Assert.Equal("Acme", tenant.Employer);
         Assert.Null(tenant.UserId);                           // account/invitation flow deferred

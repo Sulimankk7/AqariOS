@@ -157,6 +157,16 @@ public static class DependencyInjection
         services.AddTransient<PropertyOS.Infrastructure.Leasing.Jobs.ExpireLeaseContractsJob>();
 
         // Module 11 — notification delivery dispatch pipeline
+        services.Configure<PropertyOS.Application.Notifications.Options.BrevoOptions>(
+            configuration.GetSection(PropertyOS.Application.Notifications.Options.BrevoOptions.SectionName));
+        services.Configure<PropertyOS.Application.Notifications.Options.TwilioOptions>(
+            configuration.GetSection(PropertyOS.Application.Notifications.Options.TwilioOptions.SectionName));
+        services.Configure<PropertyOS.Application.Common.Options.FrontendOptions>(
+            configuration.GetSection(PropertyOS.Application.Common.Options.FrontendOptions.SectionName));
+
+        services.AddHttpClient<PropertyOS.Application.Common.Interfaces.IEmailSender, PropertyOS.Infrastructure.Notifications.Services.BrevoEmailSender>();
+        services.AddHttpClient<PropertyOS.Application.Common.Interfaces.ISmsSender, PropertyOS.Infrastructure.Notifications.Services.TwilioSmsSender>();
+
         services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.InAppChannelProvider>();
         services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.NullEmailChannelProvider>();
         services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.NullSmsChannelProvider>();
@@ -285,6 +295,7 @@ public static class DependencyInjection
         services.AddScoped<AuditTransactionState>();
         services.AddScoped<IAuditRequestContext, PropertyOS.Infrastructure.Audit.AuditRequestContext>();
         
+        services.AddScoped<IPostCommitRegistrar, PropertyOS.Infrastructure.Persistence.Behaviors.PostCommitRegistrar>();
         services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(PropertyOS.Infrastructure.Persistence.Behaviors.TransactionBehavior<,>));
 
         services.AddDbContext<PropertyOsDbContext>((serviceProvider, options) =>

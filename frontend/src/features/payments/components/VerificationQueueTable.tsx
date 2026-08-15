@@ -14,6 +14,29 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
   const { t, language, direction } = useTranslation();
   const isRtl = direction === 'rtl';
 
+  const formatPaymentMethod = (method: any) => {
+    if (method === null || method === undefined) return '-';
+    if (typeof method === 'number' || (!isNaN(Number(method)) && String(method).trim() !== '')) {
+      const num = Number(method);
+      switch (num) {
+        case 0: return t('Cash');
+        case 1: return t('Bank Transfer');
+        case 2: return t('Cheque');
+        case 3: return t('eFAWATEERCOM');
+        case 4: return t('CliQ');
+        default: return String(method);
+      }
+    }
+    const str = String(method).trim();
+    const lower = str.toLowerCase().replace(/[^a-z]/g, '');
+    if (lower === 'cash') return t('Cash');
+    if (lower === 'banktransfer') return t('Bank Transfer');
+    if (lower === 'cheque') return t('Cheque');
+    if (lower === 'efawateercom') return t('eFAWATEERCOM');
+    if (lower === 'cliq' || lower === 'cli_q') return t('CliQ');
+    return t(str);
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -62,7 +85,7 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                      {t(item.paymentMethod)}
+                      {formatPaymentMethod(item.paymentMethod)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
@@ -113,7 +136,7 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{item.contractNumber || '-'}</span>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-secondary-foreground">
-                    {t(item.paymentMethod)}
+                    {formatPaymentMethod(item.paymentMethod)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-border/50">

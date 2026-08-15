@@ -339,6 +339,7 @@ public class PaymentAllocationIntegrityTests : IAsyncLifetime
             Source = PropertyOS.Domain.Audit.Enums.AuditSource.Api
         });
 
+        services.AddScoped<PropertyOS.Application.Common.Interfaces.IPostCommitRegistrar, PropertyOS.Infrastructure.Persistence.Behaviors.PostCommitRegistrar>();
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
         _serviceProvider = services.BuildServiceProvider();

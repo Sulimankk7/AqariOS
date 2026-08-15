@@ -17,6 +17,7 @@ import { useTranslation } from '@/shared/i18n';
 import {
   User,
   Phone,
+  Mail,
   Briefcase,
   Building,
   Users,
@@ -39,10 +40,12 @@ import { EmergencyContactFormDialog } from './EmergencyContactFormDialog';
 import { DeleteEmergencyContactDialog } from './DeleteEmergencyContactDialog';
 import { VehicleFormDialog } from './VehicleFormDialog';
 import { DeleteVehicleDialog } from './DeleteVehicleDialog';
+import { ProvisionTenantAccountModal } from './ProvisionTenantAccountModal';
 import { useFamilyMembers } from '../hooks/useFamilyMembers';
 import { useEmergencyContacts } from '../hooks/useEmergencyContacts';
 import { useVehicles } from '../hooks/useVehicles';
 import { extractUserFriendlyError } from '@/shared/utils';
+import { UserPlus, CheckCircle2, ShieldCheck, KeyRound } from 'lucide-react';
 
 interface TenantDetailsProps {
   tenant: TenantDetailDto;
@@ -66,6 +69,7 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
   const [isAddingVehicle, setIsAddingVehicle] = useState<boolean>(false);
   const [editingVehicle, setEditingVehicle] = useState<TenantVehicleDto | null>(null);
   const [deletingVehicle, setDeletingVehicle] = useState<TenantVehicleDto | null>(null);
+  const [isProvisioningAccount, setIsProvisioningAccount] = useState<boolean>(false);
 
   // Fetch dynamic family members list
   const { data: familyMembersList } = useFamilyMembers(tenant.id);
@@ -194,16 +198,24 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
 
             <div className="border p-3 rounded-md">
               <span className="text-xs text-muted-foreground block">{t('phone')}</span>
-              <span className="text-sm font-semibold flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-sm font-semibold flex items-center gap-1.5" dir="ltr">
+                <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {tenant.phone}
+              </span>
+            </div>
+
+            <div className="border p-3 rounded-md">
+              <span className="text-xs text-muted-foreground block">{t('email')}</span>
+              <span className="text-sm font-semibold flex items-center gap-1.5" dir="ltr">
+                <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                {tenant.email || '—'}
               </span>
             </div>
 
             <div className="border p-3 rounded-md">
               <span className="text-xs text-muted-foreground block">{t('occupation')}</span>
               <span className="text-sm font-medium flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
+                <Briefcase className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {tenant.occupation || '—'}
               </span>
             </div>
@@ -211,11 +223,50 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
             <div className="border p-3 rounded-md sm:col-span-2">
               <span className="text-xs text-muted-foreground block">{t('employer')}</span>
               <span className="text-sm font-medium flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-muted-foreground" />
+                <Building className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {tenant.employer || '—'}
               </span>
             </div>
           </CardContent>
+        </Card>
+
+        {/* Tenant Portal Account Status Card */}
+        <Card className="md:col-span-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <div className="space-y-1">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-primary" />
+                {language === 'ar' ? 'حساب بوابة المستأجر' : 'Tenant Portal Account'}
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                {tenant.userId
+                  ? language === 'ar'
+                    ? 'حساب بوابة المستأجر مرتبط ومفعل بهذا المستأجر.'
+                    : 'Tenant portal account is linked to this tenant record.'
+                  : language === 'ar'
+                  ? 'حساب بوابة المستأجر غير مفعل. يمكنك إنشاء حساب للمستأجر وإرسال رابط التفعيل إليه.'
+                  : 'Tenant portal account is not activated. You can create an account and send an activation link to the tenant.'}
+              </CardDescription>
+            </div>
+            <div>
+              {tenant.userId ? (
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1.5 text-xs py-1 px-3">
+                  <ShieldCheck className="w-4 h-4" />
+                  {language === 'ar' ? 'حساب مرتبط / مفعل' : 'Account Linked'}
+                </Badge>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsProvisioningAccount(true)}
+                  className="gap-2 font-semibold"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {language === 'ar' ? 'إنشاء حساب المستأجر' : 'Create Tenant Account'}
+                </Button>
+              )}
+            </div>
+          </CardHeader>
         </Card>
       </div>
 
@@ -515,6 +566,16 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
             setDeletingVehicle(null);
           }
         }}
+      />
+
+      {/* Provision Tenant Account Modal */}
+      <ProvisionTenantAccountModal
+        tenantId={tenant.id}
+        tenantName={tenant.name}
+        tenantPhone={tenant.phone}
+        tenantEmail={tenant.email}
+        open={isProvisioningAccount}
+        onOpenChange={setIsProvisioningAccount}
       />
     </div>
   );

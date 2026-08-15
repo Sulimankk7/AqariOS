@@ -197,6 +197,7 @@ public class MarketplaceIntegrationTests : IAsyncLifetime
         services.AddScoped<IFileStorageValidator, FileStorageValidator>();
         services.AddScoped<ILeaseContractRepository, LeaseContractRepository>();
 
+        services.AddScoped<PropertyOS.Application.Common.Interfaces.IPostCommitRegistrar, PropertyOS.Infrastructure.Persistence.Behaviors.PostCommitRegistrar>();
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
         _serviceProvider = services.BuildServiceProvider();

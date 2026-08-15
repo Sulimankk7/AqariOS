@@ -52,6 +52,7 @@ export function TenantForm({
       name: initialValues?.name || '',
       nationalId: initialValues?.nationalId || '',
       phone: initialValues?.phone || '',
+      email: initialValues?.email || '',
       occupation: initialValues?.occupation || '',
       employer: initialValues?.employer || '',
     },
@@ -64,6 +65,7 @@ export function TenantForm({
         name: initialValues.name || '',
         nationalId: initialValues.nationalId || '',
         phone: initialValues.phone || '',
+        email: initialValues.email || '',
         occupation: initialValues.occupation || '',
         employer: initialValues.employer || '',
       });
@@ -148,21 +150,43 @@ export function TenantForm({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">{t('phone')} *</Label>
-            <Input
-              id="phone"
-              placeholder="e.g. +962 7 9123 4567"
-              aria-required="true"
-              aria-invalid={!!errors.phone}
-              aria-describedby={errors.phone ? 'phone-error' : undefined}
-              {...register('phone')}
-            />
-            {errors.phone && (
-              <p id="phone-error" role="alert" className="text-xs text-destructive">
-                {errors.phone.message}
-              </p>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="phone">{t('phone')} *</Label>
+              <Input
+                id="phone"
+                placeholder="e.g. +962 7 9123 4567"
+                dir="ltr"
+                aria-required="true"
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? 'phone-error' : undefined}
+                {...register('phone')}
+              />
+              {errors.phone && (
+                <p id="phone-error" role="alert" className="text-xs text-destructive">
+                  {errors.phone.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('email')} *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder={t('emailPlaceholder')}
+                dir="ltr"
+                aria-required="true"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
+                {...register('email')}
+              />
+              {errors.email && (
+                <p id="email-error" role="alert" className="text-xs text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

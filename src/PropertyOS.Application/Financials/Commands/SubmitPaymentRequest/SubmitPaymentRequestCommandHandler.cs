@@ -62,7 +62,11 @@ public class SubmitPaymentRequestCommandHandler : IRequestHandler<SubmitPaymentR
             request.ReferenceNumber,
             request.ProofFileId,
             submittedBy,
-            submittedAt);
+            submittedAt,
+            request.ChequeDetails?.ChequeNumber,
+            request.ChequeDetails?.BankName,
+            request.ChequeDetails?.IssueDate,
+            request.ChequeDetails?.DueDate);
 
         await _context.SaveChangesAsync(cancellationToken);
 

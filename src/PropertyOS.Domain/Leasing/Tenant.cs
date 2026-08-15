@@ -24,6 +24,10 @@ public class Tenant : ISoftDeletable
     [Sensitive]
     public string Phone { get; private set; } = string.Empty;
 
+    /// <summary>VARCHAR(255) NULL. Contact and delivery email.</summary>
+    [Sensitive]
+    public string? Email { get; private set; }
+
     /// <summary>VARCHAR(100) NULL.</summary>
     public string? Occupation { get; private set; }
 
@@ -58,6 +62,7 @@ public class Tenant : ISoftDeletable
         string phone,
         DateTimeOffset createdAt,
         Guid? createdBy,
+        string? email = null,
         string? occupation = null,
         string? employer = null,
         Guid? userId = null)
@@ -82,6 +87,7 @@ public class Tenant : ISoftDeletable
             Name = name.Trim(),
             NationalId = nationalId.Trim(),
             Phone = phone.Trim(),
+            Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant(),
             Occupation = string.IsNullOrWhiteSpace(occupation) ? null : occupation.Trim(),
             Employer = string.IsNullOrWhiteSpace(employer) ? null : employer.Trim(),
             UserId = userId,
@@ -103,7 +109,8 @@ public class Tenant : ISoftDeletable
         string? occupation,
         string? employer,
         DateTimeOffset updatedAt,
-        Guid? updatedBy)
+        Guid? updatedBy,
+        string? email = null)
     {
         if (DeletedAt.HasValue)
             throw new InvalidOperationException("Cannot update a deleted tenant.");
@@ -117,6 +124,7 @@ public class Tenant : ISoftDeletable
         Name = name.Trim();
         NationalId = nationalId.Trim();
         Phone = phone.Trim();
+        Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();
         Occupation = string.IsNullOrWhiteSpace(occupation) ? null : occupation.Trim();
         Employer = string.IsNullOrWhiteSpace(employer) ? null : employer.Trim();
         UpdatedAt = updatedAt;

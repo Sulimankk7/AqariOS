@@ -20,6 +20,9 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
   const { t } = useTranslation();
   const { breadcrumbTitles } = useBreadcrumbTitles();
 
+  const isTenantRoute = location.pathname.startsWith("/tenant");
+  const homePath = isTenantRoute ? "/tenant/dashboard" : "/dashboard";
+
   let segments: Array<{ label: string; href?: string; title?: string }> = [];
 
   if (customSegments) {
@@ -27,7 +30,7 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
   } else {
     const pathnames = location.pathname.split("/").filter(Boolean);
     segments = pathnames.map((name, index) => {
-      const href = `/${pathnames.slice(0, index + 1).join("/")}`;
+      let href: string | undefined = `/${pathnames.slice(0, index + 1).join("/")}`;
       
       let label = name;
       let title: string | undefined = undefined;
@@ -35,9 +38,20 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
       if (GUID_REGEX.test(name)) {
         title = `ID: ${name}`;
         label = breadcrumbTitles[name] || "Details";
+      } else if (name === "tenant") {
+        label = t("tenant.portal", "Tenant Portal");
+        href = "/tenant/dashboard";
       } else {
-        const translationKey = `nav.${name}`;
-        label = t(translationKey) !== translationKey ? t(translationKey) : name.charAt(0).toUpperCase() + name.slice(1);
+        const tenantKey = `tenant.navigation.${name}`;
+        const navKey = `nav.${name}`;
+
+        if (t(tenantKey) !== tenantKey) {
+          label = t(tenantKey);
+        } else if (t(navKey) !== navKey) {
+          label = t(navKey);
+        } else {
+          label = name.charAt(0).toUpperCase() + name.slice(1);
+        }
       }
 
       return { label, href, title };
@@ -47,7 +61,7 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
   return (
     <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium flex-wrap">
       <Link
-        to="/dashboard"
+        to={homePath}
         className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
       >
         <Home className="w-3.5 h-3.5 shrink-0" />

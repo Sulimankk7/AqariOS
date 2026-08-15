@@ -53,6 +53,7 @@ public class RentPaymentApprovedEventHandler : INotificationHandler<DomainEventN
         
         // Use standard DbContext retrieval as we are reacting asynchronously
         var rentPayment = await _context.RentPayments
+            .Include(rp => rp.Submissions)
             .Include(rp => rp.Receipt)
             .FirstOrDefaultAsync(rp => rp.Id == domainEvent.RentPaymentId, cancellationToken);
             
@@ -67,18 +68,54 @@ public class RentPaymentApprovedEventHandler : INotificationHandler<DomainEventN
             // 1. Generate Receipt Number
             var receiptNumber = await _sequenceRepository.ReserveAndFormatNextReceiptNumberAsync(rentPayment.CompanyId, cancellationToken);
             
-            // 2. Generate PDF
-            var pdfBytes = await _pdfGenerator.GenerateReceiptPdfAsync(rentPayment, cancellationToken);
+            // 2. Fetch Display Entities for Clean PDF Rendering
+            var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Id == rentPayment.TenantId, cancellationToken);
+            var building = await _context.Buildings.AsNoTracking().FirstOrDefaultAsync(b => b.Id == rentPayment.BuildingId, cancellationToken);
+            var apartment = await _context.Apartments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == rentPayment.ApartmentId, cancellationToken);
+            var contract = await _context.LeaseContracts.AsNoTracking().FirstOrDefaultAsync(lc => lc.Id == rentPayment.LeaseContractId, cancellationToken);
+
+            var submission = rentPayment.Submissions.FirstOrDefault(s => s.Id == domainEvent.SubmissionId)
+                             ?? rentPayment.Submissions.OrderByDescending(s => s.CreatedAt).FirstOrDefault();
+
+            var methodStr = submission?.PaymentMethod.ToString() ?? rentPayment.PaymentMethod?.ToString() ?? "Cash";
+            var refNumber = submission?.ReferenceNumber ?? rentPayment.PaymentReferenceNumber;
+            var now = _clock.UtcNow;
+
+            var pdfModel = new ReceiptPdfModel(
+                ReceiptNumber: receiptNumber,
+                IssueDate: now,
+                AmountPaid: rentPayment.AmountPaid > 0 ? rentPayment.AmountPaid : rentPayment.AmountDue,
+                Currency: string.IsNullOrWhiteSpace(rentPayment.Currency) ? "JOD" : rentPayment.Currency,
+                PaymentMethod: methodStr,
+                ReferenceNumber: refNumber,
+                PaymentPurpose: rentPayment.PaymentPurpose.ToString(),
+                BillingPeriod: rentPayment.BillingPeriodStart.HasValue && rentPayment.BillingPeriodEnd.HasValue
+                    ? $"{rentPayment.BillingPeriodStart.Value:dd/MM/yyyy} - {rentPayment.BillingPeriodEnd.Value:dd/MM/yyyy}"
+                    : null,
+                DueDate: rentPayment.DueDate?.ToString("dd/MM/yyyy"),
+                DueDateStatus: rentPayment.DueDateStatus.ToString(),
+                TenantName: tenant?.Name ?? "Tenant",
+                TenantPhone: tenant?.Phone,
+                PropertyName: building?.Name ?? "Property",
+                UnitNumber: apartment?.UnitNumber ?? "Unit",
+                ContractNumber: contract?.ContractNumber ?? "Contract",
+                ChequeNumber: submission?.ChequeNumber,
+                BankName: submission?.BankName,
+                ChequeIssueDate: submission?.ChequeIssueDate?.ToString("dd/MM/yyyy"),
+                ChequeDueDate: submission?.ChequeDueDate?.ToString("dd/MM/yyyy")
+            );
+
+            // 3. Generate PDF
+            var pdfBytes = await _pdfGenerator.GenerateReceiptPdfAsync(rentPayment, pdfModel, cancellationToken);
             
-            // 3. Save PDF to actual physical storage
+            // 4. Save PDF to actual physical storage
             var fileId = Guid.CreateVersion7();
             var storageKey = $"receipts/{rentPayment.CompanyId}/{fileId}.pdf";
-            var now = _clock.UtcNow;
             
             using var stream = new MemoryStream(pdfBytes);
             await _storageProvider.SaveAsync(storageKey, stream, "application/pdf", cancellationToken);
             
-            // 4. Create FileStorage record (Metadata)
+            // 5. Create FileStorage record (Metadata)
             var fileStorage = FileStorage.Create(
                 companyId: rentPayment.CompanyId,
                 uploadedBy: domainEvent.VerifiedBy,
@@ -92,7 +129,7 @@ public class RentPaymentApprovedEventHandler : INotificationHandler<DomainEventN
             );
             await _fileStorageRepository.AddAsync(fileStorage, cancellationToken);
             
-            // 5. Issue Receipt and Link to File
+            // 6. Issue Receipt and Link to File
             var receipt = rentPayment.IssueReceipt(
                 receiptNumber: receiptNumber,
                 issuedAt: now,

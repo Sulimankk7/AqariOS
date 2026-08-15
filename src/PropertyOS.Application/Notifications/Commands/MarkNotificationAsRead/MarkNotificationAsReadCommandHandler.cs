@@ -35,9 +35,15 @@ public class MarkNotificationAsReadCommandHandler : IRequestHandler<MarkNotifica
         if (notification == null || notification.RecipientUserId != userId)
             throw new NotFoundException($"Notification '{request.NotificationId}' not found for the current user.");
 
+        var dbTime = await _notificationRepository.GetDatabaseTimestampAsync(cancellationToken);
+        if (dbTime == default)
+        {
+            dbTime = DateTimeOffset.UtcNow;
+        }
+
         try
         {
-            notification.MarkAsRead(DateTimeOffset.UtcNow);
+            notification.MarkAsRead(dbTime);
         }
         catch (InvalidOperationException ex)
         {

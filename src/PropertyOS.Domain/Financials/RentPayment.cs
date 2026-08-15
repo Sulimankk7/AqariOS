@@ -214,7 +214,16 @@ public class RentPayment : ISoftDeletable
         }
     }
 
-    public void SubmitForVerification(PaymentMethod method, string? reference, Guid? proofFileId, Guid submittedBy, DateTimeOffset submittedAt)
+    public void SubmitForVerification(
+        PaymentMethod method,
+        string? reference,
+        Guid? proofFileId,
+        Guid submittedBy,
+        DateTimeOffset submittedAt,
+        string? chequeNumber = null,
+        string? bankName = null,
+        DateOnly? chequeIssueDate = null,
+        DateOnly? chequeDueDate = null)
     {
         if (_submissions.Any(s => s.Status == SubmissionStatus.Pending))
             throw new InvalidOperationException("A payment submission is already pending verification.");
@@ -222,7 +231,18 @@ public class RentPayment : ISoftDeletable
         if (DueDateStatus == DueDateStatus.Paid)
             throw new InvalidOperationException("Cannot submit a verification for an already paid obligation.");
 
-        var submission = PaymentSubmission.Create(CompanyId, Id, method, reference, proofFileId, submittedBy, submittedAt);
+        var submission = PaymentSubmission.Create(
+            CompanyId,
+            Id,
+            method,
+            reference,
+            proofFileId,
+            submittedBy,
+            submittedAt,
+            chequeNumber,
+            bankName,
+            chequeIssueDate,
+            chequeDueDate);
         _submissions.Add(submission);
 
         DueDateStatus = DueDateStatus.PendingVerification;

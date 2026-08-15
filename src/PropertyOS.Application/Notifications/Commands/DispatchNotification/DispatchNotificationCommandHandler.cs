@@ -48,15 +48,18 @@ public class DispatchNotificationCommandHandler : IRequestHandler<DispatchNotifi
 {
     private readonly INotificationRepository _notificationRepository;
     private readonly ITenantContext _tenantContext;
+    private readonly IApplicationDbContext _dbContext;
     private readonly IReadOnlyDictionary<DeliveryChannel, INotificationChannelProvider> _providersByChannel;
 
     public DispatchNotificationCommandHandler(
         INotificationRepository notificationRepository,
         ITenantContext tenantContext,
-        IEnumerable<INotificationChannelProvider> channelProviders)
+        IEnumerable<INotificationChannelProvider> channelProviders,
+        IApplicationDbContext dbContext)
     {
-        _notificationRepository = notificationRepository;
-        _tenantContext = tenantContext;
+        _notificationRepository = notificationRepository ?? throw new ArgumentNullException(nameof(notificationRepository));
+        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
         var providersByChannel = new Dictionary<DeliveryChannel, INotificationChannelProvider>();
         foreach (var provider in channelProviders)
@@ -152,6 +155,7 @@ public class DispatchNotificationCommandHandler : IRequestHandler<DispatchNotifi
         // else: retryable failures remain — leave the status for the next sweep.
 
         await _notificationRepository.UpdateAsync(notification, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

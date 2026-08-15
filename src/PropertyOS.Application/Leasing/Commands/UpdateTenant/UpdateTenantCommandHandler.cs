@@ -49,7 +49,8 @@ public class UpdateTenantCommandHandler : IRequestHandler<UpdateTenantCommand, U
             occupation: request.Occupation,
             employer: request.Employer,
             updatedAt: DateTimeOffset.UtcNow,
-            updatedBy: _currentUserContext.UserId
+            updatedBy: _currentUserContext.UserId,
+            email: request.Email
         );
 
         // Note: SaveChanges is owned by TransactionBehavior

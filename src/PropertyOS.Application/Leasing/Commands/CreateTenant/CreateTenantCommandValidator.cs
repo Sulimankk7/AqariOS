@@ -22,6 +22,11 @@ public class CreateTenantCommandValidator : AbstractValidator<CreateTenantComman
             .Must(BeAValidE164PhoneNumber).WithMessage("Phone must be a valid E.164 phone number (e.g. +962791234567).")
             .When(v => !string.IsNullOrWhiteSpace(v.Phone), ApplyConditionTo.CurrentValidator);
 
+        RuleFor(v => v.Email)
+            .NotEmpty().WithMessage("Email is required.")
+            .MaximumLength(255).WithMessage("Email must not exceed 255 characters.")
+            .EmailAddress().WithMessage("Email must be a valid email address.");
+
         RuleFor(v => v.Occupation)
             .MaximumLength(100).WithMessage("Occupation must not exceed 100 characters.");
 

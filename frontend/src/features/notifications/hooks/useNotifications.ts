@@ -52,3 +52,22 @@ export function useMarkNotificationAsRead() {
     },
   });
 }
+
+/**
+ * Hook to mark all unread notifications for current user as read.
+ * Invalidates user/tenant notifications cache upon success.
+ */
+export function useMarkAllNotificationsAsRead() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  return useMutation({
+    mutationFn: () => notificationsApi.markAllAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["tenant", userId, "notifications"],
+      });
+    },
+  });
+}

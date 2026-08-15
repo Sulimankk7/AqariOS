@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,18 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        var actualException = exception;
+        while (actualException.InnerException != null &&
+               actualException is not ValidationException &&
+               actualException is not BusinessRuleException &&
+               actualException is not NotFoundException &&
+               actualException is not ConflictException &&
+               actualException is not UnauthorizedAccessException &&
+               actualException is not ArchiveBlockedException)
+        {
+            actualException = actualException.InnerException;
+        }
+
         var statusCode = StatusCodes.Status500InternalServerError;
         var problemDetails = new ProblemDetails
         {
@@ -36,16 +49,16 @@ public class GlobalExceptionHandler : IExceptionHandler
             Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1"
         };
 
-        switch (exception)
+        switch (actualException)
         {
             case ValidationException validationException:
-                statusCode = StatusCodes.Status400BadRequest;
+                statusCode = StatusCodes.Status422UnprocessableEntity;
                 var validationProblemDetails = new ValidationProblemDetails(
                     validationException.Errors
                         .GroupBy(e => e.PropertyName, e => e.ErrorMessage)
                         .ToDictionary(g => g.Key, g => g.ToArray()))
                 {
-                    Status = StatusCodes.Status400BadRequest,
+                    Status = StatusCodes.Status422UnprocessableEntity,
                     Title = "Validation Failed",
                     Detail = "One or more validation errors occurred."
                 };

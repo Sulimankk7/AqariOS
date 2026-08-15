@@ -7,6 +7,7 @@ public record CreateTenantRequest(
     string Name,
     string NationalId,
     string Phone,
+    string Email,
     string? Occupation = null,
     string? Employer = null
 );

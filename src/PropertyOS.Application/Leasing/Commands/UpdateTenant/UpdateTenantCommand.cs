@@ -8,6 +8,7 @@ public record UpdateTenantCommand(
     string Name,
     string NationalId,
     string Phone,
+    string? Email = null,
     string? Occupation = null,
     string? Employer = null
 ) : ICommand;

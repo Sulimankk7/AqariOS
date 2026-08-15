@@ -45,6 +45,28 @@ internal sealed class PaymentSubmissionConfiguration : IEntityTypeConfiguration<
             .HasColumnType("uuid")
             .IsRequired(false);
 
+        builder.Property(p => p.ChequeNumber)
+            .HasColumnName("cheque_number")
+            .HasColumnType("character varying(100)")
+            .HasMaxLength(100)
+            .IsRequired(false);
+
+        builder.Property(p => p.BankName)
+            .HasColumnName("bank_name")
+            .HasColumnType("character varying(255)")
+            .HasMaxLength(255)
+            .IsRequired(false);
+
+        builder.Property(p => p.ChequeIssueDate)
+            .HasColumnName("cheque_issue_date")
+            .HasColumnType("date")
+            .IsRequired(false);
+
+        builder.Property(p => p.ChequeDueDate)
+            .HasColumnName("cheque_due_date")
+            .HasColumnType("date")
+            .IsRequired(false);
+
         builder.Property(p => p.Status)
             .HasColumnName("status")
             .HasColumnType("submission_status_enum")

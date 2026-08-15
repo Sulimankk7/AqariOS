@@ -62,6 +62,7 @@ public class TenantsController : ControllerBase
             Name: request.Name,
             NationalId: request.NationalId,
             Phone: request.Phone,
+            Email: request.Email,
             Occupation: request.Occupation,
             Employer: request.Employer
         );
@@ -116,6 +117,7 @@ public class TenantsController : ControllerBase
             Name: request.Name,
             NationalId: request.NationalId,
             Phone: request.Phone,
+            Email: request.Email,
             Occupation: request.Occupation,
             Employer: request.Employer
         );
@@ -205,20 +207,16 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> ProvisionAccount(
         [FromRoute] Guid tenantId,
         [FromBody] ProvisionTenantAccountRequest? request,
-        [FromServices] IHostEnvironment environment,
         CancellationToken cancellationToken = default)
     {
         var command = new ProvisionTenantAccountCommand(
             TenantId: tenantId,
+            ContactMethod: request?.ContactMethod ?? TenantProvisioningContactMethod.Phone,
+            Phone: request?.Phone,
             Email: request?.Email
         );
 
         var response = await _mediator.Send(command, cancellationToken);
-
-        if (!environment.IsDevelopment())
-        {
-            response.ActivationToken = null;
-        }
 
         return CreatedAtAction(nameof(GetById), new { tenantId = response.TenantId }, response);
     }

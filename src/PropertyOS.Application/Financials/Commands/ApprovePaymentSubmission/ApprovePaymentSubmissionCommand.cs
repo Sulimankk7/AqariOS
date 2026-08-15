@@ -1,7 +1,8 @@
 using System;
-using MediatR;
+using PropertyOS.Application.Common.Interfaces;
 
 namespace PropertyOS.Application.Financials.Commands.ApprovePaymentSubmission;
 
 public record ApprovePaymentSubmissionCommand(
-    Guid SubmissionId) : IRequest;
+    Guid SubmissionId) : ICommand;
+

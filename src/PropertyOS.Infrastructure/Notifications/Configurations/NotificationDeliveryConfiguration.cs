@@ -14,9 +14,6 @@ internal sealed class NotificationDeliveryConfiguration : IEntityTypeConfigurati
             t.HasCheckConstraint("chk_notification_deliveries_attempt_count_nonneg", "attempt_count >= 0");
             t.HasCheckConstraint("chk_notification_deliveries_sent_requires_attempt", "delivery_status = 'pending' OR attempt_count > 0");
 
-            // TODO: Specification Issue #1 - The module spec contradicts itself on whether 'failed' requires 'sent_at'
-            // §11.3 requires sent_at for failed. §11.7 says it correctly allows pending->failed without it.
-            // Leaving this constraint exactly as defined in §11.3 pending explicit project decision.
             t.HasCheckConstraint("chk_notification_deliveries_sent_at_requires_status", "(delivery_status = 'pending' AND sent_at IS NULL) OR (delivery_status IN ('sent', 'delivered', 'failed') AND sent_at IS NOT NULL)");
             
             t.HasCheckConstraint("chk_notification_deliveries_delivered_requires_delivered_at", "delivery_status != 'delivered' OR delivered_at IS NOT NULL");

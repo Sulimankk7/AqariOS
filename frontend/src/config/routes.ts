@@ -92,6 +92,14 @@ export const ROUTES = {
   profile: { root: "/profile" },
   /** /preferences */
   preferences: { root: "/preferences" },
+
+  // Tenant Portal Self-Service
+  tenant: {
+    dashboard: "/tenant/dashboard",
+    profile: "/tenant/profile",
+    lease: "/tenant/lease",
+    payments: "/tenant/payments",
+  },
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

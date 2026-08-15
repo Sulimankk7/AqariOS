@@ -9,6 +9,10 @@ public class PaymentSubmissionDto
     public PaymentMethod PaymentMethod { get; set; }
     public string? ReferenceNumber { get; set; }
     public Guid? ProofFileId { get; set; }
+    public string? ChequeNumber { get; set; }
+    public string? BankName { get; set; }
+    public DateOnly? ChequeIssueDate { get; set; }
+    public DateOnly? ChequeDueDate { get; set; }
     public SubmissionStatus Status { get; set; }
     
     public Guid SubmittedBy { get; set; }

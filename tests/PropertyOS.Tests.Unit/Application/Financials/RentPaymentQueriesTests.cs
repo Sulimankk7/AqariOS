@@ -151,9 +151,12 @@ public class RentPaymentQueriesTests
         public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default)
         {
             var list = Payments
-                .Where(p => p.TenantId == tenantId && p.CompanyId == companyId)
+                .Where(p => p.TenantId == tenantId 
+                         && p.CompanyId == companyId 
+                         && p.PaymentPurpose == PaymentPurpose.ScheduledInstallment 
+                         && p.DeletedAt == null)
                 .OrderByDescending(p => p.DueDate)
-                .Select(p => new RentPaymentDto { Id = p.Id, TenantId = p.TenantId, AmountDue = p.AmountDue })
+                .Select(p => new RentPaymentDto { Id = p.Id, TenantId = p.TenantId, AmountDue = p.AmountDue, PaymentPurpose = p.PaymentPurpose, DueDateStatus = p.DueDateStatus })
                 .ToList();
             return Task.FromResult(list);
         }
@@ -192,6 +195,62 @@ public class RentPaymentQueriesTests
                 .Take(effectivePageSize)
                 .Select(p => new RentPaymentDto { Id = p.Id, DueDateStatus = p.DueDateStatus, DueDate = p.DueDate })
                 .ToList();
+            return Task.FromResult(list);
+        }
+
+        public Task<List<RentPaymentDto>> GetPaymentsAsync(RentPaymentFilterOptions filter, Guid companyId, CancellationToken cancellationToken = default)
+        {
+            var query = Payments.Where(p => p.CompanyId == companyId && p.DeletedAt == null);
+
+            if (filter.BuildingId.HasValue)
+                query = query.Where(p => p.BuildingId == filter.BuildingId.Value);
+
+            if (filter.Status.HasValue)
+                query = query.Where(p => p.DueDateStatus == filter.Status.Value);
+
+            if (filter.DateFrom.HasValue)
+                query = query.Where(p => p.DueDate.HasValue && p.DueDate.Value >= filter.DateFrom.Value);
+
+            if (filter.DateTo.HasValue)
+                query = query.Where(p => p.DueDate.HasValue && p.DueDate.Value <= filter.DateTo.Value);
+
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                var term = filter.SearchTerm.Trim();
+                query = query.Where(p => p.ReceiptNumber != null && p.ReceiptNumber.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (filter.LastSeenId.HasValue && filter.LastSeenDueDate.HasValue)
+            {
+                var cursorDate = filter.LastSeenDueDate.Value;
+                var cursorId = filter.LastSeenId.Value;
+                query = query.Where(p =>
+                    (p.DueDate.HasValue && p.DueDate.Value < cursorDate) ||
+                    (p.DueDate.HasValue && p.DueDate.Value == cursorDate && p.Id.CompareTo(cursorId) > 0));
+            }
+
+            var effectivePageSize = Math.Clamp(filter.PageSize, 1, 200);
+            var list = query
+                .OrderByDescending(p => p.DueDate)
+                .ThenBy(p => p.Id)
+                .Take(effectivePageSize)
+                .Select(p => new RentPaymentDto
+                {
+                    Id = p.Id,
+                    CompanyId = p.CompanyId,
+                    BuildingId = p.BuildingId,
+                    ApartmentId = p.ApartmentId,
+                    TenantId = p.TenantId,
+                    LeaseContractId = p.LeaseContractId,
+                    AmountDue = p.AmountDue,
+                    AmountPaid = p.AmountPaid,
+                    DueDate = p.DueDate,
+                    DueDateStatus = p.DueDateStatus,
+                    ReceiptNumber = p.ReceiptNumber,
+                    PaymentPurpose = p.PaymentPurpose
+                })
+                .ToList();
+
             return Task.FromResult(list);
         }
 
@@ -450,6 +509,76 @@ public class RentPaymentQueriesTests
 
         Assert.Single(result);
         Assert.Equal(p1.Id, result[0].Id);
+    }
+
+    [Fact]
+    public async Task GetRentPaymentsForTenantQuery_ExcludesUnallocatedReceipts_Adjustments_And_SoftDeleted()
+    {
+        var repo = new FakeRentPaymentRepository();
+        var handler = new GetRentPaymentsForTenantQueryHandler(repo, _tenantContext);
+
+        var leaseId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+
+        // 1. ScheduledInstallment - Pending -> SHOULD be returned
+        var scheduledPending = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Pending, new DateOnly(2026, 1, 1));
+
+        // 2. ScheduledInstallment - Fully Paid -> SHOULD be returned (paid installments remain visible in tenant history)
+        var scheduledPaid = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Paid, new DateOnly(2026, 1, 2));
+
+        // 3. UnallocatedReceipt -> Should NOT be returned to tenant portal
+        var unallocatedReceipt = RentPayment.Create(
+            companyId: _companyId,
+            leaseContractId: leaseId,
+            tenantId: tenantId,
+            buildingId: Guid.NewGuid(),
+            apartmentId: Guid.NewGuid(),
+            purpose: PaymentPurpose.UnallocatedReceipt,
+            amountDue: 900m,
+            currency: "JOD",
+            billingPeriodStart: null,
+            billingPeriodEnd: null,
+            dueDate: null,
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: Guid.NewGuid()
+        );
+
+        // 4. Adjustment -> Should NOT be returned to tenant portal
+        var adjustment = RentPayment.Create(
+            companyId: _companyId,
+            leaseContractId: leaseId,
+            tenantId: tenantId,
+            buildingId: Guid.NewGuid(),
+            apartmentId: Guid.NewGuid(),
+            purpose: PaymentPurpose.Adjustment,
+            amountDue: 100m,
+            currency: "JOD",
+            billingPeriodStart: null,
+            billingPeriodEnd: null,
+            dueDate: null,
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: Guid.NewGuid()
+        );
+
+        // 5. ScheduledInstallment - Soft Deleted -> Should NOT be returned
+        var scheduledSoftDeleted = CreateRentPayment(Guid.NewGuid(), leaseId, tenantId, 900m, DueDateStatus.Pending, new DateOnly(2026, 1, 3));
+        scheduledSoftDeleted.SoftDelete(DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        await repo.AddAsync(scheduledPending);
+        await repo.AddAsync(scheduledPaid);
+        await repo.AddAsync(unallocatedReceipt);
+        await repo.AddAsync(adjustment);
+        await repo.AddAsync(scheduledSoftDeleted);
+
+        var result = await handler.Handle(new GetRentPaymentsForTenantQuery(tenantId), CancellationToken.None);
+
+        // Total returned count must equal the number of non-deleted ScheduledInstallment obligations (2)
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, r => r.Id == scheduledPending.Id);
+        Assert.Contains(result, r => r.Id == scheduledPaid.Id);
+        Assert.DoesNotContain(result, r => r.Id == unallocatedReceipt.Id);
+        Assert.DoesNotContain(result, r => r.Id == adjustment.Id);
+        Assert.DoesNotContain(result, r => r.Id == scheduledSoftDeleted.Id);
     }
 
     [Fact]

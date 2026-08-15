@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Notifications;
 using PropertyOS.Application.Notifications.Commands.DispatchNotification;
 using PropertyOS.Application.Notifications.Queries.Common;
 using PropertyOS.Application.Notifications.Services;
+using PropertyOS.Domain.Companies;
+using PropertyOS.Domain.Financials;
+using PropertyOS.Domain.Identity.Entities;
 using PropertyOS.Domain.Notifications;
 using PropertyOS.Domain.Notifications.Enums;
 using Xunit;
@@ -84,14 +90,16 @@ public class DispatchNotificationCommandHandlerTests
                 .ToList());
         }
 
-        public Task<List<Guid>> GetDispatchCandidateIdsAsync(int batchSize, Guid? afterId, CancellationToken cancellationToken)
+        public Task<List<Guid>> GetDispatchCandidateIdsAsync(Guid companyId, int batchSize, Guid? afterId, CancellationToken cancellationToken)
         {
             return Task.FromResult(Notifications
-                .Where(n => n.DeletedAt == null
+                .Where(n => n.CompanyId == companyId
+                    && n.DeletedAt == null
                     && n.Status != NotificationStatus.Cancelled
                     && (n.Status == NotificationStatus.Pending
                         || n.Deliveries.Any(d =>
-                            d.DeliveryStatus == DeliveryStatus.Failed
+                            d.CompanyId == companyId
+                            && d.DeliveryStatus == DeliveryStatus.Failed
                             && d.AttemptCount < NotificationDispatchPolicy.MaxDeliveryAttempts))
                     && (!afterId.HasValue || n.Id.CompareTo(afterId.Value) > 0))
                 .OrderBy(n => n.Id)
@@ -109,6 +117,16 @@ public class DispatchNotificationCommandHandlerTests
         public Task UpdateAsync(Notification notification, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+
+        public Task<DateTimeOffset> GetDatabaseTimestampAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(DateTimeOffset.UtcNow);
+        }
+
+        public Task<int> MarkAllAsReadAsync(Guid userId, Guid companyId, DateTimeOffset readAt, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(0);
         }
     }
 
@@ -148,6 +166,43 @@ public class DispatchNotificationCommandHandlerTests
             => throw new InvalidOperationException("Provider blew up");
     }
 
+    private class FakeApplicationDbContext : IApplicationDbContext
+    {
+        public int SaveChangesCallCount { get; private set; }
+
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.User> Users => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Companies.Company> Companies => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Companies.CompanySettings> CompanySettings => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.Role> Roles => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.UserCompanyRole> UserCompanyRoles => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.RefreshToken> RefreshTokens => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.Permission> Permissions => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.RolePermission> RolePermissions => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.LoginHistory> LoginHistory => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Properties.Building> Buildings => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Properties.Apartment> Apartments => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Leasing.LeaseContract> LeaseContracts => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Leasing.Tenant> Tenants => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Financials.RentPayment> RentPayments => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Financials.Expense> Expenses => throw new NotImplementedException();
+        public DatabaseFacade Database => throw new NotImplementedException();
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            SaveChangesCallCount++;
+            return Task.FromResult(1);
+        }
+
+        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -182,7 +237,7 @@ public class DispatchNotificationCommandHandlerTests
         FakeTenantContext tenantCtx,
         params INotificationChannelProvider[] providers)
     {
-        return new DispatchNotificationCommandHandler(repo, tenantCtx, providers);
+        return new DispatchNotificationCommandHandler(repo, tenantCtx, providers, new FakeApplicationDbContext());
     }
 
     // -------------------------------------------------------------------------
@@ -552,5 +607,194 @@ public class DispatchNotificationCommandHandlerTests
         // Act & Assert
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(new DispatchNotificationCommand(otherCompanyNotification.Id), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_SuccessfulDispatch_CallsDbContextSaveChangesAsyncToPersistSentState()
+    {
+        // Arrange
+        var repo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var dbContext = new FakeApplicationDbContext();
+        var notification = CreateNotification(tenantCtx.CompanyId!.Value, DeliveryChannel.InApp);
+        repo.Notifications.Add(notification);
+
+        var provider = new FakeChannelProvider(DeliveryChannel.InApp, ChannelSendResult.Ok());
+        var handler = new DispatchNotificationCommandHandler(repo, tenantCtx, new[] { provider }, dbContext);
+
+        // Act
+        await handler.Handle(new DispatchNotificationCommand(notification.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(NotificationStatus.Sent, notification.Status);
+        Assert.Equal(1, dbContext.SaveChangesCallCount);
+    }
+
+    [Fact]
+    public async Task Handle_FailedDispatch_DoesNotFalselyMarkNotificationAsSent()
+    {
+        // Arrange
+        var repo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var dbContext = new FakeApplicationDbContext();
+        var notification = CreateNotification(tenantCtx.CompanyId!.Value, DeliveryChannel.InApp);
+        repo.Notifications.Add(notification);
+
+        var provider = new FakeChannelProvider(DeliveryChannel.InApp, ChannelSendResult.Failed("Gateway error"));
+        var handler = new DispatchNotificationCommandHandler(repo, tenantCtx, new[] { provider }, dbContext);
+
+        // Act
+        await handler.Handle(new DispatchNotificationCommand(notification.Id), CancellationToken.None);
+
+        // Assert
+        Assert.NotEqual(NotificationStatus.Sent, notification.Status);
+        Assert.Equal(1, dbContext.SaveChangesCallCount);
+    }
+
+    [Fact]
+    public void Notification_MarkAsRead_Succeeds_WhenNotificationStatusIsSent()
+    {
+        // Arrange
+        var notification = CreateNotification(Guid.NewGuid(), DeliveryChannel.InApp);
+        notification.Deliveries.First().RecordAttempt(DateTimeOffset.UtcNow);
+        notification.Deliveries.First().MarkAsSent(DateTimeOffset.UtcNow);
+        notification.MarkAsSent(DateTimeOffset.UtcNow);
+
+        // Act
+        notification.MarkAsRead(DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.NotNull(notification.ReadAt);
+    }
+
+    [Fact]
+    public async Task Handle_InAppSucceeds_SmsUnconfigured_SatisfiesSentAtConstraintAndPersistsSentState()
+    {
+        // Arrange
+        var repo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var dbContext = new FakeApplicationDbContext();
+        var notification = CreateNotification(tenantCtx.CompanyId!.Value, DeliveryChannel.InApp, DeliveryChannel.Sms);
+        repo.Notifications.Add(notification);
+
+        var inAppProvider = new FakeChannelProvider(DeliveryChannel.InApp, ChannelSendResult.Ok());
+        var handler = new DispatchNotificationCommandHandler(repo, tenantCtx, new[] { inAppProvider }, dbContext);
+
+        // Act
+        await handler.Handle(new DispatchNotificationCommand(notification.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(NotificationStatus.Sent, notification.Status);
+        Assert.Equal(1, dbContext.SaveChangesCallCount);
+
+        var inAppDelivery = notification.Deliveries.Single(d => d.DeliveryChannel == DeliveryChannel.InApp);
+        Assert.Equal(DeliveryStatus.Sent, inAppDelivery.DeliveryStatus);
+        Assert.NotNull(inAppDelivery.SentAt);
+
+        var smsDelivery = notification.Deliveries.Single(d => d.DeliveryChannel == DeliveryChannel.Sms);
+        Assert.Equal(DeliveryStatus.Failed, smsDelivery.DeliveryStatus);
+        Assert.NotNull(smsDelivery.SentAt);
+        Assert.NotNull(smsDelivery.FailureReason);
+
+        // Verify exact PostgreSQL chk_notification_deliveries_sent_at_requires_status check constraint:
+        // (delivery_status = 'pending' AND sent_at IS NULL) OR (delivery_status IN ('sent', 'delivered', 'failed') AND sent_at IS NOT NULL)
+        foreach (var delivery in notification.Deliveries)
+        {
+            bool satisfiesSentAtConstraint =
+                (delivery.DeliveryStatus == DeliveryStatus.Pending && delivery.SentAt == null) ||
+                ((delivery.DeliveryStatus == DeliveryStatus.Sent ||
+                  delivery.DeliveryStatus == DeliveryStatus.Delivered ||
+                  delivery.DeliveryStatus == DeliveryStatus.Failed) && delivery.SentAt != null);
+
+            Assert.True(satisfiesSentAtConstraint, $"Delivery {delivery.DeliveryChannel} violates chk_notification_deliveries_sent_at_requires_status constraint.");
+        }
+    }
+
+    [Fact]
+    public async Task Handle_InAppSucceeds_EmailUnconfigured_SatisfiesSentAtConstraintAndPersistsSentState()
+    {
+        // Arrange
+        var repo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var dbContext = new FakeApplicationDbContext();
+        var notification = CreateNotification(tenantCtx.CompanyId!.Value, DeliveryChannel.InApp, DeliveryChannel.Email);
+        repo.Notifications.Add(notification);
+
+        var inAppProvider = new FakeChannelProvider(DeliveryChannel.InApp, ChannelSendResult.Ok());
+        var handler = new DispatchNotificationCommandHandler(repo, tenantCtx, new[] { inAppProvider }, dbContext);
+
+        // Act
+        await handler.Handle(new DispatchNotificationCommand(notification.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(NotificationStatus.Sent, notification.Status);
+        Assert.Equal(1, dbContext.SaveChangesCallCount);
+
+        var emailDelivery = notification.Deliveries.Single(d => d.DeliveryChannel == DeliveryChannel.Email);
+        Assert.Equal(DeliveryStatus.Failed, emailDelivery.DeliveryStatus);
+        Assert.NotNull(emailDelivery.SentAt);
+        Assert.NotNull(emailDelivery.FailureReason);
+    }
+
+    [Fact]
+    public async Task Handle_AllChannelsFail_NotificationDoesNotBecomeSent_AllDeliveriesSatisfySentAtConstraint()
+    {
+        // Arrange
+        var repo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var dbContext = new FakeApplicationDbContext();
+        var notification = CreateNotification(tenantCtx.CompanyId!.Value, DeliveryChannel.InApp, DeliveryChannel.Email);
+        repo.Notifications.Add(notification);
+
+        var inAppProvider = new FakeChannelProvider(DeliveryChannel.InApp, ChannelSendResult.Failed("SignalR offline"));
+        var handler = new DispatchNotificationCommandHandler(repo, tenantCtx, new[] { inAppProvider }, dbContext);
+
+        // Act
+        await handler.Handle(new DispatchNotificationCommand(notification.Id), CancellationToken.None);
+
+        // Assert
+        Assert.NotEqual(NotificationStatus.Sent, notification.Status);
+        Assert.Equal(1, dbContext.SaveChangesCallCount);
+
+        foreach (var delivery in notification.Deliveries)
+        {
+            Assert.Equal(DeliveryStatus.Failed, delivery.DeliveryStatus);
+            Assert.NotNull(delivery.SentAt);
+            Assert.NotNull(delivery.FailureReason);
+
+            bool satisfiesConstraint = (delivery.DeliveryStatus == DeliveryStatus.Pending && delivery.SentAt == null) ||
+                                       (delivery.SentAt != null);
+            Assert.True(satisfiesConstraint);
+        }
+    }
+
+    [Fact]
+    public async Task Handle_RetryAfterFailedDelivery_CorrectlyUpdatesStateAndSatisfiesConstraint()
+    {
+        // Arrange: A delivery that previously failed on attempt 1
+        var repo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var dbContext = new FakeApplicationDbContext();
+        var notification = CreateNotification(tenantCtx.CompanyId!.Value, DeliveryChannel.InApp);
+        var initialAttemptTime = DateTimeOffset.UtcNow.AddMinutes(-10);
+        notification.Deliveries.First().RecordAttempt(initialAttemptTime);
+        notification.Deliveries.First().MarkAsFailed("Initial network error", initialAttemptTime);
+        repo.Notifications.Add(notification);
+
+        Assert.Equal(DeliveryStatus.Failed, notification.Deliveries.First().DeliveryStatus);
+        Assert.NotNull(notification.Deliveries.First().SentAt);
+
+        // Act: Retry dispatch with working provider
+        var inAppProvider = new FakeChannelProvider(DeliveryChannel.InApp, ChannelSendResult.Ok());
+        var handler = new DispatchNotificationCommandHandler(repo, tenantCtx, new[] { inAppProvider }, dbContext);
+
+        await handler.Handle(new DispatchNotificationCommand(notification.Id), CancellationToken.None);
+
+        // Assert: Succeeded on retry
+        Assert.Equal(NotificationStatus.Sent, notification.Status);
+        var retriedDelivery = notification.Deliveries.First();
+        Assert.Equal(DeliveryStatus.Sent, retriedDelivery.DeliveryStatus);
+        Assert.Equal(2, retriedDelivery.AttemptCount);
+        Assert.NotNull(retriedDelivery.SentAt);
     }
 }

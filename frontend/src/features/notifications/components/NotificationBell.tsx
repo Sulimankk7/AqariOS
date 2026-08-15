@@ -1,21 +1,25 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bell, Check, AlertCircle, Info, RefreshCw } from "lucide-react";
+import { Bell, Check, CheckCheck, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useTranslation } from "@/shared/i18n";
 import {
   useUnreadNotificationCount,
   useMyNotifications,
   useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
 } from "@/features/notifications/hooks/useNotifications";
 import type { NotificationDto } from "@/features/notifications/types/notifications.types";
 
 export function NotificationBell() {
   const { t, language } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: notifications = [], isLoading, isError, refetch } = useMyNotifications({ pageSize: 20 });
   const markAsRead = useMarkNotificationAsRead();
+  const markAllAsRead = useMarkAllNotificationsAsRead();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -29,10 +33,27 @@ export function NotificationBell() {
   }, []);
 
   const handleNotificationClick = (notification: NotificationDto) => {
-    // If unread (status === 0 or readAt is null), mark as read
+    // Toggle expand/collapse
+    setExpandedId((prev) => (prev === notification.id ? null : notification.id));
+
+    // If unread (status === 0 or readAt is null), mark as read using single-item API
     if (notification.status === 0 || !notification.readAt) {
       markAsRead.mutate(notification.id);
     }
+  };
+
+  const handleMarkAllAsRead = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (markAllAsRead.isPending || unreadCount === 0) return;
+
+    markAllAsRead.mutate(undefined, {
+      onSuccess: () => {
+        toast.success(t("tenant.notifications.markAllSuccess", "All notifications marked as read"));
+      },
+      onError: () => {
+        toast.error(t("tenant.notifications.actionFailed", "Action failed"));
+      },
+    });
   };
 
   const formatDate = (dateStr: string) => {
@@ -62,7 +83,7 @@ export function NotificationBell() {
         {unreadCount > 0 && (
           <span
             className="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[10px] font-bold ring-2 ring-card animate-pulse"
-            aria-label={`${unreadCount} unread notifications`}
+            aria-label={`${unreadCount} ${t("tenant.notifications.unreadBadge", { count: unreadCount })}`}
           >
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
@@ -76,20 +97,40 @@ export function NotificationBell() {
           aria-label={t("common.notifications")}
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
-            <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
-              <Bell className="w-4 h-4 text-primary" />
-              {t("common.notifications")}
-            </span>
-            {unreadCount > 0 && (
-              <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
-                {unreadCount} {language === "ar" ? "جديد" : "New"}
+          <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-border">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
+                <Bell className="w-4 h-4 text-primary" />
+                {t("common.notifications")}
               </span>
+              {unreadCount > 0 && (
+                <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
+                  {unreadCount} {language === "ar" ? "جديد" : "New"}
+                </span>
+              )}
+            </div>
+
+            {/* Mark All as Read Action (Single Backend Operation) */}
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllAsRead}
+                disabled={markAllAsRead.isPending}
+                aria-label={t("tenant.notifications.markAllAsRead", "Mark all as read")}
+                className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {markAllAsRead.isPending ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <CheckCheck className="w-3.5 h-3.5" />
+                )}
+                <span>{t("tenant.notifications.markAllAsRead", "Mark all as read")}</span>
+              </button>
             )}
           </div>
 
           {/* List Content */}
-          <div className="max-h-80 overflow-y-auto space-y-1.5 pe-1">
+          <div className="max-h-96 overflow-y-auto space-y-1.5 pe-1">
             {isLoading ? (
               <div className="space-y-2 py-3">
                 {[1, 2, 3].map((i) => (
@@ -113,40 +154,80 @@ export function NotificationBell() {
                 <Bell className="w-8 h-8 opacity-25" />
                 <p className="font-medium text-foreground">{t("common.noNotifications")}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {language === "ar" ? "لا توجد إشعارات في صندوق الوارد حالياً." : "No notifications in your inbox right now."}
+                  {t("tenant.notifications.emptyState")}
                 </p>
               </div>
             ) : (
               notifications.map((n) => {
                 const isUnread = n.status === 0 || !n.readAt;
+                const isExpanded = expandedId === n.id;
 
                 return (
                   <div
                     key={n.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
+                    aria-label={`${n.subject} - ${isUnread ? t("tenant.notifications.unreadStatus") : t("tenant.notifications.readStatus")}`}
                     onClick={() => handleNotificationClick(n)}
-                    className={`p-2.5 rounded-lg border transition-colors cursor-pointer flex items-start gap-2.5 ${
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleNotificationClick(n);
+                      }
+                    }}
+                    className={`p-2.5 rounded-lg border transition-all cursor-pointer select-none ${
                       isUnread
                         ? "bg-primary/5 border-primary/20 hover:bg-primary/10"
                         : "bg-secondary/30 border-border/50 hover:bg-secondary/60 opacity-85"
                     }`}
                   >
-                    <div
-                      className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                        isUnread ? "bg-primary" : "bg-transparent"
-                      }`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <p className={`truncate text-xs ${isUnread ? "font-semibold text-foreground" : "font-medium text-muted-foreground"}`}>
-                          {n.subject}
-                        </p>
-                        <span className="text-[10px] text-muted-foreground shrink-0 font-mono">
-                          {formatDate(n.createdAt)}
-                        </span>
+                    <div className="flex items-start gap-2.5">
+                      <div
+                        className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                          isUnread ? "bg-primary" : "bg-transparent"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <p className={`text-xs ${isUnread ? "font-semibold text-foreground" : "font-medium text-muted-foreground"}`}>
+                            {n.subject}
+                          </p>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {formatDate(n.createdAt)}
+                            </span>
+                            {isExpanded ? (
+                              <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                            ) : (
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Content: Compact vs Expanded */}
+                        {isExpanded ? (
+                          <div className="mt-2 space-y-2 text-xs text-foreground/90 leading-relaxed break-words whitespace-pre-wrap animate-in fade-in-50 duration-150">
+                            <p className="p-2 rounded bg-background/60 border border-border/40 text-[11.5px] leading-relaxed">
+                              {n.body}
+                            </p>
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40">
+                              <span className="flex items-center gap-1 font-medium text-primary">
+                                <Check className="w-3 h-3" aria-hidden="true" />
+                                {t("tenant.notifications.readStatus")}
+                              </span>
+                              <span className="font-mono">
+                                {formatDate(n.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[11.5px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
+                            {n.body}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-[11.5px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
-                        {n.body}
-                      </p>
                     </div>
                   </div>
                 );

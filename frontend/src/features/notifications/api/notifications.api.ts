@@ -25,4 +25,12 @@ export const notificationsApi = {
   markAsRead(id: string): Promise<void> {
     return http.patch<void>(`/api/v1/notifications/${id}/read`, {});
   },
+
+  /**
+   * Marks all unread notifications for current user as read.
+   * PATCH /api/v1/notifications/me/read-all
+   */
+  markAllAsRead(): Promise<MarkAllNotificationsAsReadResult> {
+    return http.patch<MarkAllNotificationsAsReadResult>("/api/v1/notifications/me/read-all", {});
+  },
 };

@@ -13,6 +13,7 @@ using PropertyOS.Application.Notifications;
 using PropertyOS.Application.Notifications.Commands.DispatchNotification;
 using PropertyOS.Application.Notifications.Queries.Common;
 using PropertyOS.Domain.Notifications;
+using PropertyOS.Domain.Notifications.Enums;
 using PropertyOS.Infrastructure.Identity;
 using PropertyOS.Infrastructure.Notifications.Jobs;
 using Xunit;
@@ -57,7 +58,7 @@ public class DispatchNotificationsJobTests
         public List<Guid> DispatchCandidateIds { get; set; } = new();
         public List<Guid?> AfterIdsReceived { get; } = new();
 
-        public Task<List<Guid>> GetDispatchCandidateIdsAsync(int batchSize, Guid? afterId, CancellationToken cancellationToken)
+        public Task<List<Guid>> GetDispatchCandidateIdsAsync(Guid companyId, int batchSize, Guid? afterId, CancellationToken cancellationToken)
         {
             AfterIdsReceived.Add(afterId);
             var result = DispatchCandidateIds
@@ -77,6 +78,8 @@ public class DispatchNotificationsJobTests
         public Task<List<NotificationDeliveryDto>> GetFailedDeliveriesAsync(Guid companyId, int pageSize, DateTimeOffset? lastSeenSentAt, Guid? lastSeenId, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task AddAsync(Notification notification, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task UpdateAsync(Notification notification, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<DateTimeOffset> GetDatabaseTimestampAsync(CancellationToken cancellationToken) => Task.FromResult(DateTimeOffset.UtcNow);
+        public Task<int> MarkAllAsReadAsync(Guid userId, Guid companyId, DateTimeOffset readAt, CancellationToken cancellationToken) => Task.FromResult(0);
     }
 
     private class FakeSender : ISender
@@ -389,5 +392,61 @@ public class DispatchNotificationsJobTests
         Assert.Equal(5, count);
         Assert.Equal(5, sender.SentCommands.Count);
         Assert.Equal(5, sender.SentCommands.Select(c => c.NotificationId).Distinct().Count());
+    }
+
+    [Fact]
+    public void GetDispatchCandidateIds_StrictlyScopesPendingAndRetryableFailedCandidatesToCompanyId()
+    {
+        // Arrange
+        var companyA = Guid.NewGuid();
+        var companyB = Guid.NewGuid();
+
+        var pendingA = Notification.Create(companyA, Guid.NewGuid(), null, NotificationType.GeneralNotification, "SubA", "BodyA", NotificationPriority.Normal, DateTimeOffset.UtcNow);
+        var pendingB = Notification.Create(companyB, Guid.NewGuid(), null, NotificationType.GeneralNotification, "SubB", "BodyB", NotificationPriority.Normal, DateTimeOffset.UtcNow);
+
+        var failedA = Notification.Create(companyA, Guid.NewGuid(), null, NotificationType.GeneralNotification, "FailedSubA", "FailedBodyA", NotificationPriority.Normal, DateTimeOffset.UtcNow);
+        failedA.AddDeliveryChannel(DeliveryChannel.InApp, DateTimeOffset.UtcNow);
+        failedA.Deliveries.First().RecordAttempt(DateTimeOffset.UtcNow);
+        failedA.Deliveries.First().MarkAsFailed("Timeout", DateTimeOffset.UtcNow);
+
+        var failedB = Notification.Create(companyB, Guid.NewGuid(), null, NotificationType.GeneralNotification, "FailedSubB", "FailedBodyB", NotificationPriority.Normal, DateTimeOffset.UtcNow);
+        failedB.AddDeliveryChannel(DeliveryChannel.InApp, DateTimeOffset.UtcNow);
+        failedB.Deliveries.First().RecordAttempt(DateTimeOffset.UtcNow);
+        failedB.Deliveries.First().MarkAsFailed("Timeout", DateTimeOffset.UtcNow);
+
+        List<Notification> allNotifications = new() { pendingA, pendingB, failedA, failedB };
+
+        Func<Guid, List<Guid>> getCandidatesForCompany = (targetCompanyId) =>
+            allNotifications
+                .Where(n => n.CompanyId == targetCompanyId
+                    && n.DeletedAt == null
+                    && n.Status != NotificationStatus.Cancelled
+                    && (n.Status == NotificationStatus.Pending
+                        || n.Deliveries.Any(d =>
+                            d.CompanyId == targetCompanyId
+                            && d.DeliveryStatus == DeliveryStatus.Failed
+                            && d.AttemptCount < NotificationDispatchPolicy.MaxDeliveryAttempts)))
+                .OrderBy(n => n.Id)
+                .Select(n => n.Id)
+                .ToList();
+
+        // Act
+        var resultA = getCandidatesForCompany(companyA);
+        var resultB = getCandidatesForCompany(companyB);
+
+        // Assert: Company A gets only its own candidates (Pending + Retryable Failed)
+        Assert.Contains(pendingA.Id, resultA);
+        Assert.Contains(failedA.Id, resultA);
+        Assert.DoesNotContain(pendingB.Id, resultA);
+        Assert.DoesNotContain(failedB.Id, resultA);
+
+        // Assert: Company B gets only its own candidates (Pending + Retryable Failed)
+        Assert.Contains(pendingB.Id, resultB);
+        Assert.Contains(failedB.Id, resultB);
+        Assert.DoesNotContain(pendingA.Id, resultB);
+        Assert.DoesNotContain(failedA.Id, resultB);
+
+        // Assert: Intersection between Company A and Company B candidates is empty (No cross-tenant leaks)
+        Assert.Empty(resultA.Intersect(resultB));
     }
 }

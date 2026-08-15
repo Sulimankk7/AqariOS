@@ -12,7 +12,8 @@ public class TenantTests
         nationalId: "9901234567",
         phone: "+962791234567",
         createdAt: DateTimeOffset.UtcNow,
-        createdBy: Guid.NewGuid());
+        createdBy: Guid.NewGuid(),
+        email: "ahmad.odeh@example.com");
 
     [Fact]
     public void Create_ValidInput_GeneratesClientSideIdBeforeSave()
@@ -22,6 +23,7 @@ public class TenantTests
         // Client-generated UUIDv7: the ID must be usable before SaveChanges.
         Assert.NotEqual(Guid.Empty, tenant.Id);
         Assert.Equal(7, tenant.Id.Version);
+        Assert.Equal("ahmad.odeh@example.com", tenant.Email);
     }
 
     [Fact]
@@ -44,11 +46,13 @@ public class TenantTests
             occupation: "  ",
             employer: "Acme",
             updatedAt: updatedAt,
-            updatedBy: updatedBy);
+            updatedBy: updatedBy,
+            email: " New.Email@Example.com ");
 
         Assert.Equal("New Name", tenant.Name);
         Assert.Equal("2222222222", tenant.NationalId);
         Assert.Equal("+962790000000", tenant.Phone);
+        Assert.Equal("new.email@example.com", tenant.Email);
         Assert.Null(tenant.Occupation); // whitespace collapses to null
         Assert.Equal("Acme", tenant.Employer);
         Assert.Equal(updatedAt, tenant.UpdatedAt);

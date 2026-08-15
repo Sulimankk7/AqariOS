@@ -154,6 +154,7 @@ public class CommandPipelineTransactionTests : IAsyncLifetime
         var mockAuditCtx = new FakeAuditRequestContext { RequestId = Guid.NewGuid(), CorrelationId = Guid.NewGuid(), Source = PropertyOS.Domain.Audit.Enums.AuditSource.Api };
         services.AddSingleton<IAuditRequestContext>(mockAuditCtx);
         
+        services.AddScoped<PropertyOS.Application.Common.Interfaces.IPostCommitRegistrar, PropertyOS.Infrastructure.Persistence.Behaviors.PostCommitRegistrar>();
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
         
         _serviceProvider = services.BuildServiceProvider();

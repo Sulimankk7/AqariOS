@@ -29,12 +29,14 @@ import {
   Check,
   Palette,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
 import { useTheme } from "@/shared/theme";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ROUTES } from "@/config/routes";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+import { useTenantProfile } from "@/features/tenantPortal/hooks/useTenantProfile";
 
 export interface TopbarProps {
   onOpenMobileNav: () => void;
@@ -45,6 +47,14 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const isTenant = user?.roleCode === "TENANT";
+  const { data: tenantProfile } = useTenantProfile();
+
+  // Role-aware identity display: Tenants use authoritative Tenant profile; Landlords use authenticated User identity
+  const displayName = isTenant && tenantProfile?.name ? tenantProfile.name : (user?.name ?? "");
+  const displayEmail = isTenant && tenantProfile?.email ? tenantProfile.email : (user?.email ?? "");
+  const avatarInitial = displayName ? displayName[0].toUpperCase() : (user?.name ? user.name[0].toUpperCase() : "U");
 
   const [showCompanyMenu, setShowCompanyMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -82,8 +92,8 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
     navigate(path);
   };
 
-  // Company details derived from session
-  const companyInfo = user
+  // Company details derived from session (for Landlord)
+  const companyInfo = user && !isTenant
     ? {
         name: user.companyName || `${user.name}'s Organization`,
         code: "AQ-ORG",
@@ -97,7 +107,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
       className="sticky top-0 z-30 w-full h-14 border-b border-border bg-card/95 backdrop-blur-md px-3 sm:px-5 flex items-center justify-between gap-3 shadow-xs"
       role="banner"
     >
-      {/* ── Start (Left in LTR / Right in RTL): Mobile Hamburger + Organization Switcher ── */}
+      {/* ── Start (Left in LTR / Right in RTL): Mobile Hamburger + Context Indicator ── */}
       <div className="flex items-center gap-2">
         {/* Mobile Hamburger */}
         <button
@@ -108,8 +118,8 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Company / Organization Switcher */}
-        {user && companyInfo && (
+        {/* Landlord: Company / Organization Switcher */}
+        {!isTenant && user && companyInfo && (
           <div className="relative">
             <button
               onClick={() => {
@@ -162,28 +172,38 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
             )}
           </div>
         )}
+
+        {/* Tenant: Portal Identity Badge */}
+        {isTenant && (
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-border bg-secondary/50 text-foreground text-xs font-semibold select-none">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="truncate">{t("tenant.portal", "Tenant Portal")}</span>
+          </div>
+        )}
       </div>
 
-      {/* ── Center: Global Command Search Trigger (Ctrl+K) ── */}
-      <div className="flex-1 max-w-xl mx-2 flex justify-center">
-        <button
-          onClick={() => {
-            window.dispatchEvent(
-              new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
-            );
-          }}
-          aria-label="Open command palette (Ctrl+K)"
-          className="w-full max-w-[480px] flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-border/80 bg-secondary/50 hover:bg-secondary hover:border-border text-muted-foreground text-xs transition-all cursor-pointer shadow-2xs group"
-        >
-          <Search className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-          <span className="truncate text-start flex-1 text-muted-foreground group-hover:text-foreground transition-colors">
-            {t("common.searchPlaceholder")}
-          </span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono rounded-full bg-card border border-border text-muted-foreground shadow-2xs">
-            Ctrl+K
-          </kbd>
-        </button>
-      </div>
+      {/* ── Center: Global Command Search Trigger (Landlord Only) ── */}
+      {!isTenant && (
+        <div className="flex-1 max-w-xl mx-2 flex justify-center">
+          <button
+            onClick={() => {
+              window.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
+              );
+            }}
+            aria-label="Open command palette (Ctrl+K)"
+            className="w-full max-w-[480px] flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-border/80 bg-secondary/50 hover:bg-secondary hover:border-border text-muted-foreground text-xs transition-all cursor-pointer shadow-2xs group"
+          >
+            <Search className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="truncate text-start flex-1 text-muted-foreground group-hover:text-foreground transition-colors">
+              {t("common.searchPlaceholder")}
+            </span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono rounded-full bg-card border border-border text-muted-foreground shadow-2xs">
+              Ctrl+K
+            </kbd>
+          </button>
+        </div>
+      )}
 
       {/* ── End (Right in LTR / Left in RTL): Language, Theme, Notifications, User Profile ── */}
       <div className="flex items-center gap-1.5 shrink-0">
@@ -269,12 +289,12 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
             >
               {/* User Avatar */}
               <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                {user.name ? user.name[0].toUpperCase() : "U"}
+                {avatarInitial}
               </div>
 
               {/* User Name (Smooth display on desktop) */}
               <span className="hidden md:inline-block font-medium text-foreground text-xs pe-1 truncate max-w-[130px]">
-                {user.name}
+                {displayName}
               </span>
               <ChevronDown
                 className={`w-3.5 h-3.5 text-muted-foreground me-1 shrink-0 transition-transform duration-200 ${
@@ -292,34 +312,36 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
                 <div className="p-2.5 rounded-lg bg-secondary/50 border border-border/50 mb-1">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0">
-                      {user.name ? user.name[0].toUpperCase() : "U"}
+                      {avatarInitial}
                     </div>
                     <div className="truncate">
-                      <p className="font-semibold text-foreground truncate">{user.name}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                      <p className="font-semibold text-foreground truncate">{displayName}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{displayEmail}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Profile */}
                 <button
-                  onClick={() => handleNavigate(ROUTES.profile.root)}
+                  onClick={() => handleNavigate(isTenant ? ROUTES.tenant.profile : ROUTES.profile.root)}
                   className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
                   role="menuitem"
                 >
                   <UserCircle className="w-4 h-4 text-muted-foreground" />
-                  <span>{t("nav.profile") || "My Profile"}</span>
+                  <span>{isTenant ? (t("tenant.navigation.profile") || "My Profile") : (t("nav.profile") || "My Profile")}</span>
                 </button>
 
-                {/* Preferences */}
-                <button
-                  onClick={() => handleNavigate(ROUTES.preferences.root)}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
-                  role="menuitem"
-                >
-                  <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-                  <span>{t("nav.preferences") || "Preferences"}</span>
-                </button>
+                {/* Preferences (Landlord only) */}
+                {!isTenant && (
+                  <button
+                    onClick={() => handleNavigate(ROUTES.preferences.root)}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
+                    role="menuitem"
+                  >
+                    <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+                    <span>{t("nav.preferences") || "Preferences"}</span>
+                  </button>
+                )}
 
                 {/* Quick Language Toggle */}
                 <button

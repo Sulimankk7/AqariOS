@@ -13,6 +13,8 @@ import {
   UpdateTenantEmergencyContactRequest,
   CreateTenantVehicleRequest,
   UpdateTenantVehicleRequest,
+  ProvisionTenantAccountRequest,
+  ProvisionTenantAccountResponseDto,
   LeaseContractDto,
 } from '../types/tenants.types';
 
@@ -114,5 +116,12 @@ export const tenantsApi = {
 
   deleteVehicle: (tenantId: string, vehicleId: string): Promise<void> => {
     return http.delete<void>(`${BASE_PATH}/${tenantId}/vehicles/${vehicleId}`);
+  },
+
+  provisionAccount: (
+    tenantId: string,
+    data?: ProvisionTenantAccountRequest
+  ): Promise<ProvisionTenantAccountResponseDto> => {
+    return http.post<ProvisionTenantAccountResponseDto>(`${BASE_PATH}/${tenantId}/account`, data || {});
   },
 };

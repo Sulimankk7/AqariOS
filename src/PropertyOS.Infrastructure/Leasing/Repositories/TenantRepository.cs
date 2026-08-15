@@ -69,6 +69,7 @@ public class TenantRepository : ITenantRepository
                 Name = t.Name,
                 NationalId = t.NationalId,
                 Phone = t.Phone,
+                Email = t.Email,
                 Occupation = t.Occupation,
                 Employer = t.Employer,
                 UserId = t.UserId,
@@ -139,7 +140,8 @@ public class TenantRepository : ITenantRepository
             query = query.Where(t =>
                 EF.Functions.ILike(t.Name, $"%{normalizedSearch}%") ||
                 EF.Functions.ILike(t.NationalId, $"%{normalizedSearch}%") ||
-                EF.Functions.ILike(t.Phone, $"%{normalizedSearch}%"));
+                EF.Functions.ILike(t.Phone, $"%{normalizedSearch}%") ||
+                (t.Email != null && EF.Functions.ILike(t.Email, $"%{normalizedSearch}%")));
         }
 
         return query
@@ -151,6 +153,7 @@ public class TenantRepository : ITenantRepository
                 Name = t.Name,
                 NationalId = t.NationalId,
                 Phone = t.Phone,
+                Email = t.Email,
                 Occupation = t.Occupation,
                 Employer = t.Employer,
                 UserId = t.UserId,

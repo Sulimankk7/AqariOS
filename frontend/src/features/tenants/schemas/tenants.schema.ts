@@ -18,6 +18,11 @@ export const createTenantSchema = z.object({
     .refine((val) => E164_PHONE_REGEX.test(val.trim()), {
       message: 'Phone must be a valid E.164 phone number (e.g. +962791234567)',
     }),
+  email: z
+    .string()
+    .min(1, { message: 'Email address is required' })
+    .email({ message: 'Please enter a valid email address' })
+    .max(255, { message: 'Email must not exceed 255 characters' }),
   occupation: z
     .string()
     .max(100, { message: 'Occupation must not exceed 100 characters' })
@@ -46,6 +51,13 @@ export const updateTenantSchema = z.object({
     .refine((val) => E164_PHONE_REGEX.test(val.trim()), {
       message: 'Phone must be a valid E.164 phone number (e.g. +962791234567)',
     }),
+  email: z
+    .string()
+    .email({ message: 'Please enter a valid email address' })
+    .max(255, { message: 'Email must not exceed 255 characters' })
+    .optional()
+    .nullable()
+    .or(z.literal('')),
   occupation: z
     .string()
     .max(100, { message: 'Occupation must not exceed 100 characters' })

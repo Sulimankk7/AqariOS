@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tenantsApi } from '../api/tenants.api';
 import { tenantKeys } from './tenantKeys';
-import { CreateTenantRequest, UpdateTenantRequest } from '../types/tenants.types';
+import { CreateTenantRequest, UpdateTenantRequest, ProvisionTenantAccountRequest } from '../types/tenants.types';
 import { toast } from 'sonner';
 import { extractUserFriendlyError } from '@/shared/utils';
 import { getTenantTranslation } from '../constants/translations';
@@ -87,6 +87,19 @@ export const useDeleteTenant = () => {
       // Show user friendly message on failure (e.g. HTTP 422 Conflict when tenant has active leases)
       const message = extractUserFriendlyError(error, t('deleteFailedCannotDeleteActiveLease'));
       toast.error(message);
+    },
+  });
+};
+
+export const useProvisionTenantAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ tenantId, ...data }: { tenantId: string } & ProvisionTenantAccountRequest) =>
+      tenantsApi.provisionAccount(tenantId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: tenantKeys.detail(variables.tenantId) });
+      queryClient.invalidateQueries({ queryKey: tenantKeys.all });
     },
   });
 };

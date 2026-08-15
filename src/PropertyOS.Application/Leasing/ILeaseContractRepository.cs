@@ -39,6 +39,7 @@ public interface ILeaseContractRepository
     // transaction, so RLS tenant context is not guaranteed — the companyId predicate
     // is the enforced boundary here (Architecture §7).
     Task<LeaseContractDetailDto?> GetDetailByIdAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default);
+    Task<PropertyOS.Application.Leasing.Queries.GetMyActiveLease.TenantLeaseDto?> GetActiveLeaseByTenantIdAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default) => Task.FromResult<PropertyOS.Application.Leasing.Queries.GetMyActiveLease.TenantLeaseDto?>(null);
     Task<List<LeaseContractDto>> GetHistoryByApartmentIdAsync(Guid apartmentId, Guid companyId, int pageSize, CancellationToken cancellationToken = default);
     Task<List<LeaseContractDto>> GetHistoryByTenantIdAsync(Guid tenantId, Guid companyId, int pageSize, CancellationToken cancellationToken = default);
     Task<List<LeaseContractDto>> SearchContractsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default);

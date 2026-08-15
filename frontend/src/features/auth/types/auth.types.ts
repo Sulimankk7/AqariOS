@@ -88,6 +88,18 @@ export interface OtpVerifyDto {
 
 // ── Application Core Auth State ───────────────────────────────────────────────
 
+export interface ActivateTenantAccountRequestDto {
+  activationToken: string;
+  password: string;
+}
+
+export interface TenantActivationStatusDto {
+  status: 'VALID' | 'EXPIRED' | 'ALREADY_USED' | 'INVALID' | 'NOT_FOUND';
+  message: string;
+  tenantName?: string;
+  expiresAt?: string;
+}
+
 export interface AuthState {
   currentUser: UserProfileDto | null;
   accessToken: string | null;

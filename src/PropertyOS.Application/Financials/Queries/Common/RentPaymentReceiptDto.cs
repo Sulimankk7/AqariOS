@@ -13,6 +13,7 @@ public class RentPaymentReceiptDto
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "JOD";
     public string? Notes { get; set; }
+    public Guid? FileId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     // Read-side display enrichment — populated by join projection, never from domain writes.

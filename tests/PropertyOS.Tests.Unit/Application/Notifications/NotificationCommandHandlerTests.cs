@@ -9,6 +9,7 @@ using PropertyOS.Application.Notifications;
 using PropertyOS.Application.Notifications.Commands.CreateNotification;
 using PropertyOS.Application.Notifications.Commands.CreateNotificationTemplate;
 using PropertyOS.Application.Notifications.Commands.DeleteNotificationTemplate;
+using PropertyOS.Application.Notifications.Commands.MarkAllNotificationsAsRead;
 using PropertyOS.Application.Notifications.Commands.MarkNotificationAsRead;
 using PropertyOS.Application.Notifications.Commands.UpdateNotificationDelivery;
 using PropertyOS.Application.Notifications.Commands.UpdateNotificationTemplate;
@@ -84,14 +85,16 @@ public class NotificationCommandHandlerTests
                 .ToList());
         }
 
-        public Task<List<Guid>> GetDispatchCandidateIdsAsync(int batchSize, Guid? afterId, CancellationToken cancellationToken)
+        public Task<List<Guid>> GetDispatchCandidateIdsAsync(Guid companyId, int batchSize, Guid? afterId, CancellationToken cancellationToken)
         {
             return Task.FromResult(Notifications
-                .Where(n => n.DeletedAt == null
+                .Where(n => n.CompanyId == companyId
+                    && n.DeletedAt == null
                     && n.Status != NotificationStatus.Cancelled
                     && (n.Status == NotificationStatus.Pending
                         || n.Deliveries.Any(d =>
-                            d.DeliveryStatus == DeliveryStatus.Failed
+                            d.CompanyId == companyId
+                            && d.DeliveryStatus == DeliveryStatus.Failed
                             && d.AttemptCount < NotificationDispatchPolicy.MaxDeliveryAttempts))
                     && (!afterId.HasValue || n.Id.CompareTo(afterId.Value) > 0))
                 .OrderBy(n => n.Id)
@@ -109,6 +112,29 @@ public class NotificationCommandHandlerTests
         public Task UpdateAsync(Notification notification, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+
+        public Task<DateTimeOffset> GetDatabaseTimestampAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(DateTimeOffset.UtcNow);
+        }
+
+        public Task<int> MarkAllAsReadAsync(Guid userId, Guid companyId, DateTimeOffset readAt, CancellationToken cancellationToken)
+        {
+            var unread = Notifications
+                .Where(n => n.RecipientUserId == userId
+                         && n.CompanyId == companyId
+                         && n.ReadAt == null
+                         && n.Status == NotificationStatus.Sent
+                         && n.DeletedAt == null)
+                .ToList();
+
+            foreach (var n in unread)
+            {
+                n.MarkAsRead(readAt);
+            }
+
+            return Task.FromResult(unread.Count);
         }
     }
 
@@ -632,6 +658,69 @@ public class NotificationCommandHandlerTests
         Assert.Equal("NOTIFICATION_READ_INVALID_STATE", ex.Code);
     }
 
+    [Fact]
+    public async Task Handle_MarkAsRead_CalledMultipleTimes_IsIdempotent()
+    {
+        // Arrange
+        var notificationRepo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var initialTime = DateTimeOffset.UtcNow.AddMinutes(-5);
+        var notification = Notification.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            recipientUserId: userCtx.UserId!.Value,
+            templateId: null,
+            notificationType: NotificationType.RentDue,
+            subject: "Rent due",
+            body: "Your rent is due.",
+            priority: NotificationPriority.Normal,
+            createdAt: initialTime);
+        notification.MarkAsSent(initialTime.AddMinutes(1));
+        notificationRepo.Notifications.Add(notification);
+
+        var handler = new MarkNotificationAsReadCommandHandler(notificationRepo, tenantCtx, userCtx);
+
+        // Act - First read
+        await handler.Handle(new MarkNotificationAsReadCommand(notification.Id), CancellationToken.None);
+        var firstReadAt = notification.ReadAt;
+        Assert.NotNull(firstReadAt);
+
+        // Act - Second read
+        await handler.Handle(new MarkNotificationAsReadCommand(notification.Id), CancellationToken.None);
+
+        // Assert - Preserves original read_at (idempotent)
+        Assert.Equal(firstReadAt, notification.ReadAt);
+    }
+
+    [Fact]
+    public async Task Handle_MarkAsRead_WhenNotificationCancelled_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        var notificationRepo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var notification = Notification.Create(
+            companyId: tenantCtx.CompanyId!.Value,
+            recipientUserId: userCtx.UserId!.Value,
+            templateId: null,
+            notificationType: NotificationType.RentDue,
+            subject: "Rent due",
+            body: "Your rent is due.",
+            priority: NotificationPriority.Normal,
+            createdAt: DateTimeOffset.UtcNow.AddMinutes(-5));
+        notification.MarkAsCancelled(DateTimeOffset.UtcNow.AddMinutes(-4), Guid.NewGuid());
+        notificationRepo.Notifications.Add(notification);
+
+        var handler = new MarkNotificationAsReadCommandHandler(notificationRepo, tenantCtx, userCtx);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            handler.Handle(new MarkNotificationAsReadCommand(notification.Id), CancellationToken.None));
+        Assert.Equal("NOTIFICATION_READ_INVALID_STATE", ex.Code);
+    }
+
     // ─────────────────────────── UpdateNotificationDelivery ───────────────────────────
 
     private static Notification CreateNotificationWithDelivery(
@@ -808,5 +897,116 @@ public class NotificationCommandHandlerTests
         var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
             handler.Handle(command, CancellationToken.None));
         Assert.Equal("NOTIFICATION_DELIVERY_INVALID_TRANSITION", ex.Code);
+    }
+
+    // ─────────────────────────── MarkAllNotificationsAsRead ───────────────────────────
+
+    [Fact]
+    public async Task Handle_MarkAllAsRead_MarksAllEligibleUnreadNotificationsForCurrentUser()
+    {
+        // Arrange
+        var notificationRepo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        // 2 unread sent notifications for current user
+        var n1 = Notification.Create(
+            tenantCtx.CompanyId!.Value, userCtx.UserId!.Value, null,
+            NotificationType.RentDue, "Rent 1", "Body 1", NotificationPriority.Normal,
+            DateTimeOffset.UtcNow.AddMinutes(-10));
+        n1.MarkAsSent(DateTimeOffset.UtcNow.AddMinutes(-9));
+
+        var n2 = Notification.Create(
+            tenantCtx.CompanyId!.Value, userCtx.UserId!.Value, null,
+            NotificationType.GeneralNotification, "Notice 2", "Body 2", NotificationPriority.High,
+            DateTimeOffset.UtcNow.AddMinutes(-5));
+        n2.MarkAsSent(DateTimeOffset.UtcNow.AddMinutes(-4));
+
+        // 1 already-read notification for current user
+        var n3 = Notification.Create(
+            tenantCtx.CompanyId!.Value, userCtx.UserId!.Value, null,
+            NotificationType.GeneralNotification, "Read notice", "Body", NotificationPriority.Normal,
+            DateTimeOffset.UtcNow.AddMinutes(-20));
+        n3.MarkAsSent(DateTimeOffset.UtcNow.AddMinutes(-19));
+        var initialReadAt = DateTimeOffset.UtcNow.AddMinutes(-15);
+        n3.MarkAsRead(initialReadAt);
+
+        // 1 unread notification for a DIFFERENT user in same company
+        var foreignUser = Guid.NewGuid();
+        var n4 = Notification.Create(
+            tenantCtx.CompanyId!.Value, foreignUser, null,
+            NotificationType.RentDue, "Other user rent", "Body", NotificationPriority.Normal,
+            DateTimeOffset.UtcNow.AddMinutes(-5));
+        n4.MarkAsSent(DateTimeOffset.UtcNow.AddMinutes(-4));
+
+        // 1 unread notification in a DIFFERENT company
+        var foreignCompany = Guid.NewGuid();
+        var n5 = Notification.Create(
+            foreignCompany, userCtx.UserId!.Value, null,
+            NotificationType.RentDue, "Other company rent", "Body", NotificationPriority.Normal,
+            DateTimeOffset.UtcNow.AddMinutes(-5));
+        n5.MarkAsSent(DateTimeOffset.UtcNow.AddMinutes(-4));
+
+        notificationRepo.Notifications.AddRange(new[] { n1, n2, n3, n4, n5 });
+
+        var handler = new MarkAllNotificationsAsReadCommandHandler(notificationRepo, tenantCtx, userCtx);
+
+        // Act
+        var result = await handler.Handle(new MarkAllNotificationsAsReadCommand(), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(2, result.MarkedCount);
+        Assert.NotNull(n1.ReadAt);
+        Assert.NotNull(n2.ReadAt);
+        Assert.Equal(initialReadAt, n3.ReadAt); // Already-read remains untouched
+        Assert.Null(n4.ReadAt); // Other user remains unread
+        Assert.Null(n5.ReadAt); // Other company remains unread
+    }
+
+    [Fact]
+    public async Task Handle_MarkAllAsRead_WhenNoUnreadNotifications_ReturnsZero()
+    {
+        // Arrange
+        var notificationRepo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext();
+
+        var handler = new MarkAllNotificationsAsReadCommandHandler(notificationRepo, tenantCtx, userCtx);
+
+        // Act
+        var result = await handler.Handle(new MarkAllNotificationsAsReadCommand(), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(0, result.MarkedCount);
+    }
+
+    [Fact]
+    public async Task Handle_MarkAllAsRead_MissingTenantContext_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var notificationRepo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext { CompanyId = null };
+        var userCtx = new FakeCurrentUserContext();
+
+        var handler = new MarkAllNotificationsAsReadCommandHandler(notificationRepo, tenantCtx, userCtx);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            handler.Handle(new MarkAllNotificationsAsReadCommand(), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_MarkAllAsRead_UnauthenticatedUser_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange
+        var notificationRepo = new FakeNotificationRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext { UserId = null };
+
+        var handler = new MarkAllNotificationsAsReadCommandHandler(notificationRepo, tenantCtx, userCtx);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            handler.Handle(new MarkAllNotificationsAsReadCommand(), CancellationToken.None));
     }
 }

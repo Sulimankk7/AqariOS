@@ -51,10 +51,6 @@ public class UpdateNotificationDeliveryCommandHandler : IRequestHandler<UpdateNo
                     delivery.MarkAsDelivered(now);
                     break;
                 case Domain.Notifications.Enums.DeliveryStatus.Failed:
-                    // TODO: Specification Issue #1 - chk_notification_deliveries_sent_at_requires_status
-                    // requires sent_at for failed. The specification is currently ambiguous.
-                    // Keeping implementation aligned with the domain behavior, intentionally allowing
-                    // the database constraint violation to surface until an explicit decision is made.
                     delivery.MarkAsFailed(request.FailureReason ?? "Unknown Error", now);
                     break;
                 default:
