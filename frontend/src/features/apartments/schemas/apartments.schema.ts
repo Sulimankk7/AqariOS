@@ -5,7 +5,7 @@ export const SUPPORTED_CURRENCIES = ['JOD', 'USD', 'EUR', 'AED', 'SAR'] as const
 export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
 
 export const apartmentSchema = z.object({
-  floorId: z.string().min(1, 'Floor ID is required'),
+  floorId: z.string().min(1, 'Floor selection is required'),
   unitNumber: z.string().min(1, 'Unit number is required').max(20, 'Unit number max 20 chars'),
   areaSqm: z
     .number({ invalid_type_error: 'Area is required' })

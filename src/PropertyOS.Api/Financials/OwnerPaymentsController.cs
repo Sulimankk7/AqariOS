@@ -34,6 +34,7 @@ public class OwnerPaymentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/submissions/{submissionId:guid}/approve")]
+    [Authorize(Policy = PropertyOS.Application.Common.Security.PlatformPermissions.PaymentsApprove)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -47,6 +48,7 @@ public class OwnerPaymentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/submissions/{submissionId:guid}/reject")]
+    [Authorize(Policy = PropertyOS.Application.Common.Security.PlatformPermissions.PaymentsApprove)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

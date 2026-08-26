@@ -31,6 +31,7 @@ public class TenantPaymentsController : ControllerBase
     {
         var command = new SubmitPaymentRequestCommand(
             id,
+            request.Amount,
             request.PaymentMethod,
             request.ReferenceNumber,
             request.ProofFileId,
@@ -42,6 +43,7 @@ public class TenantPaymentsController : ControllerBase
 }
 
 public record SubmitPaymentVerificationRequest(
+    decimal Amount,
     PaymentMethod PaymentMethod,
     string? ReferenceNumber,
     Guid? ProofFileId,

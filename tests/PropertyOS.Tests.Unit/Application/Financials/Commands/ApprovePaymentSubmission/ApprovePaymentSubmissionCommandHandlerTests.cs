@@ -41,7 +41,7 @@ public class ApprovePaymentSubmissionCommandHandlerTests
 
         var rentPayment = RentPayment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
         var tenantId = Guid.NewGuid();
-        rentPayment.SubmitForVerification(PaymentMethod.BankTransfer, "REF123", Guid.NewGuid(), tenantId, DateTimeOffset.UtcNow);
+        rentPayment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid(), tenantId, DateTimeOffset.UtcNow);
 
         await dbContext.RentPayments.AddAsync(rentPayment);
         await dbContext.SaveChangesAsync();
@@ -76,6 +76,75 @@ public class ApprovePaymentSubmissionCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_PartialPaymentApproval_AllocatesExactSubmittedAmount()
+    {
+        // Arrange
+        using var dbContext = CreateInMemoryDbContext();
+        var currentUser = Substitute.For<ICurrentUserContext>();
+        var clock = Substitute.For<IBusinessClock>();
+        var publisher = Substitute.For<IPublisher>();
+        var sender = Substitute.For<ISender>();
+
+        clock.UtcNow.Returns(DateTimeOffset.UtcNow);
+
+        var rentPayment = RentPayment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
+        var tenantId = Guid.NewGuid();
+        rentPayment.SubmitForVerification(350.500m, PaymentMethod.BankTransfer, "REF_PARTIAL", Guid.NewGuid(), tenantId, DateTimeOffset.UtcNow);
+
+        await dbContext.RentPayments.AddAsync(rentPayment);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        currentUser.UserId.Returns(Guid.NewGuid());
+
+        var submission = rentPayment.Submissions.First();
+        var handler = new ApprovePaymentSubmissionCommandHandler(dbContext, currentUser, clock, publisher, sender);
+        var command = new ApprovePaymentSubmissionCommand(submission.Id);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - exactly 350.500 is allocated, NOT the full 1000
+        await sender.Received(1).Send(Arg.Is<RecordManualRentPaymentCommand>(cmd =>
+            cmd.Amount == 350.500m &&
+            cmd.Allocations!.Count == 1 &&
+            cmd.Allocations[0].ObligationPaymentId == rentPayment.Id &&
+            cmd.Allocations[0].Amount == 350.500m),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_NonPendingSubmissionApproval_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        using var dbContext = CreateInMemoryDbContext();
+        var currentUser = Substitute.For<ICurrentUserContext>();
+        var clock = Substitute.For<IBusinessClock>();
+        var publisher = Substitute.For<IPublisher>();
+        var sender = Substitute.For<ISender>();
+
+        clock.UtcNow.Returns(DateTimeOffset.UtcNow);
+
+        var rentPayment = RentPayment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
+        rentPayment.SubmitForVerification(500, PaymentMethod.BankTransfer, "REF1", Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var submission = rentPayment.Submissions.First();
+        rentPayment.ApproveSubmission(submission.Id, Guid.NewGuid(), DateTimeOffset.UtcNow); // Already approved
+
+        await dbContext.RentPayments.AddAsync(rentPayment);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        currentUser.UserId.Returns(Guid.NewGuid());
+
+        var handler = new ApprovePaymentSubmissionCommandHandler(dbContext, currentUser, clock, publisher, sender);
+        var command = new ApprovePaymentSubmissionCommand(submission.Id);
+
+        // Act & Assert
+        await FluentActions.Invoking(() => handler.Handle(command, CancellationToken.None))
+            .Should().ThrowAsync<PropertyOS.Application.Common.Exceptions.BusinessRuleException>();
+    }
+
+    [Fact]
     public async Task Handle_Regression_ApprovalDoesNotDirectlySetFinancialStatus()
     {
         // Arrange
@@ -88,7 +157,7 @@ public class ApprovePaymentSubmissionCommandHandlerTests
         clock.UtcNow.Returns(DateTimeOffset.UtcNow);
 
         var rentPayment = RentPayment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
-        rentPayment.SubmitForVerification(PaymentMethod.BankTransfer, "REF123", Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow);
+        rentPayment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow);
 
         await dbContext.RentPayments.AddAsync(rentPayment);
         await dbContext.SaveChangesAsync();

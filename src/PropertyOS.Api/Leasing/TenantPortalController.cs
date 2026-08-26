@@ -91,4 +91,26 @@ public class TenantPortalController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Downloads the official final settlement statement PDF for a settled installment.
+    /// Access is restricted to the authenticated tenant owning the obligation.
+    /// </summary>
+    /// <param name="id">Rent payment installment identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>PDF file stream.</returns>
+    [HttpGet("payments/{id:guid}/settlement-statement")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMySettlementStatement(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new PropertyOS.Application.Financials.Queries.GetMyPaymentSettlementStatementPdf.GetMyPaymentSettlementStatementPdfQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return File(result.Content, result.MimeType, result.Filename);
+    }
 }

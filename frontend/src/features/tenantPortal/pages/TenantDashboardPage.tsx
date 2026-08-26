@@ -4,16 +4,22 @@ import { useTranslation } from "@/shared/i18n";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useTenantProfile } from "../hooks/useTenantProfile";
+import { useUtilityDashboardSummary } from "../hooks/useUtilityBills";
 import {
   useUnreadNotificationCount,
   useMyNotifications,
   useMarkNotificationAsRead,
 } from "@/features/notifications/hooks/useNotifications";
-import { SubmitPaymentVerificationModal } from "../components/SubmitPaymentVerificationModal";
+import { TenantLinkUtilityAccountModal } from "../components/TenantLinkUtilityAccountModal";
+import { TenantPaymentBadge, TenantSyncBadge } from "../components/TenantUtilityBadges";
+import type { TenantUtilityBillDto } from "../types/utilityBills.types";
+import type { TenantUtilitySyncStatus } from "../types/utilityBills.types";
+import { utilityBillsErrorMessage } from "../utils/utilityBills";
+import { Button } from "@/app/components/ui/button";
+import { ErrorState, Skeleton } from "@/shared/components/ui/Feedback";
 import {
   UserCircle,
   Bell,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -24,10 +30,13 @@ import {
   ShieldCheck,
   ArrowUpRight,
   CreditCard,
+  Zap,
+  Droplets,
 } from "lucide-react";
 
+
 export function TenantDashboardPage() {
-  const { t, language } = useTranslation();
+  const { t, language, formatCurrency } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -35,11 +44,20 @@ export function TenantDashboardPage() {
   const ChevronIcon = isRtl ? ChevronLeft : ChevronRight;
 
   const { data: profile } = useTenantProfile();
+  const {
+    data: utilitySummary,
+    isLoading: isUtilitySummaryLoading,
+    isError: isUtilitySummaryError,
+    error: utilitySummaryError,
+    refetch: refetchUtilitySummary,
+  } = useUtilityDashboardSummary();
 
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: recentNotifications = [] } = useMyNotifications({ pageSize: 5 });
   const markAsRead = useMarkNotificationAsRead();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [utilityLinkOpen, setUtilityLinkOpen] = useState(false);
+
 
   const handleNotificationClick = (n: { id: string; status: number; readAt?: string | null }) => {
     setExpandedId((prev) => (prev === n.id ? null : n.id));
@@ -173,8 +191,75 @@ export function TenantDashboardPage() {
           </div>
         </div>
 
+        {/* Utility Bills Summary Widget */}
+        <div className="rounded-2xl border border-border bg-card shadow-xs p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-border/70 pb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-500" />
+              <h3 className="font-semibold text-sm">{t("tenant.utilityBills.dashboard.title")}</h3>
+            </div>
+            <button
+              onClick={() => navigate("/tenant/bills")}
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>{t("tenant.utilityBills.dashboard.viewDetails")}</span>
+              <ChevronIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {isUtilitySummaryLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+            </div>
+          ) : isUtilitySummaryError ? (
+            <ErrorState
+              message={utilityBillsErrorMessage(utilitySummaryError, t)}
+              onRetry={() => refetchUtilitySummary()}
+            />
+          ) : !utilitySummary?.electricityLinked && !utilitySummary?.waterLinked ? (
+            <div className="py-6 px-4 text-center text-muted-foreground text-xs bg-secondary/30 rounded-xl space-y-3">
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">{t("tenant.utilityBills.dashboard.noAccountsTitle")}</p>
+                <p className="text-[11px]">{t("tenant.utilityBills.dashboard.noAccountsDescription")}</p>
+              </div>
+              <Button size="sm" onClick={() => setUtilityLinkOpen(true)}>
+                {t("tenant.utilityBills.dashboard.linkAction")}
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DashboardUtilitySummary
+                icon={Zap}
+                iconClass="text-amber-500"
+                title={t("tenant.utilityBills.electricity")}
+                linked={Boolean(utilitySummary?.electricityLinked)}
+                latestBill={utilitySummary?.latestElectricityBill}
+                accountNumber={utilitySummary?.electricityAccountNumber}
+                syncStatus={utilitySummary?.electricitySyncStatus}
+                lastSuccessfulSyncAt={utilitySummary?.electricityLastSuccessfulSyncAt}
+                onClick={() => navigate("/tenant/bills?utilityType=Electricity")}
+                formatAmount={(amount, currency) => formatCurrency(amount, { currency })}
+              />
+              <DashboardUtilitySummary
+                icon={Droplets}
+                iconClass="text-sky-500"
+                title={t("tenant.utilityBills.water")}
+                linked={Boolean(utilitySummary?.waterLinked)}
+                latestBill={utilitySummary?.latestWaterBill}
+                accountNumber={utilitySummary?.waterAccountNumber}
+                syncStatus={utilitySummary?.waterSyncStatus}
+                lastSuccessfulSyncAt={utilitySummary?.waterLastSuccessfulSyncAt}
+                onClick={() => navigate("/tenant/bills?utilityType=Water")}
+                formatAmount={(amount, currency) => formatCurrency(amount, { currency })}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Recent Notifications Summary Widget */}
         <div className="rounded-xl border border-border bg-card shadow-xs p-5 space-y-4">
+
           <div className="flex items-center justify-between border-b border-border/70 pb-3">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-primary" />
@@ -274,6 +359,64 @@ export function TenantDashboardPage() {
           )}
         </div>
       </div>
+      <TenantLinkUtilityAccountModal
+        open={utilityLinkOpen}
+        onClose={() => setUtilityLinkOpen(false)}
+      />
     </PageContainer>
+  );
+}
+
+interface DashboardUtilitySummaryProps {
+  icon: typeof Zap;
+  iconClass: string;
+  title: string;
+  linked: boolean;
+  latestBill?: TenantUtilityBillDto | null;
+  accountNumber?: string | null;
+  syncStatus?: TenantUtilitySyncStatus | null;
+  lastSuccessfulSyncAt?: string | null;
+  onClick: () => void;
+  formatAmount: (amount: number, currency: string) => string;
+}
+
+function DashboardUtilitySummary({
+  icon: Icon,
+  iconClass,
+  title,
+  linked,
+  latestBill,
+  accountNumber,
+  syncStatus,
+  lastSuccessfulSyncAt,
+  onClick,
+  formatAmount,
+}: DashboardUtilitySummaryProps) {
+  const { t } = useTranslation();
+
+  return (
+    <button type="button" onClick={onClick} className="w-full text-start p-4 rounded-xl border border-border/70 bg-secondary/20 hover:bg-secondary/40 transition-colors space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${iconClass}`} />
+          <span className="font-semibold text-xs text-foreground">{title}</span>
+        </div>
+        {linked && syncStatus != null ? <TenantSyncBadge value={syncStatus} /> : <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-muted text-muted-foreground border-border">{t("tenant.utilityBills.states.notLinked")}</span>}
+      </div>
+      {linked && <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground"><span className="font-mono truncate">{accountNumber ?? "—"}</span><span className="text-end">{lastSuccessfulSyncAt ? new Date(lastSuccessfulSyncAt).toLocaleDateString() : t("tenant.utilityBills.states.neverSynced")}</span></div>}
+      {latestBill ? (
+        <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2 text-xs">
+          <div>
+            <p className="text-[11px] text-muted-foreground">{t("tenant.utilityBills.latestBill")}</p>
+            <p className="font-bold text-foreground mt-0.5">
+              {formatAmount(latestBill.amount, latestBill.currency)}
+            </p>
+          </div>
+          <TenantPaymentBadge value={latestBill.paymentStatus} />
+        </div>
+      ) : linked ? (
+        <p className="text-[11px] text-muted-foreground pt-1">{t("tenant.utilityBills.states.noBills")}</p>
+      ) : null}
+    </button>
   );
 }

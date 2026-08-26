@@ -81,6 +81,7 @@ public class ChequesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of cheques for the authenticated company.</returns>
     [HttpGet("api/v{version:apiVersion}/cheques")]
+    [Authorize(Policy = FinancialsPermissions.ChequesRead)]
     [ProducesResponseType(typeof(List<ChequeDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -101,6 +102,7 @@ public class ChequesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of upcoming cheques.</returns>
     [HttpGet("api/v{version:apiVersion}/cheques/upcoming")]
+    [Authorize(Policy = FinancialsPermissions.ChequesRead)]
     [ProducesResponseType(typeof(List<ChequeDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetUpcoming(

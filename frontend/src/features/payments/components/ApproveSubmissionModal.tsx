@@ -16,15 +16,15 @@ export function ApproveSubmissionModal({ isOpen, onClose, onConfirm, isSubmittin
     <Modal
       isOpen={isOpen}
       onClose={isSubmitting ? () => {} : onClose}
-      title={t('Confirm Approval')}
+      title={t('payments.confirmApprovalTitle')}
       maxWidth="md"
     >
       <div className="p-6 space-y-4">
         <p className="text-sm text-foreground">
-          {t('Approving this submission will confirm the tenant\'s payment and trigger the financial settlement workflow. An official receipt will be generated automatically.')}
+          {t('payments.confirmApprovalDesc')}
         </p>
         <p className="text-sm font-medium text-destructive">
-          {t('This action cannot be undone.')}
+          {t('payments.actionIrreversible')}
         </p>
 
         <div className="flex justify-end space-x-3 rtl:space-x-reverse pt-4 border-t border-border mt-6">
@@ -32,17 +32,17 @@ export function ApproveSubmissionModal({ isOpen, onClose, onConfirm, isSubmittin
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 rounded-md text-sm font-medium border border-border hover:bg-muted transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-md text-sm font-medium border border-border hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
           >
-            {t('Cancel')}
+            {t('common.cancel')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
           >
-            {isSubmitting ? t('Processing...') : t('Approve Payment')}
+            {isSubmitting ? t('payments.processing') : t('payments.approvePayment')}
           </button>
         </div>
       </div>

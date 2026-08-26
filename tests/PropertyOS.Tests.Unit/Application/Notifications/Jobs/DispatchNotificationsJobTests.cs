@@ -171,9 +171,15 @@ public class DispatchNotificationsJobTests
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Leasing.LeaseContract> LeaseContracts => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Leasing.Tenant> Tenants => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Financials.RentPayment> RentPayments => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Financials.PaymentAllocation> PaymentAllocations => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Financials.PaymentSubmission> PaymentSubmissions => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Financials.RentPaymentReceipt> RentPaymentReceipts => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Financials.Expense> Expenses => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.UtilityBills.UtilityAccount> UtilityAccounts => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.UtilityBills.UtilityBill> UtilityBills => throw new NotImplementedException();
 
         public Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database => throw new NotImplementedException();
+
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
 

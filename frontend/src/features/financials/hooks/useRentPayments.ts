@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { financialsApi } from '../api/financials.api';
-import type { RentPaymentFilterParams, RemindRentPaymentResponseDto } from '../types/financials.types';
+import type { ExpenseFilterParams, RentPaymentFilterParams, RemindRentPaymentResponseDto } from '../types/financials.types';
 import { toast } from 'sonner';
 import { useTranslation } from '@/shared/i18n';
 import { ApiError } from '@/shared/lib/http';
@@ -12,6 +12,9 @@ export const financialKeys = {
   rentPaymentsList: (params: RentPaymentFilterParams) => [...financialKeys.rentPayments(), params] as const,
   paymentDetails: (id: string | null) => [...financialKeys.all, 'payment-detail', id] as const,
   paymentReceipt: (id: string | null) => [...financialKeys.all, 'payment-receipt', id] as const,
+  expenses: () => [...financialKeys.all, 'expenses'] as const,
+  expensesList: (params: ExpenseFilterParams) => [...financialKeys.expenses(), params] as const,
+  expenseDetails: (id: string | null) => [...financialKeys.expenses(), 'detail', id] as const,
 };
 
 export function useRentPayments(params: RentPaymentFilterParams = {}) {
@@ -19,6 +22,23 @@ export function useRentPayments(params: RentPaymentFilterParams = {}) {
     queryKey: financialKeys.rentPaymentsList(params),
     queryFn: () => financialsApi.getRentPayments(params),
     staleTime: 30_000, // 30 seconds
+  });
+}
+
+export function useExpenses(params: ExpenseFilterParams = {}) {
+  return useQuery({
+    queryKey: financialKeys.expensesList(params),
+    queryFn: () => financialsApi.getExpenses(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useExpenseDetails(expenseId: string | null) {
+  return useQuery({
+    queryKey: financialKeys.expenseDetails(expenseId),
+    queryFn: () => expenseId ? financialsApi.getExpenseDetails(expenseId) : Promise.reject('No expense ID'),
+    enabled: !!expenseId,
+    staleTime: 60_000,
   });
 }
 

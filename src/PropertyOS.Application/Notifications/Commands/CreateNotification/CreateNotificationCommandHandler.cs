@@ -49,7 +49,7 @@ public class CreateNotificationCommandHandler : IRequestHandler<CreateNotificati
             body: request.Body,
             priority: request.Priority,
             createdAt: now,
-            createdBy: _currentUserContext.UserId ?? Guid.Empty
+            createdBy: _currentUserContext.UserId
         );
         foreach (var channel in request.Channels)
         {

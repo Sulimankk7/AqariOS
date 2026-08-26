@@ -44,16 +44,39 @@ public class ApprovePaymentSubmissionCommandHandler : IRequestHandler<ApprovePay
         if (rentPayment == null)
             throw new NotFoundException($"PaymentSubmission with ID {request.SubmissionId} was not found.");
 
+        var submission = rentPayment.Submissions.FirstOrDefault(s => s.Id == request.SubmissionId)
+            ?? throw new NotFoundException($"PaymentSubmission with ID {request.SubmissionId} was not found.");
+
+        if (submission.Status != PropertyOS.Domain.Financials.Enums.SubmissionStatus.Pending)
+            throw new BusinessRuleException("Only pending submissions can be approved.", "SUBMISSION_NOT_PENDING");
+
+        var currentOutstandingBalance = rentPayment.AmountDue - rentPayment.AmountPaid;
+        if (currentOutstandingBalance <= 0 || rentPayment.DueDateStatus == PropertyOS.Domain.Financials.Enums.DueDateStatus.Paid)
+        {
+            throw new BusinessRuleException("This rent installment is already fully settled.", "INSTALLMENT_ALREADY_PAID");
+        }
+
+        // Exact submitted amount integrity (FIN-01): allocate submission.Amount (fallback to remaining balance only for legacy rows where Amount is null)
+        var amountToAllocate = submission.Amount ?? currentOutstandingBalance;
+
+        if (amountToAllocate <= 0)
+        {
+            throw new BusinessRuleException("Submitted payment amount must be greater than zero.", "INVALID_SUBMISSION_AMOUNT");
+        }
+
+        if (amountToAllocate > currentOutstandingBalance)
+        {
+            throw new BusinessRuleException(
+                $"Submitted payment amount ({amountToAllocate} {rentPayment.Currency}) exceeds the current outstanding balance ({currentOutstandingBalance} {rentPayment.Currency}).",
+                "AMOUNT_EXCEEDS_OUTSTANDING_BALANCE");
+        }
+
         var verifiedBy = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var verifiedAt = _clock.UtcNow;
 
-        rentPayment.ApproveSubmission(request.SubmissionId, verifiedBy, verifiedAt);
-
-        var submission = rentPayment.Submissions.First(s => s.Id == request.SubmissionId);
-
         // Invoke the canonical Module 6 financial engine to handle the actual settlement.
         // Allocation targets MUST be ScheduledInstallments per core domain rule.
-        var amountToAllocate = rentPayment.AmountDue - rentPayment.AmountPaid;
+        Guid? receivingPaymentId = null;
         if (amountToAllocate > 0)
         {
             System.Collections.Generic.List<AllocationDetail>? allocations = null;
@@ -101,8 +124,10 @@ public class ApprovePaymentSubmissionCommandHandler : IRequestHandler<ApprovePay
                 Allocations: allocations
             );
 
-            await _sender.Send(recordPaymentCommand, cancellationToken);
+            receivingPaymentId = await _sender.Send(recordPaymentCommand, cancellationToken);
         }
+
+        rentPayment.ApproveSubmission(request.SubmissionId, verifiedBy, verifiedAt, receivingPaymentId);
 
         // Publish domain events
         foreach (var domainEvent in rentPayment.DomainEvents)

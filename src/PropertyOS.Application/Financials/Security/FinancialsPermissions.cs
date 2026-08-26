@@ -7,7 +7,10 @@ namespace PropertyOS.Application.Financials.Security;
 /// </summary>
 public static class FinancialsPermissions
 {
+    public const string PaymentsRead = PlatformPermissions.PaymentsRead;
     public const string PaymentsApprove = PlatformPermissions.PaymentsApprove;
+    public const string ChequesRead = PlatformPermissions.ChequesRead;
+    public const string ReceiptsRead = PlatformPermissions.ReceiptsRead;
     public const string ExpensesCreate = PlatformPermissions.ExpensesCreate;
     public const string ExpensesApprove = PlatformPermissions.ExpensesApprove;
     public const string ReceiptsIssue = PlatformPermissions.ReceiptsIssue;

@@ -17,6 +17,7 @@ public class PaymentVerificationQueueItemDto
     public string? ContractNumber { get; set; }
     public decimal AmountDue { get; set; }
     public decimal AmountPaid { get; set; }
+    public decimal SubmittedAmount { get; set; }
     public string Currency { get; set; } = null!;
     public PaymentMethod PaymentMethod { get; set; }
     public string? ReferenceNumber { get; set; }

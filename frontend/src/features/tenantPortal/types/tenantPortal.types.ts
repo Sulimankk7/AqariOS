@@ -96,6 +96,7 @@ export interface ChequeSubmissionInput {
  * Synchronized 1:1 with backend DTO SubmitPaymentVerificationRequest
  */
 export interface SubmitPaymentVerificationRequestPayload {
+  amount: number;
   paymentMethod: number | PaymentMethod | string;
   referenceNumber?: string | null;
   proofFileId?: string | null;
@@ -125,6 +126,16 @@ export enum PaymentPurpose {
   UnallocatedReceipt = "UnallocatedReceipt",
   AdjustmentCredit = "AdjustmentCredit",
   AdjustmentDebit = "AdjustmentDebit",
+}
+
+/**
+ * Payment submission status — synchronized 1:1 with
+ * PropertyOS.Domain.Financials.Enums.SubmissionStatus
+ */
+export enum SubmissionStatus {
+  Pending = 0,
+  Approved = 1,
+  Rejected = 2,
 }
 
 /**
@@ -165,5 +176,39 @@ export interface TenantPaymentDto {
   buildingName?: string | null;
   apartmentNumber?: string | null;
   contractNumber?: string | null;
+
+  // Latest Payment Submission projection (for Tenant Portal visibility)
+  latestSubmissionStatus?: SubmissionStatus | string | number | null;
+  latestSubmissionRejectionReason?: string | null;
+  latestSubmissionAmount?: number | null;
+  latestSubmissionDate?: string | null;
+
+  // Receipt File ID (for direct download)
+  receiptFileId?: string | null;
+
+  // Hybrid Receipt Model: transaction receipts and settlement summary
+  transactionReceipts?: TransactionReceiptDto[];
+  settlementSummary?: SettlementStatementSummaryDto | null;
+}
+
+export interface TransactionReceiptDto {
+  receiptId: string;
+  receiptNumber: string;
+  amount: number;
+  issuedAt: string;
+  fileId?: string | null;
+  paymentMethod?: PaymentMethod | string | null;
+  referenceNumber?: string | null;
+  previouslyPaid: number;
+  remainingAfter: number;
+}
+
+export interface SettlementStatementSummaryDto {
+  isAvailable: boolean;
+  totalDue: number;
+  totalPaid: number;
+  remaining: number;
+  transactionCount: number;
+  settledAt?: string | null;
 }
 

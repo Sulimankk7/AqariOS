@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SearchBar } from '@/shared/components/ui/Filters';
 import { useBuildings } from '@/features/buildings/hooks/useBuildings';
 import { useTranslation } from '@/shared/i18n';
 import { DueDateStatus, type RentPaymentFilterParams } from '../types/financials.types';
-import { Building2, Filter, RotateCcw, Calendar } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 
 interface RentPaymentFiltersProps {
@@ -16,13 +16,26 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
   const { data: buildings, isLoading: isLoadingBuildings } = useBuildings();
 
   const [localSearch, setLocalSearch] = useState(filters.searchTerm || '');
+  const filtersRef = useRef(filters);
+  const onFiltersChangeRef = useRef(onFiltersChange);
+
+  useEffect(() => {
+    filtersRef.current = filters;
+    onFiltersChangeRef.current = onFiltersChange;
+  }, [filters, onFiltersChange]);
+
+  useEffect(() => {
+    const externalSearch = filters.searchTerm || '';
+    setLocalSearch((current) => current === externalSearch ? current : externalSearch);
+  }, [filters.searchTerm]);
 
   // Debounced search effect
   useEffect(() => {
     const handler = setTimeout(() => {
-      if ((filters.searchTerm || '') !== localSearch) {
-        onFiltersChange({
-          ...filters,
+      const currentFilters = filtersRef.current;
+      if ((currentFilters.searchTerm || '') !== localSearch) {
+        onFiltersChangeRef.current({
+          ...currentFilters,
           searchTerm: localSearch ? localSearch.trim() : null,
           lastSeenId: null,
           lastSeenDueDate: null,
@@ -95,8 +108,48 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
     localSearch
   );
 
+  const quickPresets = [
+    { id: 'all', label: t('financials.filterAll', 'الكل'), status: null },
+    { id: 'needsVerification', label: t('financials.filterNeedsVerification', 'بانتظار المراجعة'), status: DueDateStatus.PendingVerification },
+    { id: 'overdue', label: t('financials.filterOverdue', 'متأخر'), status: DueDateStatus.OverdueUnpaid },
+    { id: 'partiallyPaid', label: t('financials.filterPartiallyPaid', 'مدفوع جزئياً'), status: DueDateStatus.PartiallyPaid },
+  ];
+
   return (
-    <div className="flex flex-col gap-3 bg-card p-4 rounded-lg border border-border">
+    <div className="flex flex-col gap-3 bg-card p-3 rounded-lg border border-border">
+      {/* Quick Operational Presets */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+        <span className="text-xs font-semibold text-muted-foreground shrink-0 me-1">
+          {t('financials.quickFilters', 'تصفية سريعة:')}
+        </span>
+        {quickPresets.map((preset) => {
+          const isActive = preset.status === null
+            ? (filters.status === null || filters.status === undefined)
+            : filters.status === preset.status;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => {
+                onFiltersChange({
+                  ...filters,
+                  status: preset.status,
+                  lastSeenId: null,
+                  lastSeenDueDate: null,
+                });
+              }}
+              className={`px-3 py-1 text-xs font-medium rounded-full border transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                isActive
+                  ? 'bg-primary text-primary-foreground border-primary shadow-2xs'
+                  : 'bg-secondary/60 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
+              }`}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Search */}
         <SearchBar
@@ -147,6 +200,7 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
         <div className="flex items-center gap-1.5">
           <input
             type="date"
+            dir="ltr"
             value={filters.dateFrom || ''}
             onChange={handleDateFromChange}
             title={t('financials.dateFrom') || 'من تاريخ استحقاق'}
@@ -155,6 +209,7 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
           <span className="text-xs text-muted-foreground">-</span>
           <input
             type="date"
+            dir="ltr"
             value={filters.dateTo || ''}
             onChange={handleDateToChange}
             title={t('financials.dateTo') || 'إلى تاريخ استحقاق'}

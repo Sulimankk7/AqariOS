@@ -33,11 +33,14 @@ public static class PlatformPermissions
     public const string ContractsApprove = "contracts.approve";
 
     // Module 6 — Rent Payments Management
+    public const string PaymentsRead = "payments.read";
     public const string PaymentsApprove = "payments.approve";
+    public const string ChequesRead = "cheques.read";
 
     // Module 7 — Financial Operations
     public const string ExpensesCreate = "expenses.create";
     public const string ExpensesApprove = "expenses.approve";
+    public const string ReceiptsRead = "receipts.read";
     public const string ReceiptsIssue = "receipts.issue";
     public const string ReportsExport = "reports.export";
 
@@ -80,10 +83,13 @@ public static class PlatformPermissions
         new(ContractsCreate, "Leasing", "Draft and create lease contracts", "إعداد وإنشاء عقود الإيجار"),
         new(ContractsApprove, "Leasing", "Approve and execute lease contracts", "الموافقة على عقود الإيجار وتنفيذها"),
 
+        new(PaymentsRead, "Financials", "View rent payments, schedules, and collections", "عرض دفعات وجداول وتحصيلات الإيجار"),
         new(PaymentsApprove, "Financials", "Approve rent payments and cheques", "الموافقة على دفعات الإيجار والشيكات"),
+        new(ChequesRead, "Financials", "View cheque registers and lifecycle statuses", "عرض سجلات وحالات الشيكات"),
 
         new(ExpensesCreate, "Financials", "Record operational expenses", "تسجيل المصاريف التشغيلية"),
         new(ExpensesApprove, "Financials", "Approve operational expense payouts", "الموافقة على صرف المصاريف التشغيلية"),
+        new(ReceiptsRead, "Financials", "View issued rent and expense receipts", "عرض إيصالات الإيجار والمصاريف الصادرة"),
         new(ReceiptsIssue, "Financials", "Issue official rent and expense receipts", "إصدار إيصالات الإيجار والمصاريف الرسمية"),
         new(ReportsExport, "Financials", "Export financial and portfolio reports", "تصدير التقارير المالية والعقارية"),
 

@@ -10,6 +10,10 @@ public class SubmitPaymentRequestCommandValidator : AbstractValidator<SubmitPaym
         RuleFor(v => v.RentPaymentId)
             .NotEmpty().WithMessage("Rent payment ID is required.");
 
+        RuleFor(v => v.Amount)
+            .GreaterThan(0).WithMessage("Submitted payment amount must be greater than zero.")
+            .Must(a => decimal.Round(a, 3) == a).WithMessage("Payment amount must not exceed 3 decimal places.");
+
         RuleFor(v => v.PaymentMethod)
             .IsInEnum().WithMessage("Invalid payment method.");
 

@@ -57,7 +57,19 @@ public class SubmitPaymentRequestCommandHandler : IRequestHandler<SubmitPaymentR
 
         var submittedAt = _clock.UtcNow;
 
+        if (request.Amount <= 0)
+            throw new BusinessRuleException("Submitted payment amount must be greater than zero.", "INVALID_AMOUNT");
+
+        var remainingBalance = rentPayment.AmountDue - rentPayment.AmountPaid;
+        if (request.Amount > remainingBalance)
+        {
+            throw new BusinessRuleException(
+                $"Submitted payment amount ({request.Amount} {rentPayment.Currency}) cannot exceed the outstanding balance ({remainingBalance} {rentPayment.Currency}).",
+                "AMOUNT_EXCEEDS_OUTSTANDING");
+        }
+
         rentPayment.SubmitForVerification(
+            request.Amount,
             request.PaymentMethod,
             request.ReferenceNumber,
             request.ProofFileId,

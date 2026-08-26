@@ -16,25 +16,24 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
 
   const formatPaymentMethod = (method: any) => {
     if (method === null || method === undefined) return '-';
-    if (typeof method === 'number' || (!isNaN(Number(method)) && String(method).trim() !== '')) {
-      const num = Number(method);
+    const num = Number(method);
+    if (!isNaN(num)) {
       switch (num) {
-        case 0: return t('Cash');
-        case 1: return t('Bank Transfer');
-        case 2: return t('Cheque');
-        case 3: return t('eFAWATEERCOM');
-        case 4: return t('CliQ');
+        case 0: return t('financials.paymentMethodCash');
+        case 1: return t('financials.paymentMethodBankTransfer');
+        case 2: return t('financials.paymentMethodCheque');
+        case 3: return t('financials.paymentMethodEfawateercom');
+        case 4: return t('financials.paymentMethodCliq');
         default: return String(method);
       }
     }
-    const str = String(method).trim();
-    const lower = str.toLowerCase().replace(/[^a-z]/g, '');
-    if (lower === 'cash') return t('Cash');
-    if (lower === 'banktransfer') return t('Bank Transfer');
-    if (lower === 'cheque') return t('Cheque');
-    if (lower === 'efawateercom') return t('eFAWATEERCOM');
-    if (lower === 'cliq' || lower === 'cli_q') return t('CliQ');
-    return t(str);
+    const lower = String(method).trim().toLowerCase().replace(/[^a-z]/g, '');
+    if (lower === 'cash') return t('financials.paymentMethodCash');
+    if (lower === 'banktransfer') return t('financials.paymentMethodBankTransfer');
+    if (lower === 'cheque') return t('financials.paymentMethodCheque');
+    if (lower === 'efawateercom') return t('financials.paymentMethodEfawateercom');
+    if (lower === 'cliq' || lower === 'cli_q') return t('financials.paymentMethodCliq');
+    return String(method);
   };
 
   return (
@@ -43,19 +42,19 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
         <table className="w-full text-sm text-left">
           <thead className="bg-muted/50 text-muted-foreground uppercase text-xs">
             <tr>
-              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('Tenant')}</th>
-              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('Contract')}</th>
-              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('Amount')}</th>
-              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('Payment Method')}</th>
-              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('Submitted At')}</th>
-              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('Action')}</th>
+              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('financials.tenant')}</th>
+              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('payments.contract')}</th>
+              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('payments.submittedAmount')}</th>
+              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('payments.paymentMethod')}</th>
+              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('payments.submittedAt')}</th>
+              <th className={`px-6 py-4 font-medium ${isRtl ? 'text-right' : 'text-left'}`}>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border hidden md:table-row-group">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground animate-pulse">
-                  {t('Loading...')}
+                  {t('common.loading')}
                 </td>
               </tr>
             ) : items.length === 0 ? (
@@ -65,8 +64,8 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                     <div className="p-3 bg-muted rounded-full">
                       <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <p className="text-base font-medium text-foreground">{t('No payment verification requests')}</p>
-                    <p className="text-sm max-w-sm">{t('New tenant payment submissions requiring verification will appear here.')}</p>
+                    <p className="text-base font-medium text-foreground">{t('payments.noVerificationRequests')}</p>
+                    <p className="text-sm max-w-sm">{t('payments.noVerificationRequestsDesc')}</p>
                   </div>
                 </td>
               </tr>
@@ -74,14 +73,21 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
               items.map((item) => (
                 <tr key={item.paymentSubmissionId} className="hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-foreground">{item.tenantName || t('Unknown Tenant')}</div>
+                    <div className="font-medium text-foreground">{item.tenantName || t('payments.unknownTenant')}</div>
                     <div className="text-xs text-muted-foreground">{item.buildingName} - {item.apartmentNumber}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-muted-foreground">{item.contractNumber || '-'}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-foreground">{item.amountDue.toLocaleString()} {item.currency}</div>
+                    <div className="font-bold text-foreground">
+                      {(item.submittedAmount ?? item.amountDue).toLocaleString()} {item.currency}
+                    </div>
+                    {item.submittedAmount !== undefined && item.submittedAmount !== item.amountDue && (
+                      <div className="text-xs text-muted-foreground">
+                        {t('payments.totalInstallmentDue')}: {item.amountDue.toLocaleString()} {item.currency}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
@@ -94,9 +100,9 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => onSelect(item)}
-                      className="inline-flex items-center justify-center px-3 py-1.5 border border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-md text-sm font-medium transition-colors"
+                      className="inline-flex items-center justify-center px-3 py-1.5 border border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-md text-sm font-medium transition-colors cursor-pointer"
                     >
-                      {t('View / Verify')}
+                      {t('payments.viewVerify')}
                     </button>
                   </td>
                 </tr>
@@ -109,7 +115,7 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
         <div className="md:hidden flex flex-col divide-y divide-border">
           {isLoading ? (
             <div className="px-4 py-8 text-center text-muted-foreground animate-pulse">
-              {t('Loading...')}
+              {t('common.loading')}
             </div>
           ) : items.length === 0 ? (
             <div className="px-4 py-12 text-center text-muted-foreground">
@@ -117,8 +123,8 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                 <div className="p-3 bg-muted rounded-full">
                   <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <p className="text-base font-medium text-foreground">{t('No payment verification requests')}</p>
-                <p className="text-sm">{t('New tenant payment submissions requiring verification will appear here.')}</p>
+                <p className="text-base font-medium text-foreground">{t('payments.noVerificationRequests')}</p>
+                <p className="text-sm">{t('payments.noVerificationRequestsDesc')}</p>
               </div>
             </div>
           ) : (
@@ -126,11 +132,18 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
               <div key={item.paymentSubmissionId} className="p-4 flex flex-col space-y-3 hover:bg-muted/30 transition-colors">
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="font-medium text-foreground">{item.tenantName || t('Unknown Tenant')}</div>
+                    <div className="font-medium text-foreground">{item.tenantName || t('payments.unknownTenant')}</div>
                     <div className="text-xs text-muted-foreground">{item.buildingName} - {item.apartmentNumber}</div>
                   </div>
-                  <div className="font-medium text-primary text-right">
-                    {item.amountDue.toLocaleString()} {item.currency}
+                  <div className="text-right rtl:text-left">
+                    <div className="font-bold text-primary">
+                      {(item.submittedAmount ?? item.amountDue).toLocaleString()} {item.currency}
+                    </div>
+                    {item.submittedAmount !== undefined && item.submittedAmount !== item.amountDue && (
+                      <div className="text-[10px] text-muted-foreground">
+                        {t('payments.totalInstallmentDue')}: {item.amountDue.toLocaleString()} {item.currency}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -146,9 +159,9 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                   </div>
                   <button
                     onClick={() => onSelect(item)}
-                    className="inline-flex items-center justify-center px-3 py-1 border border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-md text-sm font-medium transition-colors"
+                    className="inline-flex items-center justify-center px-3 py-1 border border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-md text-sm font-medium transition-colors cursor-pointer"
                   >
-                    {t('Verify')}
+                    {t('payments.verifyAction')}
                   </button>
                 </div>
               </div>

@@ -57,6 +57,7 @@ export function SubmitPaymentVerificationModal({
   const resolvedPaymentId = selectedPayment?.id || defaultRentPaymentId || "";
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.Cash);
+  const [amount, setAmount] = useState<string>("");
   const [referenceNumber, setReferenceNumber] = useState("");
   
   // Cheque details state
@@ -64,6 +65,12 @@ export function SubmitPaymentVerificationModal({
   const [bankName, setBankName] = useState("");
   const [chequeIssueDate, setChequeIssueDate] = useState("");
   const [chequeDueDate, setChequeDueDate] = useState("");
+
+  // Outstanding balance calculation
+  const remainingBalance = selectedPayment
+    ? Math.max(0, (selectedPayment.amountDue ?? 0) - (selectedPayment.amountPaid ?? 0))
+    : 0;
+  const paymentCurrency = selectedPayment?.currency || "JOD";
 
   // File upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -82,6 +89,10 @@ export function SubmitPaymentVerificationModal({
   useEffect(() => {
     if (isOpen) {
       setPaymentMethod(PaymentMethod.Cash);
+      const initialRemaining = selectedPayment
+        ? Math.max(0, (selectedPayment.amountDue ?? 0) - (selectedPayment.amountPaid ?? 0))
+        : 0;
+      setAmount(initialRemaining > 0 ? initialRemaining.toString() : "");
       setReferenceNumber("");
       setChequeNumber("");
       setBankName("");
@@ -91,7 +102,7 @@ export function SubmitPaymentVerificationModal({
       setSubmitError(null);
       setIsSuccess(false);
     }
-  }, [isOpen, resolvedPaymentId]);
+  }, [isOpen, resolvedPaymentId, selectedPayment]);
 
   if (!isOpen) return null;
 
@@ -199,6 +210,25 @@ export function SubmitPaymentVerificationModal({
       return;
     }
 
+    // Validate submitted amount
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setSubmitError(
+        t("paymentVerification.invalidAmount", "Please enter a valid payment amount greater than zero.")
+      );
+      return;
+    }
+
+    if (remainingBalance > 0 && parsedAmount > remainingBalance) {
+      setSubmitError(
+        t(
+          "paymentVerification.amountExceedsOutstanding",
+          `Submitted payment amount (${parsedAmount} ${paymentCurrency}) cannot exceed the remaining balance (${remainingBalance} ${paymentCurrency}).`
+        )
+      );
+      return;
+    }
+
     // Method-specific validation strictly matching backend validator rules
     if (paymentMethod === PaymentMethod.CliQ) {
       if (!referenceNumber.trim()) {
@@ -235,6 +265,7 @@ export function SubmitPaymentVerificationModal({
     setSubmitError(null);
 
     const payload: any = {
+      amount: parsedAmount,
       paymentMethod,
       referenceNumber: paymentMethod === PaymentMethod.Cash
         ? (referenceNumber.trim() || null)
@@ -343,31 +374,53 @@ export function SubmitPaymentVerificationModal({
                 {t("paymentVerification.modalSubtitle", "Select your payment method and submit details for property management review.")}
               </p>
 
-              {/* Selected Payment Human-Readable Summary Banner (Zero internal IDs shown) */}
+              {/* Selected Payment Human-Readable Summary Banner */}
               {selectedPayment && (
-                <div className="p-3.5 rounded-xl bg-secondary/40 border border-border/60 flex items-center justify-between text-xs gap-3">
-                  <div className="space-y-0.5 min-w-0">
-                    <span className="text-[11px] text-muted-foreground block">
-                      {t("paymentVerification.selectedPaymentLabel", "Selected Rent Payment")}
-                    </span>
-                    <p className="font-bold text-foreground truncate">
-                      {selectedPayment.amountDue} {selectedPayment.currency}
-                      {selectedPayment.contractNumber && ` — ${selectedPayment.contractNumber}`}
-                    </p>
+                <div className="p-3.5 rounded-xl bg-secondary/40 border border-border/60 flex flex-col gap-2 text-xs">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-[11px] text-muted-foreground block">
+                        {t("paymentVerification.selectedPaymentLabel", "Selected Rent Payment")}
+                      </span>
+                      <p className="font-bold text-foreground truncate">
+                        {selectedPayment.contractNumber ? `${selectedPayment.contractNumber}` : t("paymentVerification.installment", "Scheduled Installment")}
+                        {selectedPayment.dueDate && ` — ${new Date(selectedPayment.dueDate).toLocaleDateString(language)}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {selectedPayment.buildingName && (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Building2 className="w-3 h-3" />
+                          {selectedPayment.buildingName}
+                        </span>
+                      )}
+                      {selectedPayment.apartmentNumber && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-[11px]">
+                          <Home className="w-3 h-3" />
+                          {selectedPayment.apartmentNumber}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {selectedPayment.buildingName && (
-                      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Building2 className="w-3 h-3" />
-                        {selectedPayment.buildingName}
+
+                  {/* Financial Breakdown: Amount Due vs Remaining Balance */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground block">
+                        {t("paymentVerification.totalDue", "Total Installment Due / إجمالي القسط")}
                       </span>
-                    )}
-                    {selectedPayment.apartmentNumber && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-[11px]">
-                        <Home className="w-3 h-3" />
-                        {selectedPayment.apartmentNumber}
+                      <span className="font-medium text-foreground text-xs">
+                        {selectedPayment.amountDue.toLocaleString()} {paymentCurrency}
                       </span>
-                    )}
+                    </div>
+                    <div className="text-right rtl:text-left">
+                      <span className="text-[10px] text-muted-foreground block">
+                        {t("paymentVerification.remainingBalance", "المبلغ المستحق (Remaining Balance)")}
+                      </span>
+                      <span className="font-bold text-primary text-xs">
+                        {remainingBalance.toLocaleString()} {paymentCurrency}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -380,6 +433,44 @@ export function SubmitPaymentVerificationModal({
                 </div>
               )}
 
+              {/* Amount Actually Paid Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground block">
+                    {t("paymentVerification.amountPaidLabel", "المبلغ المدفوع فعلياً (Actually Paid Amount) *")}
+                  </label>
+                  {remainingBalance > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAmount(remainingBalance.toString())}
+                      className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
+                    >
+                      {t("paymentVerification.payFullBalance", "Pay Full Balance / دفع كامل المبلغ")}
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0.001"
+                    max={remainingBalance > 0 ? remainingBalance : undefined}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder={remainingBalance > 0 ? remainingBalance.toString() : "0.000"}
+                    disabled={submitMutation.isPending}
+                    className="w-full h-9 px-3 pe-14 rounded-lg border border-border bg-background text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                    required
+                  />
+                  <div className="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-xs text-muted-foreground font-medium">
+                    {paymentCurrency}
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("paymentVerification.amountPaidHint", "أدخل المبلغ الذي قمت بتحويله أو دفعه فعلياً (يمكنك دفع كامل المبلغ المستحق أو دفعة جزئية).")}
+                </p>
+              </div>
+
               {/* 1. Payment Method Selector (Strictly 3 methods: Cash, CliQ, Cheque) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground block">
@@ -388,7 +479,8 @@ export function SubmitPaymentVerificationModal({
                 <select
                   value={paymentMethod}
                   onChange={(e) => handleMethodChange(e.target.value as PaymentMethod)}
-                  className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+                  disabled={submitMutation.isPending}
+                  className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer disabled:opacity-50"
                 >
                   {TENANT_PAYMENT_METHODS.map((m) => (
                     <option key={m.value} value={m.value}>

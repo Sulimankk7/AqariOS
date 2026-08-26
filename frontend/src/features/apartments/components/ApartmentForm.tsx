@@ -143,7 +143,7 @@ export function ApartmentForm({
                   <SelectContent>
                     {buildingsData?.map((b) => (
                       <SelectItem key={b.id} value={b.id}>
-                        {b.name} ({b.internalCode || b.id.substring(0, 6)})
+                        {b.internalCode ? `${b.name} (${b.internalCode})` : b.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -180,7 +180,7 @@ export function ApartmentForm({
                       ))}
                       {floorOptions.length === 0 && field.value && (
                         <SelectItem value={field.value}>
-                          Floor ({field.value.substring(0, 8)}...)
+                          {t('floor')}
                         </SelectItem>
                       )}
                     </SelectContent>

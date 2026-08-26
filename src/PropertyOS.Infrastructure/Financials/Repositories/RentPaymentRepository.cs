@@ -207,30 +207,77 @@ public class RentPaymentRepository : IRentPaymentRepository
         return paymentDto;
     }
 
-    public Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, Guid companyId, CancellationToken cancellationToken = default)
+    public async Task<List<RentPaymentDto>> GetPaymentsForLeaseAsync(Guid leaseContractId, Guid companyId, CancellationToken cancellationToken = default)
     {
-        return _dbContext.RentPayments
+        var list = await _dbContext.RentPayments
             .AsNoTracking()
             .Where(p => p.LeaseContractId == leaseContractId && p.CompanyId == companyId)
             .OrderBy(p => p.DueDate)
             .ProjectToType<RentPaymentDto>()
             .ToListAsync(cancellationToken);
+
+        await PopulateTransactionReceiptsAndSettlementAsync(list, cancellationToken);
+        return list;
     }
 
-    public Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default)
+    public async Task<List<RentPaymentDto>> GetPaymentsForTenantAsync(Guid tenantId, Guid companyId, CancellationToken cancellationToken = default)
     {
-        return _dbContext.RentPayments
+        var baseQuery = _dbContext.RentPayments
             .AsNoTracking()
             .Where(p => p.TenantId == tenantId 
                      && p.CompanyId == companyId 
                      && p.PaymentPurpose == PaymentPurpose.ScheduledInstallment 
                      && p.DeletedAt == null)
             .OrderByDescending(p => p.DueDate)
-            .ProjectToType<RentPaymentDto>()
-            .ToListAsync(cancellationToken);
+            .ThenByDescending(p => p.CreatedAt);
+
+        var list = await (from p in baseQuery
+                join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
+                join t  in _dbContext.Tenants         on p.TenantId        equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
+                join a  in _dbContext.Apartments      on p.ApartmentId     equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
+                join b  in _dbContext.Buildings       on p.BuildingId      equals b.Id  into bx  from b  in bx.DefaultIfEmpty()
+                join r  in _dbContext.RentPaymentReceipts on p.Id equals r.RentPaymentId into rs from r in rs.Where(x => x.DeletedAt == null).DefaultIfEmpty()
+                select new RentPaymentDto
+                {
+                    Id                    = p.Id,
+                    CompanyId             = p.CompanyId,
+                    LeaseContractId       = p.LeaseContractId,
+                    TenantId              = p.TenantId,
+                    BuildingId            = p.BuildingId,
+                    ApartmentId           = p.ApartmentId,
+                    PaymentPurpose        = p.PaymentPurpose,
+                    AmountDue             = p.AmountDue,
+                    AmountPaid            = p.AmountPaid,
+                    Currency              = p.Currency,
+                    DueDateStatus         = p.DueDateStatus,
+                    BillingPeriodStart    = p.BillingPeriodStart,
+                    BillingPeriodEnd      = p.BillingPeriodEnd,
+                    DueDate               = p.DueDate,
+                    ReceiptNumber         = r != null ? r.ReceiptNumber : p.ReceiptNumber,
+                    PaymentMethod         = p.PaymentMethod,
+                    PaymentReferenceNumber = p.PaymentReferenceNumber,
+                    Notes                 = p.Notes,
+                    CreatedAt             = p.CreatedAt,
+                    UpdatedAt             = p.UpdatedAt,
+                    CreatedBy             = p.CreatedBy,
+                    UpdatedBy             = p.UpdatedBy,
+                    TenantName            = t != null ? t.Name : null,
+                    BuildingName          = b != null ? b.Name : null,
+                    ApartmentNumber       = a != null ? a.UnitNumber : null,
+                    ContractNumber        = lc != null ? lc.ContractNumber : null,
+                    LatestSubmissionStatus = p.Submissions.Where(s => s.DeletedAt == null).OrderByDescending(s => s.CreatedAt).Select(s => (SubmissionStatus?)s.Status).FirstOrDefault(),
+                    LatestSubmissionRejectionReason = p.Submissions.Where(s => s.DeletedAt == null).OrderByDescending(s => s.CreatedAt).Select(s => s.RejectionReason).FirstOrDefault(),
+                    LatestSubmissionAmount = p.Submissions.Where(s => s.DeletedAt == null).OrderByDescending(s => s.CreatedAt).Select(s => s.Amount).FirstOrDefault(),
+                    LatestSubmissionDate = p.Submissions.Where(s => s.DeletedAt == null).OrderByDescending(s => s.CreatedAt).Select(s => (DateTimeOffset?)s.CreatedAt).FirstOrDefault(),
+                    ReceiptFileId         = r != null ? r.FileId : null,
+                })
+                .ToListAsync(cancellationToken);
+
+        await PopulateTransactionReceiptsAndSettlementAsync(list, cancellationToken);
+        return list;
     }
 
-    public Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<List<RentPaymentDto>> SearchPaymentsAsync(string searchTerm, Guid companyId, int pageSize, CancellationToken cancellationToken = default)
     {
         var effectivePageSize = Math.Clamp(pageSize, 1, 200);
 
@@ -263,7 +310,7 @@ public class RentPaymentRepository : IRentPaymentRepository
                     .Take(effectivePageSize);
         }
 
-        return (from p in baseQuery
+        var list = await (from p in baseQuery
                 join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
                 join t  in _dbContext.Tenants         on p.TenantId        equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
                 join a  in _dbContext.Apartments      on p.ApartmentId     equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
@@ -298,9 +345,12 @@ public class RentPaymentRepository : IRentPaymentRepository
                     ContractNumber        = lc != null ? lc.ContractNumber : null,
                 })
                 .ToListAsync(cancellationToken);
+
+        await PopulateTransactionReceiptsAndSettlementAsync(list, cancellationToken);
+        return list;
     }
 
-    public Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<List<RentPaymentDto>> GetOutstandingPaymentsAsync(Guid companyId, int pageSize, CancellationToken cancellationToken = default)
     {
         var effectivePageSize = Math.Clamp(pageSize, 1, 200);
 
@@ -322,7 +372,7 @@ public class RentPaymentRepository : IRentPaymentRepository
             .ThenBy(p => p.Id)
             .Take(effectivePageSize);
 
-        return (from p in baseQuery
+        var list = await (from p in baseQuery
                 join lc in _dbContext.LeaseContracts on p.LeaseContractId equals lc.Id into lcs from lc in lcs.DefaultIfEmpty()
                 join t  in _dbContext.Tenants         on p.TenantId        equals t.Id  into ts  from t  in ts.DefaultIfEmpty()
                 join a  in _dbContext.Apartments      on p.ApartmentId     equals a.Id  into ax  from a  in ax.DefaultIfEmpty()
@@ -357,9 +407,12 @@ public class RentPaymentRepository : IRentPaymentRepository
                     ContractNumber        = lc != null ? lc.ContractNumber : null,
                 })
                 .ToListAsync(cancellationToken);
+
+        await PopulateTransactionReceiptsAndSettlementAsync(list, cancellationToken);
+        return list;
     }
 
-    public Task<List<RentPaymentDto>> GetPaymentsAsync(
+    public async Task<List<RentPaymentDto>> GetPaymentsAsync(
         RentPaymentFilterOptions filter,
         Guid companyId,
         CancellationToken cancellationToken = default)
@@ -413,7 +466,7 @@ public class RentPaymentRepository : IRentPaymentRepository
 
         var effectivePageSize = Math.Clamp(filter.PageSize, 1, 200);
 
-        return baseQuery
+        var list = await baseQuery
             .AsNoTracking()
             .OrderByDescending(x => x.p.DueDate)
             .ThenBy(x => x.p.Id)
@@ -448,6 +501,147 @@ public class RentPaymentRepository : IRentPaymentRepository
                 ContractNumber         = x.lc != null ? x.lc.ContractNumber : null,
             })
             .ToListAsync(cancellationToken);
+
+        await PopulateTransactionReceiptsAndSettlementAsync(list, cancellationToken);
+        return list;
+    }
+
+    private async Task PopulateTransactionReceiptsAndSettlementAsync(
+        List<RentPaymentDto> dtos,
+        CancellationToken cancellationToken)
+    {
+        if (dtos.Count == 0) return;
+
+        var obligationIds = dtos.Select(d => d.Id).ToList();
+
+        var allocations = await (
+            from a in _dbContext.PaymentAllocations.AsNoTracking()
+            where obligationIds.Contains(a.ObligationPaymentId) 
+               && a.AllocationStatus == AllocationStatus.Active 
+               && a.DeletedAt == null
+            join rcv in _dbContext.RentPayments.AsNoTracking() on a.ReceivingPaymentId equals rcv.Id
+            join r in _dbContext.RentPaymentReceipts.AsNoTracking() on rcv.Id equals r.RentPaymentId into rs 
+            from r in rs.Where(x => x.DeletedAt == null).DefaultIfEmpty()
+            orderby a.AllocationDate, a.CreatedAt
+            select new
+            {
+                ObligationId = a.ObligationPaymentId,
+                ReceivingPaymentId = a.ReceivingPaymentId,
+                AllocatedAmount = a.AllocatedAmount,
+                AllocationDate = a.AllocationDate,
+                CreatedAt = a.CreatedAt,
+                PaymentMethod = rcv.PaymentMethod,
+                ReferenceNumber = rcv.PaymentReferenceNumber,
+                ReceiptId = r != null ? (Guid?)r.Id : null,
+                ReceiptNumber = r != null ? r.ReceiptNumber : null,
+                FileId = r != null ? r.FileId : null,
+                IssueDate = r != null ? (DateTimeOffset?)r.CreatedAt : null,
+                ReceiptAmount = (r != null && r.RentPaymentId == a.ReceivingPaymentId) ? (decimal?)r.Amount : null
+            }
+        ).ToListAsync(cancellationToken);
+
+        var directReceipts = await (
+            from r in _dbContext.RentPaymentReceipts.AsNoTracking()
+            where obligationIds.Contains(r.RentPaymentId) && r.DeletedAt == null
+            select new
+            {
+                ObligationId = r.RentPaymentId,
+                ReceiptId = r.Id,
+                ReceiptNumber = r.ReceiptNumber,
+                FileId = r.FileId,
+                IssueDate = r.CreatedAt,
+                ReceiptAmount = r.Amount
+            }
+        ).ToListAsync(cancellationToken);
+
+        var allocationsByObligation = allocations.GroupBy(x => x.ObligationId).ToDictionary(g => g.Key, g => g.ToList());
+        var directReceiptsByObligation = directReceipts
+            .GroupBy(r => r.ObligationId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.IssueDate).First());
+
+        foreach (var dto in dtos)
+        {
+            var txReceipts = new List<TransactionReceiptDto>();
+            decimal previouslyPaid = 0m;
+
+            if (allocationsByObligation.TryGetValue(dto.Id, out var allocs) && allocs.Count > 0)
+            {
+                foreach (var alloc in allocs)
+                {
+                    // The authoritative transaction amount is the exact allocated money-in for this obligation
+                    var amount = alloc.AllocatedAmount > 0
+                        ? alloc.AllocatedAmount
+                        : (alloc.ReceiptAmount ?? 0m);
+
+                    var remainingAfter = Math.Max(0, dto.AmountDue - (previouslyPaid + amount));
+
+                    txReceipts.Add(new TransactionReceiptDto
+                    {
+                        ReceiptId = alloc.ReceiptId ?? Guid.Empty,
+                        ReceiptNumber = !string.IsNullOrWhiteSpace(alloc.ReceiptNumber)
+                            ? alloc.ReceiptNumber
+                            : (allocs.Count == 1 ? (dto.ReceiptNumber ?? "REC-PENDING") : "REC-PENDING"),
+                        Amount = amount,
+                        IssuedAt = alloc.IssueDate ?? alloc.CreatedAt,
+                        FileId = alloc.FileId,
+                        PaymentMethod = alloc.PaymentMethod ?? dto.PaymentMethod,
+                        ReferenceNumber = alloc.ReferenceNumber ?? dto.PaymentReferenceNumber,
+                        PreviouslyPaid = previouslyPaid,
+                        RemainingAfter = remainingAfter
+                    });
+
+                    previouslyPaid += amount;
+                }
+            }
+            else if (directReceiptsByObligation.TryGetValue(dto.Id, out var direct))
+            {
+                txReceipts.Add(new TransactionReceiptDto
+                {
+                    ReceiptId = direct.ReceiptId,
+                    ReceiptNumber = direct.ReceiptNumber,
+                    Amount = direct.ReceiptAmount,
+                    IssuedAt = direct.IssueDate,
+                    FileId = direct.FileId,
+                    PaymentMethod = dto.PaymentMethod,
+                    ReferenceNumber = dto.PaymentReferenceNumber,
+                    PreviouslyPaid = 0m,
+                    RemainingAfter = Math.Max(0, dto.AmountDue - direct.ReceiptAmount)
+                });
+            }
+            else if (!string.IsNullOrWhiteSpace(dto.ReceiptNumber))
+            {
+                txReceipts.Add(new TransactionReceiptDto
+                {
+                    ReceiptId = dto.Id,
+                    ReceiptNumber = dto.ReceiptNumber,
+                    Amount = dto.AmountPaid > 0 ? dto.AmountPaid : dto.AmountDue,
+                    IssuedAt = dto.UpdatedAt,
+                    FileId = dto.ReceiptFileId,
+                    PaymentMethod = dto.PaymentMethod,
+                    ReferenceNumber = dto.PaymentReferenceNumber,
+                    PreviouslyPaid = 0m,
+                    RemainingAfter = Math.Max(0, dto.AmountDue - dto.AmountPaid)
+                });
+            }
+
+            dto.TransactionReceipts = txReceipts;
+
+            if (dto.ReceiptFileId == null && txReceipts.Count > 0)
+            {
+                dto.ReceiptFileId = txReceipts.LastOrDefault(t => t.FileId.HasValue)?.FileId;
+            }
+
+            bool isSettled = dto.DueDateStatus == DueDateStatus.Paid && dto.AmountPaid == dto.AmountDue;
+            dto.SettlementSummary = new SettlementStatementSummaryDto
+            {
+                IsAvailable = isSettled,
+                TotalDue = dto.AmountDue,
+                TotalPaid = dto.AmountPaid,
+                Remaining = Math.Max(0, dto.AmountDue - dto.AmountPaid),
+                TransactionCount = txReceipts.Count,
+                SettledAt = isSettled ? dto.UpdatedAt : null
+            };
+        }
     }
 
     public async Task<PropertyOS.Application.Common.Models.KeysetPage<PropertyOS.Application.Financials.Queries.GetPendingPaymentVerifications.PaymentVerificationQueueItemDto>> GetPendingVerificationsAsync(Guid companyId, int pageSize, DateTimeOffset? lastSeenSubmittedAt, Guid? lastSeenId, CancellationToken cancellationToken = default)
@@ -483,6 +677,7 @@ public class RentPaymentRepository : IRentPaymentRepository
                         ContractNumber = lc != null ? lc.ContractNumber : null,
                         AmountDue = p.AmountDue,
                         AmountPaid = p.AmountPaid,
+                        SubmittedAmount = s.Amount ?? (p.AmountDue - p.AmountPaid),
                         Currency = p.Currency,
                         PaymentMethod = s.PaymentMethod,
                         ReferenceNumber = s.ReferenceNumber,

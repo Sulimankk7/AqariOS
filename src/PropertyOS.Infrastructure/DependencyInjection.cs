@@ -125,7 +125,13 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum", null);
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum", null);
 
+        // Module 12 — Utility Bills
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityType>("utility_type_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilitySyncStatus>("utility_sync_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityBillPaymentStatus>("utility_bill_status_enum", null);
+
         var dataSource = dataSourceBuilder.Build();
+
 
         // -----------------------------------------------------------------------
         // Module 3 — Security / Identity / Auth Context Providers & Services
@@ -285,6 +291,39 @@ public static class DependencyInjection
         services.AddScoped<PropertyOS.Application.Notifications.INotificationTemplateRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationTemplateRepository>();
         services.AddScoped<PropertyOS.Application.Notifications.INotificationRepository, PropertyOS.Infrastructure.Notifications.Repositories.NotificationRepository>();
 
+        // Module 12 — Utility Bills
+        services.Configure<PropertyOS.Application.UtilityBills.Options.UtilityBillsOptions>(
+            configuration.GetSection(PropertyOS.Application.UtilityBills.Options.UtilityBillsOptions.SectionName));
+
+        services.AddScoped<PropertyOS.Application.UtilityBills.IUtilityAccountRepository,
+            PropertyOS.Infrastructure.UtilityBills.Repositories.UtilityAccountRepository>();
+        services.AddScoped<PropertyOS.Application.UtilityBills.IUtilityBillRepository,
+            PropertyOS.Infrastructure.UtilityBills.Repositories.UtilityBillRepository>();
+
+        // Provider rate limiter & concurrency regulator (singleton)
+        services.AddSingleton<PropertyOS.Infrastructure.UtilityBills.Providers.UtilityProviderRateLimiter>();
+
+        // Typed client for the private authenticated Python scraper service.
+        services.AddHttpClient<PropertyOS.Infrastructure.UtilityBills.Providers.InternalUtilityScraperClient>();
+
+        // Utility billing providers — registered as IEnumerable<IUtilityBillingProvider> implementations.
+        // Fails closed gracefully when disabled or unconfigured in settings.
+        services.AddScoped<PropertyOS.Application.UtilityBills.Services.IUtilityBillingProvider,
+            PropertyOS.Infrastructure.UtilityBills.Providers.JordanElectricityBillingProvider>();
+        services.AddScoped<PropertyOS.Application.UtilityBills.Services.IUtilityBillingProvider,
+            PropertyOS.Infrastructure.UtilityBills.Providers.JordanWaterBillingProvider>();
+
+
+        // Background jobs (Hangfire-activated; AddTransient is the correct lifetime)
+        services.AddTransient<PropertyOS.Infrastructure.UtilityBills.Jobs.CheckElectricityBillsJob>();
+        services.AddTransient<PropertyOS.Infrastructure.UtilityBills.Jobs.CheckWaterBillsJob>();
+        services.AddTransient<PropertyOS.Infrastructure.UtilityBills.Jobs.BootstrapUtilityAccountJob>();
+        services.AddTransient<PropertyOS.Infrastructure.UtilityBills.Jobs.SyncUtilityAccountJob>();
+        services.AddTransient<PropertyOS.Infrastructure.UtilityBills.Jobs.BootstrapPendingUtilityAccountsJob>();
+        services.AddScoped<PropertyOS.Application.UtilityBills.Services.IUtilityBillsJobScheduler,
+            PropertyOS.Infrastructure.UtilityBills.Jobs.HangfireUtilityBillsJobScheduler>();
+
+
         // Module 2 - Subscriptions
         services.AddScoped<PropertyOS.Application.Subscriptions.ISubscriptionService, PropertyOS.Infrastructure.Subscriptions.Services.SubscriptionService>();
 
@@ -376,7 +415,13 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
+
+                    // Module 12 — Utility Bills
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityType>("utility_type_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilitySyncStatus>("utility_sync_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityBillPaymentStatus>("utility_bill_status_enum");
                 });
+
 
 
             // Register the interceptor from the scoped DI container.

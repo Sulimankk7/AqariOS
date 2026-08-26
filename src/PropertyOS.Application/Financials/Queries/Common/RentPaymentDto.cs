@@ -37,4 +37,40 @@ public class RentPaymentDto
     public string? BuildingName { get; set; }
     public string? ApartmentNumber { get; set; }
     public string? ContractNumber { get; set; }
+
+    // Latest Payment Submission projection (for Tenant Portal visibility)
+    public SubmissionStatus? LatestSubmissionStatus { get; set; }
+    public string? LatestSubmissionRejectionReason { get; set; }
+    public decimal? LatestSubmissionAmount { get; set; }
+    public DateTimeOffset? LatestSubmissionDate { get; set; }
+
+    // Receipt File ID (for direct download)
+    public Guid? ReceiptFileId { get; set; }
+
+    // Hybrid Receipt Model: individual transaction receipts & final settlement summary
+    public List<TransactionReceiptDto> TransactionReceipts { get; set; } = new();
+    public SettlementStatementSummaryDto? SettlementSummary { get; set; }
+}
+
+public class TransactionReceiptDto
+{
+    public Guid ReceiptId { get; set; }
+    public string ReceiptNumber { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public DateTimeOffset IssuedAt { get; set; }
+    public Guid? FileId { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
+    public string? ReferenceNumber { get; set; }
+    public decimal PreviouslyPaid { get; set; }
+    public decimal RemainingAfter { get; set; }
+}
+
+public class SettlementStatementSummaryDto
+{
+    public bool IsAvailable { get; set; }
+    public decimal TotalDue { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal Remaining { get; set; }
+    public int TransactionCount { get; set; }
+    public DateTimeOffset? SettledAt { get; set; }
 }

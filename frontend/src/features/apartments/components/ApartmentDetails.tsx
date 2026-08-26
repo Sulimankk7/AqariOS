@@ -45,9 +45,9 @@ export function ApartmentDetails({ apartment, floorLabel }: ApartmentDetailsProp
 
   const resolvedFloorLabel = floor 
     ? (floor.floorLabel || `Floor ${floor.floorNumber}`)
-    : (floorLabel || `Floor (ID: ${apartment.floorId.substring(0, 8)}...)`);
+    : (floorLabel || t('floor'));
 
-  const buildingName = building?.name || `Building (ID: ${apartment.buildingId.substring(0, 8)}...)`;
+  const buildingName = building?.name || t('building');
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -61,7 +61,7 @@ export function ApartmentDetails({ apartment, floorLabel }: ApartmentDetailsProp
               </CardTitle>
               <CardDescription className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 {/* Clickable Building Name Link with clear link styling */}
-                <div className="flex items-center gap-1.5" title={`Building ID: ${apartment.buildingId}`}>
+                <div className="flex items-center gap-1.5">
                   <Building2 className="h-3.5 w-3.5 text-primary" />
                   <span>Building:</span>
                   <Link 
@@ -73,7 +73,7 @@ export function ApartmentDetails({ apartment, floorLabel }: ApartmentDetailsProp
                 </div>
 
                 {/* Resolved Floor Label */}
-                <div className="flex items-center gap-1.5" title={`Floor ID: ${apartment.floorId}`}>
+                <div className="flex items-center gap-1.5">
                   <Layers className="h-3.5 w-3.5 text-primary" />
                   <span>Floor:</span>
                   <span className="font-medium text-foreground">{resolvedFloorLabel}</span>

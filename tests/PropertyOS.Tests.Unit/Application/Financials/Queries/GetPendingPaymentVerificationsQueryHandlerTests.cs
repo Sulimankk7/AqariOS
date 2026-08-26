@@ -35,7 +35,7 @@ public class GetPendingPaymentVerificationsQueryHandlerTests
         tenantContext.CompanyId.Returns(companyId);
 
         var payment = RentPayment.Create(companyId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
-        payment.SubmitForVerification(PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        payment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
         
         dbContext.RentPayments.Add(payment);
         await dbContext.SaveChangesAsync();
@@ -62,7 +62,7 @@ public class GetPendingPaymentVerificationsQueryHandlerTests
         tenantContext.CompanyId.Returns(companyId);
 
         var payment = RentPayment.Create(otherCompanyId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
-        payment.SubmitForVerification(PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        payment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
         
         dbContext.RentPayments.Add(payment);
         await dbContext.SaveChangesAsync();
@@ -88,7 +88,7 @@ public class GetPendingPaymentVerificationsQueryHandlerTests
         var payment = RentPayment.Create(companyId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
         // Change status to PendingVerification directly without creating a submission
         // In real domain this shouldn't happen, but we want to test the query logic
-        payment.SubmitForVerification(PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        payment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
         var submission = payment.Submissions.First();
         payment.RejectSubmission(submission.Id, "Reason", Guid.NewGuid(), DateTimeOffset.UtcNow); // this changes status back to Pending
 
@@ -116,7 +116,7 @@ public class GetPendingPaymentVerificationsQueryHandlerTests
         tenantContext.CompanyId.Returns(companyId);
 
         var payment = RentPayment.Create(companyId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
-        payment.SubmitForVerification(PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        payment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
         payment.RejectSubmission(payment.Submissions.First().Id, "Reject reason", Guid.NewGuid(), DateTimeOffset.UtcNow);
         
         dbContext.RentPayments.Add(payment);
@@ -141,11 +141,11 @@ public class GetPendingPaymentVerificationsQueryHandlerTests
         var payment = RentPayment.Create(companyId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
         
         // First submission (Rejected)
-        payment.SubmitForVerification(PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        payment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF1", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
         payment.RejectSubmission(payment.Submissions.First().Id, "Reject reason", Guid.NewGuid(), DateTimeOffset.UtcNow);
         
         // Second submission (Pending)
-        payment.SubmitForVerification(PaymentMethod.BankTransfer, "REF2", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        payment.SubmitForVerification(1000, PaymentMethod.BankTransfer, "REF2", null, Guid.NewGuid(), DateTimeOffset.UtcNow);
 
         dbContext.RentPayments.Add(payment);
         await dbContext.SaveChangesAsync();

@@ -34,25 +34,24 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
 
   const formatPaymentMethod = (method: any) => {
     if (method === null || method === undefined) return '-';
-    if (typeof method === 'number' || (!isNaN(Number(method)) && String(method).trim() !== '')) {
-      const num = Number(method);
+    const num = Number(method);
+    if (!isNaN(num)) {
       switch (num) {
-        case 0: return t('Cash');
-        case 1: return t('Bank Transfer');
-        case 2: return t('Cheque');
-        case 3: return t('eFAWATEERCOM');
-        case 4: return t('CliQ');
+        case 0: return t('financials.paymentMethodCash');
+        case 1: return t('financials.paymentMethodBankTransfer');
+        case 2: return t('financials.paymentMethodCheque');
+        case 3: return t('financials.paymentMethodEfawateercom');
+        case 4: return t('financials.paymentMethodCliq');
         default: return String(method);
       }
     }
-    const str = String(method).trim();
-    const lower = str.toLowerCase().replace(/[^a-z]/g, '');
-    if (lower === 'cash') return t('Cash');
-    if (lower === 'banktransfer') return t('Bank Transfer');
-    if (lower === 'cheque') return t('Cheque');
-    if (lower === 'efawateercom') return t('eFAWATEERCOM');
-    if (lower === 'cliq' || lower === 'cli_q') return t('CliQ');
-    return t(str);
+    const lower = String(method).trim().toLowerCase().replace(/[^a-z]/g, '');
+    if (lower === 'cash') return t('financials.paymentMethodCash');
+    if (lower === 'banktransfer') return t('financials.paymentMethodBankTransfer');
+    if (lower === 'cheque') return t('financials.paymentMethodCheque');
+    if (lower === 'efawateercom') return t('financials.paymentMethodEfawateercom');
+    if (lower === 'cliq' || lower === 'cli_q') return t('financials.paymentMethodCliq');
+    return String(method);
   };
 
   const currentSubmission = details?.submissions.find(s => s.id === item?.paymentSubmissionId);
@@ -69,7 +68,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
       .then(res => setProofFile(res))
       .catch(err => {
         console.error('Failed to load proof download URL:', err);
-        setProofError(t('Unable to load proof file preview.'));
+        setProofError(t('payments.proofRetrieveError'));
       })
       .finally(() => setIsProofLoading(false));
   }, [targetProofId]);
@@ -114,12 +113,12 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
         <div className="space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-border">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">{t('Payment Verification Details')}</h2>
-              <p className="text-sm text-muted-foreground">{item.tenantName || t('Unknown Tenant')}</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('payments.verificationDetailsTitle')}</h2>
+              <p className="text-sm text-muted-foreground">{item.tenantName || t('payments.unknownTenant')}</p>
             </div>
             <button 
               onClick={onClose}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -127,36 +126,48 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
 
           {isLoading ? (
             <div className="py-12 text-center text-muted-foreground animate-pulse">
-              {t('Loading payment details...')}
+              {t('payments.loadingDetails')}
             </div>
           ) : isError || !details ? (
             <div className="py-12 text-center text-destructive flex flex-col items-center space-y-2">
               <AlertCircle className="h-8 w-8" />
-              <p>{t('Failed to load payment verification details.')}</p>
+              <p>{t('payments.loadError')}</p>
             </div>
           ) : (
             <div className="space-y-6">
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('Summary')}</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('payments.summary')}</h3>
                 <div className="bg-muted/30 rounded-xl p-4 space-y-2 text-sm border border-border/50">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('Contract')}</span>
+                    <span className="text-muted-foreground">{t('payments.contract')}</span>
                     <span className="font-medium">{item.contractNumber || '-'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('Amount')}</span>
-                    <span className="font-medium text-lg text-primary">{details.amountDue.toLocaleString()} {details.currency}</span>
+                  <div className="flex justify-between items-center py-1 border-y border-border/40">
+                    <span className="text-muted-foreground font-medium">{t('payments.submittedAmount')}</span>
+                    <span className="font-bold text-lg text-primary">
+                      {(currentSubmission?.amount ?? item.submittedAmount ?? details.amountDue).toLocaleString()} {details.currency}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t('payments.totalInstallmentDue')}</span>
+                    <span>{details.amountDue.toLocaleString()} {details.currency}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t('payments.remainingBalance')}</span>
+                    <span className="font-medium text-foreground">
+                      {Math.max(0, details.amountDue - details.amountPaid).toLocaleString()} {details.currency}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('Payment Method')}</span>
+                    <span className="text-muted-foreground">{t('payments.paymentMethod')}</span>
                     <span className="font-medium">{formatPaymentMethod(currentSubmission?.paymentMethod ?? item.paymentMethod)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('Reference Number')}</span>
+                    <span className="text-muted-foreground">{t('payments.referenceNumber')}</span>
                     <span className="font-medium">{currentSubmission?.referenceNumber || '-'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('Submitted At')}</span>
+                    <span className="text-muted-foreground">{t('payments.submittedAt')}</span>
                     <span className="font-medium">{new Date(item.submittedAt).toLocaleString(language)}</span>
                   </div>
                 </div>
@@ -165,22 +176,22 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
               {/* Cheque Details Section (Shown only for Cheque method) */}
               {(currentSubmission?.paymentMethod === 'Cheque' || (currentSubmission?.paymentMethod as any) === 2 || item.paymentMethod === 'Cheque' || (item.paymentMethod as any) === 2) && (
                 <section className="space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('تفاصيل الشيك / Cheque Details')}</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('payments.chequeDetails')}</h3>
                   <div className="bg-secondary/40 rounded-xl p-4 space-y-2.5 text-sm border border-border/60">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('رقم الشيك / Cheque Number')}</span>
+                      <span className="text-muted-foreground">{t('payments.chequeNumber')}</span>
                       <span className="font-bold text-foreground font-mono">{currentSubmission?.chequeNumber || item.chequeNumber || currentSubmission?.referenceNumber || item.referenceNumber || '-'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('البنك / Bank Name')}</span>
+                      <span className="text-muted-foreground">{t('payments.bankName')}</span>
                       <span className="font-medium text-foreground">{currentSubmission?.bankName || item.bankName || '-'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('تاريخ الإصدار / Issue Date')}</span>
+                      <span className="text-muted-foreground">{t('payments.chequeIssueDate')}</span>
                       <span className="font-medium text-foreground">{currentSubmission?.chequeIssueDate || item.chequeIssueDate || '-'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('تاريخ الاستحقاق / Due Date')}</span>
+                      <span className="text-muted-foreground">{t('payments.chequeDueDate')}</span>
                       <span className="font-medium text-foreground">{currentSubmission?.chequeDueDate || item.chequeDueDate || '-'}</span>
                     </div>
                   </div>
@@ -189,14 +200,14 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
 
               {receipt && (
                 <section className="space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('Official Receipt (سند قبض)')}</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('payments.officialReceipt')}</h3>
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <CheckCircle2 className="h-5 w-5 text-green-600 mr-2 rtl:ml-2 rtl:mr-0 shrink-0" />
                         <div>
                           <div className="font-semibold text-foreground text-sm">{receipt.receiptNumber}</div>
-                          <div className="text-xs text-muted-foreground">{t('Issued Date')}: {receipt.issueDate}</div>
+                          <div className="text-xs text-muted-foreground">{t('payments.issuedDate')}: {receipt.issueDate}</div>
                         </div>
                       </div>
                       <div className="text-right font-medium text-primary text-sm">
@@ -211,7 +222,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
                         className="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-sm font-medium transition-colors shadow-xs"
                       >
                         <Download className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
-                        {t('Download Official Receipt PDF (سند قبض)')}
+                        {t('payments.downloadReceipt')}
                       </a>
                     )}
                   </div>
@@ -219,20 +230,20 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
               )}
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('Payment Proof')}</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('payments.paymentProof')}</h3>
                 {!targetProofId ? (
                   <div className="bg-muted/30 rounded-xl p-6 text-center text-sm text-muted-foreground border border-border/50">
-                    {t('No proof file attached to this submission.')}
+                    {t('payments.noProofAttached')}
                   </div>
                 ) : isProofLoading ? (
                   <div className="bg-muted/30 rounded-xl p-8 border border-border text-center text-sm text-muted-foreground animate-pulse flex flex-col items-center space-y-2">
                     <Clock className="h-6 w-6 animate-spin text-primary" />
-                    <span>{t('Loading proof file preview...')}</span>
+                    <span>{t('payments.loadingProofPreview')}</span>
                   </div>
                 ) : proofError || !proofFile ? (
                   <div className="bg-muted/30 rounded-xl p-6 border border-border text-center space-y-2">
                     <AlertCircle className="h-6 w-6 text-destructive mx-auto" />
-                    <p className="text-sm text-muted-foreground">{proofError || t('Proof file could not be retrieved.')}</p>
+                    <p className="text-sm text-muted-foreground">{proofError || t('payments.proofRetrieveError')}</p>
                   </div>
                 ) : proofFile.mimeType.startsWith('image/') ? (
                   <div className="bg-muted/30 rounded-xl p-4 border border-border flex flex-col items-center space-y-3">
@@ -249,7 +260,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
                         className="inline-flex items-center text-xs text-primary hover:underline font-medium"
                       >
                         <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                        {t('Open Full Image')}
+                        {t('payments.openFullImage')}
                       </a>
                     </div>
                   </div>
@@ -267,29 +278,29 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
                       className="inline-flex items-center px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:bg-primary/90 transition-colors"
                     >
                       <Download className="h-3.5 w-3.5 mr-1.5" />
-                      {t('Download / View Document')}
+                      {t('payments.downloadViewDocument')}
                     </a>
                   </div>
                 )}
               </section>
 
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('Submission History')}</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('payments.submissionHistory')}</h3>
                 <div className="space-y-3">
                   {details.submissions.map((sub: PaymentSubmissionDto) => (
                     <div key={sub.id} className="p-3 border border-border rounded-lg bg-card text-sm space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{new Date(sub.submittedAt).toLocaleString(language)}</span>
-                        {sub.status === 'Pending' && <span className="text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded text-xs">{t('Pending')}</span>}
-                        {sub.status === 'Approved' && <span className="text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded text-xs">{t('Approved')}</span>}
-                        {sub.status === 'Rejected' && <span className="text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded text-xs">{t('Rejected')}</span>}
+                        {sub.status === 'Pending' && <span className="text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded text-xs">{t('payments.statusPending')}</span>}
+                        {sub.status === 'Approved' && <span className="text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded text-xs">{t('payments.statusApproved')}</span>}
+                        {sub.status === 'Rejected' && <span className="text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded text-xs">{t('payments.statusRejected')}</span>}
                       </div>
                       <div className="text-muted-foreground">
-                        {t('Method')}: {formatPaymentMethod(sub.paymentMethod)} | {t('Ref')}: {sub.referenceNumber || '-'}
+                        {t('payments.paymentMethod')}: {formatPaymentMethod(sub.paymentMethod)} | {t('payments.referenceNumber')}: {sub.referenceNumber || '-'}
                       </div>
                       {sub.rejectionReason && (
                         <div className="text-destructive bg-destructive/10 p-2 rounded mt-2">
-                          <span className="font-semibold">{t('Rejection Reason')}:</span> {sub.rejectionReason}
+                          <span className="font-semibold">{t('payments.rejectionReason')}:</span> {sub.rejectionReason}
                         </div>
                       )}
                     </div>
@@ -305,16 +316,16 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
             <button
               onClick={() => setIsRejectModalOpen(true)}
               disabled={isLoading || approveMutation.isPending || !details}
-              className="flex-1 py-2.5 rounded-md font-medium text-destructive border border-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-md font-medium text-destructive border border-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {t('Reject Payment')}
+              {t('payments.rejectPayment')}
             </button>
             <button
               onClick={handleApprove}
               disabled={isLoading || approveMutation.isPending || !details}
-              className="flex-1 py-2.5 rounded-md font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-md font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {t('Approve Payment')}
+              {t('payments.approvePayment')}
             </button>
           </div>
         </div>

@@ -51,7 +51,7 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "mfa_type_enum", new[] { "totp", "sms" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "notification_priority_enum", new[] { "low", "normal", "high", "critical" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "notification_status_enum", new[] { "pending", "sent", "failed", "cancelled" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "notification_type_enum", new[] { "new_lease", "lease_expiration", "rent_due", "rent_paid", "late_payment", "maintenance_request_created", "maintenance_request_updated", "marketplace_viewing_request", "document_expiring", "general_notification" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "notification_type_enum", new[] { "new_lease", "lease_expiration", "rent_due", "rent_paid", "late_payment", "maintenance_request_created", "maintenance_request_updated", "marketplace_viewing_request", "document_expiring", "general_notification", "utility_bill_electricity", "utility_bill_water" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "occupancy_status_enum", new[] { "vacant", "occupied", "under_maintenance", "listed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "otp_purpose_enum", new[] { "login", "phone_verification" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ownership_status_enum", new[] { "company_owned", "third_party_owned" });
@@ -66,6 +66,9 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "subscription_status_enum", new[] { "trialing", "active", "past_due", "suspended", "cancelled", "expired" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant_type_enum", new[] { "personal", "corporate" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "termination_type_enum", new[] { "normal_expiration", "early_termination", "mutual_agreement", "tenant_request", "owner_request", "legal_eviction" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "utility_bill_status_enum", new[] { "unpaid", "paid", "unknown" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "utility_sync_status_enum", new[] { "never_synced", "syncing", "synced", "provider_error", "rate_limited", "timeout", "suspended", "invalid_account" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "utility_type_enum", new[] { "electricity", "water" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "viewing_request_status_enum", new[] { "pending", "contacted", "scheduled", "completed", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1464,6 +1467,10 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("uuid_generate_v7()");
 
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("amount");
+
                     b.Property<string>("BankName")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
@@ -1581,7 +1588,10 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_payment_submissions_status");
 
-                    b.ToTable("payment_submissions", (string)null);
+                    b.ToTable("payment_submissions", (string)null, t =>
+                        {
+                            t.HasCheckConstraint("chk_payment_submissions_amount_positive", "amount IS NULL OR amount > 0");
+                        });
                 });
 
             modelBuilder.Entity("PropertyOS.Domain.Financials.RentPayment", b =>
@@ -4401,6 +4411,316 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("chk_notification_templates_name_not_blank", "length(btrim(template_name)) > 0");
 
                             t.HasCheckConstraint("chk_notification_templates_subject_not_blank", "length(btrim(subject)) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.UtilityBills.UtilityAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v7()");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("account_number");
+
+                    b.Property<Guid>("ApartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("apartment_id");
+
+                    b.Property<short?>("AverageBillingIntervalDays")
+                        .HasColumnType("smallint")
+                        .HasColumnName("average_billing_interval_days");
+
+                    b.Property<short>("BillingIntervalSampleCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
+                        .HasColumnName("billing_interval_sample_count");
+
+                    b.Property<DateTimeOffset?>("ClaimedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("claimed_at");
+
+                    b.Property<string>("ClaimedByJobRunId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("claimed_by_job_run_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<short>("ConsecutiveFailureCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
+                        .HasColumnName("consecutive_failure_count");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<DateOnly?>("EstimatedNextBillDate")
+                        .HasColumnType("date")
+                        .HasColumnName("estimated_next_bill_date");
+
+                    b.Property<bool>("HistoricalBootstrapCompleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("historical_bootstrap_completed");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedSyncAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_attempted_sync_at");
+
+                    b.Property<DateOnly?>("LastKnownBillDate")
+                        .HasColumnType("date")
+                        .HasColumnName("last_known_bill_date");
+
+                    b.Property<DateTimeOffset?>("LastSuccessfulSyncAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_successful_sync_at");
+
+                    b.Property<string>("LastSyncErrorDetail")
+                        .HasColumnType("text")
+                        .HasColumnName("last_sync_error_detail");
+
+                    b.Property<Guid>("LeaseContractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lease_contract_id");
+
+                    b.Property<string>("MeterNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("meter_number");
+
+                    b.Property<DateTimeOffset>("NextCheckAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()")
+                        .HasColumnName("next_check_at");
+
+                    b.Property<int>("SyncStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("utility_sync_status_enum")
+                        .HasDefaultValueSql("'never_synced'")
+                        .HasColumnName("sync_status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal?>("TotalOutstandingBalance")
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("total_outstanding_balance");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<int>("UtilityType")
+                        .HasColumnType("utility_type_enum")
+                        .HasColumnName("utility_type");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaseContractId")
+                        .HasDatabaseName("idx_utility_accounts_lease")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("CompanyId", "TenantId")
+                        .HasDatabaseName("idx_utility_accounts_company_tenant")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("LeaseContractId", "UtilityType")
+                        .IsUnique()
+                        .HasDatabaseName("uq_utility_accounts_lease_type")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("UtilityType", "AccountNumber")
+                        .IsUnique()
+                        .HasDatabaseName("uq_utility_accounts_type_number")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("UtilityType", "CreatedAt")
+                        .HasDatabaseName("idx_utility_accounts_bootstrap_pending")
+                        .HasFilter("deleted_at IS NULL AND is_active = true AND historical_bootstrap_completed = false");
+
+                    b.HasIndex("UtilityType", "NextCheckAt")
+                        .HasDatabaseName("idx_utility_accounts_scheduler")
+                        .HasFilter("deleted_at IS NULL AND is_active = true AND historical_bootstrap_completed = true");
+
+                    b.ToTable("utility_accounts", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_utility_accounts_account_number_not_blank", "length(btrim(account_number)) > 0");
+
+                            t.HasCheckConstraint("chk_utility_accounts_claim_fields_consistent", "(claimed_at IS NULL AND claimed_by_job_run_id IS NULL) OR (claimed_at IS NOT NULL AND claimed_by_job_run_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("chk_utility_accounts_interval_consistent", "(billing_interval_sample_count = 0 AND average_billing_interval_days IS NULL  AND estimated_next_bill_date IS NULL) OR (billing_interval_sample_count > 0 AND average_billing_interval_days IS NOT NULL)");
+
+                            t.HasCheckConstraint("chk_utility_accounts_total_outstanding_nonneg", "total_outstanding_balance IS NULL OR total_outstanding_balance >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.UtilityBills.UtilityBill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v7()");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateOnly>("BillDate")
+                        .HasColumnType("date")
+                        .HasColumnName("bill_date");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasDefaultValue("JOD")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset>("DiscoveredAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()")
+                        .HasColumnName("discovered_at");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<bool>("IsFromHistoricalBackfill")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_from_historical_backfill");
+
+                    b.Property<bool>("IsPaid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_paid");
+
+                    b.Property<DateTimeOffset?>("NotificationSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("notification_sent_at");
+
+                    b.Property<int>("PaymentStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("utility_bill_status_enum")
+                        .HasDefaultValueSql("'unknown'")
+                        .HasColumnName("payment_status");
+
+                    b.Property<string>("ProviderExternalId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_external_id");
+
+                    b.Property<string>("ProviderReference")
+                        .HasColumnType("text")
+                        .HasColumnName("provider_reference");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UtilityAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("utility_account_id");
+
+                    b.Property<int>("UtilityType")
+                        .HasColumnType("utility_type_enum")
+                        .HasColumnName("utility_type");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UtilityAccountId")
+                        .HasDatabaseName("idx_utility_bills_notification_pending")
+                        .HasFilter("notification_sent_at IS NULL AND is_paid = false AND is_from_historical_backfill = false");
+
+                    b.HasIndex("CompanyId", "BillDate")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("idx_utility_bills_company_date");
+
+                    b.HasIndex("UtilityAccountId", "BillDate")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("idx_utility_bills_account_date");
+
+                    b.HasIndex("UtilityAccountId", "ProviderExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_utility_bills_account_external_id");
+
+                    b.ToTable("utility_bills", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_utility_bills_amount_positive", "amount > 0");
+
+                            t.HasCheckConstraint("chk_utility_bills_currency_length", "length(currency) = 3");
+
+                            t.HasCheckConstraint("chk_utility_bills_notification_after_discovered", "notification_sent_at IS NULL OR notification_sent_at >= discovered_at");
                         });
                 });
 

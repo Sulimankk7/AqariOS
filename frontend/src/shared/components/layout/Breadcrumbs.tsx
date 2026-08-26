@@ -36,8 +36,7 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
       let title: string | undefined = undefined;
 
       if (GUID_REGEX.test(name)) {
-        title = `ID: ${name}`;
-        label = breadcrumbTitles[name] || "Details";
+        label = breadcrumbTitles[name] || t("common.details");
       } else if (name === "tenant") {
         label = t("tenant.portal", "Tenant Portal");
         href = "/tenant/dashboard";

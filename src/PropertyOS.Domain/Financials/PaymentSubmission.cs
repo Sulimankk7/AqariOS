@@ -9,6 +9,7 @@ public class PaymentSubmission : ISoftDeletable
     public Guid Id { get; private set; }
     public Guid CompanyId { get; private set; }
     public Guid RentPaymentId { get; private set; }
+    public decimal? Amount { get; private set; }
     public PaymentMethod PaymentMethod { get; private set; }
     public string? ReferenceNumber { get; private set; }
     public Guid? ProofFileId { get; private set; }
@@ -44,6 +45,7 @@ public class PaymentSubmission : ISoftDeletable
     internal static PaymentSubmission Create(
         Guid companyId,
         Guid rentPaymentId,
+        decimal amount,
         PaymentMethod paymentMethod,
         string? referenceNumber,
         Guid? proofFileId,
@@ -54,11 +56,15 @@ public class PaymentSubmission : ISoftDeletable
         DateOnly? chequeIssueDate = null,
         DateOnly? chequeDueDate = null)
     {
+        if (amount <= 0)
+            throw new ArgumentException("Submitted payment amount must be greater than zero.", nameof(amount));
+
         return new PaymentSubmission
         {
             Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             RentPaymentId = rentPaymentId,
+            Amount = amount,
             PaymentMethod = paymentMethod,
             ReferenceNumber = referenceNumber,
             ProofFileId = proofFileId,

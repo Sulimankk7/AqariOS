@@ -74,6 +74,11 @@ export const ROUTES = {
   payments: { root: "/payments" },
   /** /financial-operations */
   financialOperations: { root: "/financial-operations" },
+  /** /utility-bills */
+  utilityBills: {
+    root: "/utility-bills",
+    details: (id: string) => `/utility-bills/${id}`,
+  },
 
   // Operations
   /** /maintenance */
@@ -99,6 +104,7 @@ export const ROUTES = {
     profile: "/tenant/profile",
     lease: "/tenant/lease",
     payments: "/tenant/payments",
+    bills: "/tenant/bills",
   },
 } as const;
 

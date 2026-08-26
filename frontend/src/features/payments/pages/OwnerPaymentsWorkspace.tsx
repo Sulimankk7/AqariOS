@@ -17,9 +17,9 @@ export default function OwnerPaymentsWorkspace() {
     <div className="flex flex-col h-full bg-background p-4 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('Owner Payment Verification')}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('payments.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            {t('Review and verify tenant payment submissions.')}
+            {t('payments.subtitle')}
           </p>
         </div>
       </div>

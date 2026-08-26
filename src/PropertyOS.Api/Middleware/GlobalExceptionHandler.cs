@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using PropertyOS.Application.Common.Exceptions;
+using PropertyOS.Application.UtilityBills;
 using FluentValidation;
 
 namespace PropertyOS.Api.Middleware;
@@ -36,7 +37,8 @@ public class GlobalExceptionHandler : IExceptionHandler
                actualException is not NotFoundException &&
                actualException is not ConflictException &&
                actualException is not UnauthorizedAccessException &&
-               actualException is not ArchiveBlockedException)
+               actualException is not ArchiveBlockedException &&
+               actualException is not DbUpdateException)
         {
             actualException = actualException.InnerException;
         }
@@ -80,6 +82,10 @@ public class GlobalExceptionHandler : IExceptionHandler
                 else if (conflictException is DuplicatePhoneException)
                 {
                     problemDetails.Extensions["code"] = "PHONE_ALREADY_EXISTS";
+                }
+                else if (conflictException is UtilityAccountAlreadyLinkedException)
+                {
+                    problemDetails.Extensions["code"] = "UTILITY_ACCOUNT_ALREADY_LINKED";
                 }
                 break;
 
@@ -148,6 +154,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                     {
                         problemDetails.Detail = "A tenant with this national ID already exists.";
                         problemDetails.Extensions["code"] = "TENANT_NATIONAL_ID_ALREADY_EXISTS";
+                    }
+                    else if (pgEx.ConstraintName is "uq_utility_accounts_lease_type"
+                             or "uq_utility_accounts_type_number")
+                    {
+                        problemDetails.Detail = "This utility account is already linked.";
+                        problemDetails.Extensions["code"] = "UTILITY_ACCOUNT_ALREADY_LINKED";
                     }
                     else
                     {

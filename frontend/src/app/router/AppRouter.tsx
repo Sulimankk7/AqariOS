@@ -30,6 +30,7 @@ import { TenantDashboardPage } from "@/features/tenantPortal/pages/TenantDashboa
 import { TenantProfilePage } from "@/features/tenantPortal/pages/TenantProfilePage";
 import { TenantLeasePage } from "@/features/tenantPortal/pages/TenantLeasePage";
 import { TenantPaymentsPage } from "@/features/tenantPortal/pages/TenantPaymentsPage";
+import { TenantBillsPage } from "@/features/tenantPortal/pages/TenantBillsPage";
 
 // Lucide icons for placeholders
 import {
@@ -83,6 +84,9 @@ import TenantDetailsPage from "@/features/tenants/pages/TenantDetailsPage";
 
 import { OwnerPaymentsWorkspace } from "@/features/payments";
 import { FinancialOperationsPage } from "@/features/financials";
+import { UtilityAccountsPage } from "@/features/utilityBills/pages/UtilityAccountsPage";
+import { UtilityAccountDetailsPage } from "@/features/utilityBills/pages/UtilityAccountDetailsPage";
+import { MaintenancePage } from "@/features/maintenance/pages/MaintenancePage";
 
 import { AuthLoadingScreen } from "@/features/auth/components/AuthLoadingScreen";
 
@@ -191,17 +195,15 @@ export function AppRouter() {
 
             {/* Finance */}
             <Route path={ROUTES.financialOperations.root} element={<FinancialOperationsPage />} />
+            <Route path={ROUTES.utilityBills.root}>
+              <Route index element={<UtilityAccountsPage />} />
+              <Route path=":id" element={<UtilityAccountDetailsPage />} />
+            </Route>
 
             {/* Operations */}
             <Route
               path={ROUTES.maintenance.root}
-              element={
-                <ModulePlaceholder
-                  title="Maintenance"
-                  description="Submit and track work orders and facilities requests."
-                  icon={Wrench}
-                />
-              }
+              element={<MaintenancePage />}
             />
             <Route
               path={ROUTES.marketplace.root}
@@ -274,8 +276,10 @@ export function AppRouter() {
             <Route path="/tenant/dashboard" element={<TenantDashboardPage />} />
             <Route path="/tenant/lease" element={<TenantLeasePage />} />
             <Route path="/tenant/payments" element={<TenantPaymentsPage />} />
+            <Route path={ROUTES.tenant.bills} element={<TenantBillsPage />} />
             <Route path="/tenant/profile" element={<TenantProfilePage />} />
           </Route>
+
         </Route>
 
         {/* Catch-all: redirect to root (which is auth-aware) */}

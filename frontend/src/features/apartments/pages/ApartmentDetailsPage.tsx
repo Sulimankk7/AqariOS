@@ -36,7 +36,6 @@ export default function ApartmentDetailsPage() {
 
       <PageHeader 
         title={`${t('unitNumber')} ${apartment.unitNumber}`} 
-        description={`Apartment ID: ${apartment.id}`}
         actions={
           <Button onClick={() => navigate(`/apartments/${apartment.id}/edit`)}>
             <Edit className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />

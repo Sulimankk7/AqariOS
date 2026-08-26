@@ -9,7 +9,10 @@ internal sealed class PaymentSubmissionConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<PaymentSubmission> builder)
     {
-        builder.ToTable("payment_submissions");
+        builder.ToTable("payment_submissions", t =>
+        {
+            t.HasCheckConstraint("chk_payment_submissions_amount_positive", "amount IS NULL OR amount > 0");
+        });
 
         builder.HasKey(p => p.Id);
 
@@ -28,6 +31,11 @@ internal sealed class PaymentSubmissionConfiguration : IEntityTypeConfiguration<
             .HasColumnName("rent_payment_id")
             .HasColumnType("uuid")
             .IsRequired();
+
+        builder.Property(p => p.Amount)
+            .HasColumnName("amount")
+            .HasColumnType("numeric(12,3)")
+            .IsRequired(false);
 
         builder.Property(p => p.PaymentMethod)
             .HasColumnName("payment_method")

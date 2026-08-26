@@ -25,7 +25,8 @@ public class CreateTenantCommandValidator : AbstractValidator<CreateTenantComman
         RuleFor(v => v.Email)
             .NotEmpty().WithMessage("Email is required.")
             .MaximumLength(255).WithMessage("Email must not exceed 255 characters.")
-            .EmailAddress().WithMessage("Email must be a valid email address.");
+            .Must(BeAValidEmailAddress).WithMessage("Email must be a valid email address.")
+            .When(v => !string.IsNullOrWhiteSpace(v.Email), ApplyConditionTo.CurrentValidator);
 
         RuleFor(v => v.Occupation)
             .MaximumLength(100).WithMessage("Occupation must not exceed 100 characters.");
@@ -42,6 +43,30 @@ public class CreateTenantCommandValidator : AbstractValidator<CreateTenantComman
             return true;
         }
         catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
+    private static bool BeAValidEmailAddress(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            if (addr.Address != email)
+                return false;
+
+            var host = addr.Host;
+            if (string.IsNullOrWhiteSpace(host) || host.StartsWith('.') || host.EndsWith('.') || !host.Contains('.'))
+                return false;
+
+            var hostParts = host.Split('.');
+            return System.Linq.Enumerable.All(hostParts, p => !string.IsNullOrWhiteSpace(p) && p.Length >= 1);
+        }
+        catch
         {
             return false;
         }

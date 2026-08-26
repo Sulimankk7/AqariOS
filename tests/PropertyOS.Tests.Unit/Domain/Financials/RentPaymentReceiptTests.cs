@@ -51,7 +51,7 @@ public class RentPaymentReceiptTests
     }
 
     [Fact]
-    public void IssueReceipt_OnPartiallyPaidPayment_ThrowsInvalidOperationException()
+    public void IssueReceipt_OnPartiallyPaidPayment_WithAmount_SucceedsAndSetsTransactionAmount()
     {
         var payment = RentPayment.Create(
             Guid.NewGuid(),
@@ -72,13 +72,17 @@ public class RentPaymentReceiptTests
         // Transition to PartiallyPaid status
         payment.UpdateAllocationSync(150.00m, DueDateStatus.PartiallyPaid, DateTimeOffset.UtcNow, Guid.NewGuid());
 
-        Assert.Throws<InvalidOperationException>(() =>
-            payment.IssueReceipt("REC-123", DateTimeOffset.UtcNow, Guid.NewGuid())
-        );
+        var receipt = payment.IssueReceipt("REC-123", DateTimeOffset.UtcNow, Guid.NewGuid(), amount: 150.00m);
+
+        Assert.NotNull(receipt);
+        Assert.Equal(150.00m, receipt.Amount);
+        Assert.Equal("REC-123", payment.ReceiptNumber);
+        Assert.Equal(350.00m, payment.AmountDue); // Invariant: AmountDue unchanged
+        Assert.Equal(150.00m, payment.AmountPaid); // Invariant: AmountPaid unchanged
     }
 
     [Fact]
-    public void IssueReceipt_OnPendingPayment_ThrowsInvalidOperationException()
+    public void IssueReceipt_OnPartiallyPaidPayment_AmountExceedingAmountDue_ThrowsInvalidOperationException()
     {
         var payment = RentPayment.Create(
             Guid.NewGuid(),
@@ -96,7 +100,33 @@ public class RentPaymentReceiptTests
             Guid.NewGuid()
         );
 
-        // Status is initially Pending
+        payment.UpdateAllocationSync(150.00m, DueDateStatus.PartiallyPaid, DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        Assert.Throws<InvalidOperationException>(() =>
+            payment.IssueReceipt("REC-123", DateTimeOffset.UtcNow, Guid.NewGuid(), amount: 400.00m)
+        );
+    }
+
+    [Fact]
+    public void IssueReceipt_OnPendingPayment_ZeroPaidAndNoAmount_ThrowsInvalidOperationException()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            350.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        // Status is initially Pending with AmountPaid = 0
         Assert.Throws<InvalidOperationException>(() =>
             payment.IssueReceipt("REC-123", DateTimeOffset.UtcNow, Guid.NewGuid())
         );

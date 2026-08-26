@@ -356,4 +356,234 @@ public class RentPaymentTests
             cheque.Cancel("Cancellation after clear", null, DateTimeOffset.UtcNow, Guid.NewGuid())
         );
     }
+
+    [Fact]
+    public void SubmitForVerification_ValidAmount_StoresAmountAndSetsPendingVerification()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            500.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        payment.SubmitForVerification(
+            200.00m,
+            PaymentMethod.BankTransfer,
+            "REF-PARTIAL",
+            Guid.NewGuid(),
+            tenantId,
+            now
+        );
+
+        Assert.Equal(DueDateStatus.PendingVerification, payment.DueDateStatus);
+        Assert.Single(payment.Submissions);
+        var sub = payment.Submissions.First();
+        Assert.Equal(200.00m, sub.Amount);
+        Assert.Equal(SubmissionStatus.Pending, sub.Status);
+    }
+
+    [Fact]
+    public void SubmitForVerification_ZeroOrNegativeAmount_ThrowsArgumentException()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            500.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        Assert.Throws<ArgumentException>(() => payment.SubmitForVerification(
+            0,
+            PaymentMethod.BankTransfer,
+            "REF-0",
+            Guid.NewGuid(),
+            tenantId,
+            now
+        ));
+
+        Assert.Throws<ArgumentException>(() => payment.SubmitForVerification(
+            -50.00m,
+            PaymentMethod.BankTransfer,
+            "REF-NEG",
+            Guid.NewGuid(),
+            tenantId,
+            now
+        ));
+    }
+
+    [Fact]
+    public void SubmitForVerification_AmountExceedingRemainingBalance_ThrowsInvalidOperationException()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            500.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        Assert.Throws<InvalidOperationException>(() => payment.SubmitForVerification(
+            500.001m,
+            PaymentMethod.BankTransfer,
+            "REF-EXCEED",
+            Guid.NewGuid(),
+            tenantId,
+            now
+        ));
+    }
+
+    [Fact]
+    public void RejectSubmission_ValidPendingSubmission_SetsRejectedStatusAndRestoredStatus()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            500.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        payment.SubmitForVerification(200.00m, PaymentMethod.BankTransfer, "REF-1", null, tenantId, now);
+        var sub = payment.Submissions.First();
+
+        var rejectorId = Guid.NewGuid();
+        var rejectedAt = now.AddMinutes(5);
+        payment.RejectSubmission(sub.Id, "Invalid receipt image", rejectorId, rejectedAt, DueDateStatus.PartiallyPaid);
+
+        Assert.Equal(SubmissionStatus.Rejected, sub.Status);
+        Assert.Equal("Invalid receipt image", sub.RejectionReason);
+        Assert.Equal(rejectorId, sub.RejectedBy);
+        Assert.Equal(rejectedAt, sub.RejectedAt);
+        Assert.Equal(DueDateStatus.PartiallyPaid, payment.DueDateStatus);
+    }
+
+    [Fact]
+    public void RejectSubmission_NonExistentSubmission_ThrowsArgumentException()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            500.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        Assert.Throws<ArgumentException>(() =>
+            payment.RejectSubmission(Guid.NewGuid(), "Reason", Guid.NewGuid(), DateTimeOffset.UtcNow, DueDateStatus.Pending));
+    }
+
+    [Fact]
+    public void RejectSubmission_AlreadyRejectedSubmission_ThrowsInvalidOperationException()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            500.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        payment.SubmitForVerification(200.00m, PaymentMethod.BankTransfer, "REF-1", null, tenantId, now);
+        var sub = payment.Submissions.First();
+
+        payment.RejectSubmission(sub.Id, "Reason 1", Guid.NewGuid(), now, DueDateStatus.Pending);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            payment.RejectSubmission(sub.Id, "Reason 2", Guid.NewGuid(), now, DueDateStatus.Pending));
+    }
+
+    [Fact]
+    public void RejectSubmission_EmptyReason_ThrowsArgumentException()
+    {
+        var payment = RentPayment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            PaymentPurpose.ScheduledInstallment,
+            500.00m,
+            "JOD",
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            DateOnly.FromDateTime(DateTime.UtcNow),
+            DateTimeOffset.UtcNow,
+            Guid.NewGuid()
+        );
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        payment.SubmitForVerification(200.00m, PaymentMethod.BankTransfer, "REF-1", null, tenantId, now);
+        var sub = payment.Submissions.First();
+
+        Assert.Throws<ArgumentException>(() =>
+            payment.RejectSubmission(sub.Id, "", Guid.NewGuid(), now, DueDateStatus.Pending));
+
+        Assert.Throws<ArgumentException>(() =>
+            payment.RejectSubmission(sub.Id, "   ", Guid.NewGuid(), now, DueDateStatus.Pending));
+    }
 }

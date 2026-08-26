@@ -72,7 +72,9 @@ public sealed class PostgresTestFixture : IAsyncLifetime
 
         var migrationOptions = new DbContextOptionsBuilder<PropertyOsDbContext>()
             .UseNpgsql(connString)
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
             .Options;
+
 
         await using (var migrationContext = new PropertyOsDbContext(migrationOptions))
         {
@@ -87,6 +89,8 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 GRANT SELECT, INSERT, UPDATE, DELETE ON expenses, expense_receipts, company_receipt_sequences, rent_payment_receipts, efawateercom_transactions TO propertyos_app;
                 GRANT SELECT, INSERT, UPDATE, DELETE ON maintenance_requests, maintenance_request_attachments, maintenance_request_comments, maintenance_status_history TO propertyos_app;
             ");
+
+
             
             // Create a non-superuser role for runtime tests to ensure RLS is genuinely enforced.
             // (A PostgreSQL superuser cannot remove its own superuser status).
@@ -165,7 +169,13 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
 
+        // Module 12 — Utility Bills
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityType>("utility_type_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilitySyncStatus>("utility_sync_status_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityBillPaymentStatus>("utility_bill_status_enum");
+
         _dataSource = dataSourceBuilder.Build();
+
 
         AppUserConnectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
         {
@@ -237,7 +247,13 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
         appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
 
+        // Module 12 — Utility Bills
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityType>("utility_type_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilitySyncStatus>("utility_sync_status_enum");
+        appUserDataSourceBuilder.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityBillPaymentStatus>("utility_bill_status_enum");
+
         AppUserDataSource = appUserDataSourceBuilder.Build();
+
 
         // 3. Create the test Context backed by the mapped DataSource.
         var options = new DbContextOptionsBuilder<PropertyOsDbContext>()
@@ -303,7 +319,13 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
                 o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
                 o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
+
+                // Module 12 — Utility Bills
+                o.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityType>("utility_type_enum");
+                o.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilitySyncStatus>("utility_sync_status_enum");
+                o.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityBillPaymentStatus>("utility_bill_status_enum");
             })
+
             .LogSqlWhenRequested()
             .Options;
 
@@ -372,7 +394,13 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<PropertyOS.Domain.Notifications.Enums.NotificationPriority>("notification_priority_enum");
                 o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>("delivery_channel_enum");
                 o.MapEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>("delivery_status_enum");
+
+                // Module 12 — Utility Bills
+                o.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityType>("utility_type_enum");
+                o.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilitySyncStatus>("utility_sync_status_enum");
+                o.MapEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityBillPaymentStatus>("utility_bill_status_enum");
             })
+
             .Options;
 
         AppUserContext = new PropertyOsDbContext(appUserOptions);

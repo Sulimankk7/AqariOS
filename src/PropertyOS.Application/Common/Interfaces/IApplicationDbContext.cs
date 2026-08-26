@@ -28,7 +28,13 @@ public interface IApplicationDbContext
     DbSet<PropertyOS.Domain.Leasing.LeaseContract> LeaseContracts { get; }
     DbSet<PropertyOS.Domain.Leasing.Tenant> Tenants { get; }
     DbSet<PropertyOS.Domain.Financials.RentPayment> RentPayments { get; }
+    DbSet<PropertyOS.Domain.Financials.PaymentAllocation> PaymentAllocations { get; }
+    DbSet<PropertyOS.Domain.Financials.PaymentSubmission> PaymentSubmissions { get; }
+    DbSet<PropertyOS.Domain.Financials.RentPaymentReceipt> RentPaymentReceipts { get; }
     DbSet<PropertyOS.Domain.Financials.Expense> Expenses { get; }
+    DbSet<PropertyOS.Domain.UtilityBills.UtilityAccount> UtilityAccounts { get; }
+    DbSet<PropertyOS.Domain.UtilityBills.UtilityBill> UtilityBills { get; }
+
 
     DatabaseFacade Database { get; }
 

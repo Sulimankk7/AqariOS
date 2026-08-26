@@ -56,6 +56,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Rent payment details.</returns>
     [HttpGet("api/v{version:apiVersion}/rent-payments/{id:guid}")]
+    [Authorize(Policy = FinancialsPermissions.PaymentsRead)]
     [ProducesResponseType(typeof(RentPaymentDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -77,6 +78,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of rent payments for the lease contract.</returns>
     [HttpGet("api/v{version:apiVersion}/leases/{leaseId:guid}/rent-payments")]
+    [Authorize(Policy = FinancialsPermissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<RentPaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetForLease(
@@ -95,6 +97,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of rent payments for the tenant.</returns>
     [HttpGet("api/v{version:apiVersion}/tenants/{tenantId:guid}/rent-payments")]
+    [Authorize(Policy = FinancialsPermissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<RentPaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetForTenant(
@@ -114,6 +117,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of matching rent payments.</returns>
     [HttpGet("api/v{version:apiVersion}/rent-payments/search")]
+    [Authorize(Policy = FinancialsPermissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<RentPaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -134,6 +138,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of outstanding rent payments.</returns>
     [HttpGet("api/v{version:apiVersion}/rent-payments/outstanding")]
+    [Authorize(Policy = FinancialsPermissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<RentPaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -160,6 +165,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Page of rent payments.</returns>
     [HttpGet("api/v{version:apiVersion}/rent-payments")]
+    [Authorize(Policy = FinancialsPermissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<RentPaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -290,6 +296,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Receipt details.</returns>
     [HttpGet("api/v{version:apiVersion}/rent-payments/{id:guid}/receipt")]
+    [Authorize(Policy = FinancialsPermissions.ReceiptsRead)]
     [ProducesResponseType(typeof(RentPaymentReceiptDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -305,6 +312,27 @@ public class RentPaymentsController : ControllerBase
     }
 
     /// <summary>
+    /// Downloads the official final settlement statement PDF for a settled installment.
+    /// </summary>
+    /// <param name="id">Rent payment installment identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>PDF file stream.</returns>
+    [HttpGet("api/v{version:apiVersion}/rent-payments/{id:guid}/settlement-statement")]
+    [Authorize(Policy = FinancialsPermissions.ReceiptsRead)]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSettlementStatement(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new PropertyOS.Application.Financials.Queries.GetRentPaymentSettlementStatementPdf.GetRentPaymentSettlementStatementPdfQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return File(result.Content, result.MimeType, result.Filename);
+    }
+
+    /// <summary>
     /// Gets rent payment receipts, keyset-paginated (IssueDate DESC, Id ASC) with optional filters.
     /// </summary>
     /// <param name="leaseContractId">Optional lease contract filter.</param>
@@ -317,6 +345,7 @@ public class RentPaymentsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Page of rent payment receipts.</returns>
     [HttpGet("api/v{version:apiVersion}/rent-payment-receipts")]
+    [Authorize(Policy = FinancialsPermissions.ReceiptsRead)]
     [ProducesResponseType(typeof(List<RentPaymentReceiptDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]

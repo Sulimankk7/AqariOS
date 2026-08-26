@@ -1,4 +1,6 @@
 import { http, ApiError } from "@/shared/lib/http";
+import { storage, STORAGE_KEYS } from "@/shared/services/storage";
+import { apiUrl } from "@/config/api";
 import type {
   TenantDetailDto,
   TenantLeaseDto,
@@ -79,6 +81,39 @@ export const tenantPortalApi = {
    */
   getMyPayments(): Promise<TenantPaymentDto[]> {
     return http.get<TenantPaymentDto[]>("/api/v1/tenant-portal/payments");
+  },
+
+  /**
+   * Downloads the final settlement statement PDF for a settled installment.
+   * GET /api/v1/tenant-portal/payments/{id}/settlement-statement
+   */
+  async downloadSettlementStatement(rentPaymentId: string): Promise<Blob> {
+    const token = storage.get<string>(STORAGE_KEYS.accessToken);
+    const url = apiUrl(`/api/v1/tenant-portal/payments/${rentPaymentId}/settlement-statement`);
+    const headers: Record<string, string> = {
+      Accept: "application/pdf, application/problem+json",
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Download failed with status ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("json") || contentType.includes("problem+json")) {
+      const errorJson = await response.json();
+      throw new Error(errorJson.detail || errorJson.title || "Failed to download settlement statement");
+    }
+
+    return await response.blob();
   },
 };
 

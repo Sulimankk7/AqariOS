@@ -15,6 +15,7 @@ export interface StatCardProps {
   icon?: LucideIcon;
   variant?: "default" | "success" | "warning" | "danger" | "info";
   path?: string;
+  onClick?: () => void;
   ariaLabel?: string;
 }
 
@@ -34,12 +35,15 @@ export function StatCard({
   icon: Icon,
   variant = "default",
   path,
+  onClick,
   ariaLabel,
 }: StatCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (path) {
+    if (onClick) {
+      onClick();
+    } else if (path) {
       navigate(path);
     }
   };
@@ -47,17 +51,17 @@ export function StatCard({
   return (
     <article
       tabIndex={0}
-      role={path ? "button" : "article"}
+      role={path || onClick ? "button" : "article"}
       onClick={handleClick}
       onKeyDown={(e) => {
-        if (path && (e.key === "Enter" || e.key === " ")) {
+        if ((path || onClick) && (e.key === "Enter" || e.key === " ")) {
           e.preventDefault();
           handleClick();
         }
       }}
       aria-label={ariaLabel || `${title}: ${value}`}
       className={`group relative flex flex-col justify-between p-5 rounded-lg border border-border bg-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-        path ? "hover:border-border-strong hover:shadow-md cursor-pointer" : ""
+        path || onClick ? "hover:border-border-strong hover:shadow-md cursor-pointer" : ""
       }`}
     >
       <div className="flex items-center justify-between gap-3 mb-3">
@@ -70,7 +74,7 @@ export function StatCard({
               <Icon className="w-4 h-4" />
             </div>
           )}
-          {path && (
+          {(path || onClick) && (
             <ArrowUpRight className="w-4 h-4 text-muted-foreground/0 group-hover:text-muted-foreground transition-all duration-200 rtl:rotate-270" />
           )}
         </div>

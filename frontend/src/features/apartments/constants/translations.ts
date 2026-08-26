@@ -5,6 +5,8 @@ export const dictionary = {
     addApartment: 'Add Apartment',
     editApartment: 'Edit Apartment',
     apartmentDetails: 'Apartment Details',
+    building: 'Building',
+    floor: 'Floor',
     pageDescription: 'Manage apartment units across property floors.',
     createPageDescription: 'Register a new apartment unit under a specific floor.',
     editPageDescription: 'Update base rent and monetary terms for this unit.',
@@ -26,8 +28,8 @@ export const dictionary = {
     baseRentAmount: 'Base Rent Amount',
     baseRentCurrency: 'Currency',
     occupancyStatusTitle: 'Occupancy Status',
-    floorId: 'Floor ID',
-    buildingId: 'Building ID',
+    floorId: 'Floor',
+    buildingId: 'Building',
     
     // Form Placeholders
     unitNumberPlaceholder: 'e.g. APT-101',
@@ -38,7 +40,7 @@ export const dictionary = {
     bedroomsPlaceholder: 'e.g. 2',
     bathroomsPlaceholder: 'e.g. 2',
     baseRentAmountPlaceholder: 'e.g. 450.00',
-    floorIdPlaceholder: 'Select or paste floor ID',
+    floorIdPlaceholder: 'Select a floor',
 
     // Table Columns
     tableUnit: 'Unit',
@@ -82,7 +84,7 @@ export const dictionary = {
     deleteConfirmTitle: 'Archive Apartment',
     deleteConfirmMessage: 'Are you sure you want to archive this apartment unit? This action will mark the unit inactive.',
     loadError: 'Failed to load apartments list.',
-    floorRequiredMessage: 'A valid Floor ID is required to create an apartment unit.',
+    floorRequiredMessage: 'Select a floor to create an apartment unit.',
 
     // Enum Labels
     ownershipStatus: {
@@ -102,6 +104,8 @@ export const dictionary = {
     addApartment: 'إضافة شقة',
     editApartment: 'تعديل الشقة',
     apartmentDetails: 'تفاصيل الشقة',
+    building: 'العمارة',
+    floor: 'الطابق',
     pageDescription: 'إدارة الشقق والوحدات العقارية حسب الطوابق.',
     createPageDescription: 'تسجيل وحدة شقة جديدة تحت طابق محدد.',
     editPageDescription: 'تحديث قيمة الإيجار الشخطي والشروط المالية للوحدة.',
@@ -123,8 +127,8 @@ export const dictionary = {
     baseRentAmount: 'قيمة الإيجار الأساسي',
     baseRentCurrency: 'العملة',
     occupancyStatusTitle: 'حالة الإشغال',
-    floorId: 'معرّف الطابق',
-    buildingId: 'معرّف المبنى',
+    floorId: 'الطابق',
+    buildingId: 'العمارة',
     
     // Form Placeholders
     unitNumberPlaceholder: 'مثال: شقة 101',
@@ -135,7 +139,7 @@ export const dictionary = {
     bedroomsPlaceholder: 'مثال: 2',
     bathroomsPlaceholder: 'مثال: 2',
     baseRentAmountPlaceholder: 'مثال: 450.00',
-    floorIdPlaceholder: 'اختر أو أدخل معرّف الطابق',
+    floorIdPlaceholder: 'اختر الطابق',
 
     // Table Columns
     tableUnit: 'الوحدة',
@@ -179,7 +183,7 @@ export const dictionary = {
     deleteConfirmTitle: 'أرشفة الشقة',
     deleteConfirmMessage: 'هل أنت تأكد من رغبتك في أرشفة هذه الشقة؟ سيتم تغيير حالتها إلى غير نشط.',
     loadError: 'فشل في تحميل قائمة الشقق.',
-    floorRequiredMessage: 'معرّف الطابق مطلوب لإضافة شقة جديدة.',
+    floorRequiredMessage: 'اختر الطابق لإضافة شقة جديدة.',
 
     // Enum Labels
     ownershipStatus: {

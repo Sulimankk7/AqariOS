@@ -11,6 +11,7 @@ export interface PaymentVerificationQueueItem {
   contractNumber: string | null;
   amountDue: number;
   amountPaid: number;
+  submittedAmount: number;
   currency: string;
   paymentMethod: string;
   referenceNumber: string | null;
@@ -32,6 +33,7 @@ export interface KeysetPage<T> {
 
 export interface PaymentSubmissionDto {
   id: string;
+  amount?: number | null;
   paymentMethod: string;
   referenceNumber: string | null;
   proofFileId: string | null;

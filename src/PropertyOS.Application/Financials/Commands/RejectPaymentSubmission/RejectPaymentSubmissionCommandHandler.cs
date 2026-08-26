@@ -8,6 +8,7 @@ using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.Common.Models;
 using PropertyOS.Domain.Financials;
+using PropertyOS.Domain.Financials.Enums;
 
 namespace PropertyOS.Application.Financials.Commands.RejectPaymentSubmission;
 
@@ -39,10 +40,33 @@ public class RejectPaymentSubmissionCommandHandler : IRequestHandler<RejectPayme
         if (rentPayment == null)
             throw new NotFoundException($"PaymentSubmission with ID {request.SubmissionId} was not found.");
 
+        var submission = rentPayment.Submissions.FirstOrDefault(s => s.Id == request.SubmissionId)
+            ?? throw new NotFoundException($"PaymentSubmission with ID {request.SubmissionId} was not found.");
+
+        if (submission.Status != SubmissionStatus.Pending)
+            throw new BusinessRuleException("Only pending submissions can be rejected.", "SUBMISSION_NOT_PENDING");
+
         var rejectedBy = _currentUser.UserId ?? throw new UnauthorizedAccessException();
         var rejectedAt = _clock.UtcNow;
 
-        rentPayment.RejectSubmission(request.SubmissionId, request.Reason, rejectedBy, rejectedAt);
+        var today = _clock.GetJordanBusinessDate(rejectedAt);
+
+        var graceDays = await _context.CompanySettings
+            .AsNoTracking()
+            .Where(s => s.CompanyId == rentPayment.CompanyId)
+            .Select(s => (short?)s.RentGracePeriodDays)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var effectiveGraceDays = graceDays ?? 5;
+
+        var restoredStatus = AllocationSettlement.DeriveStatus(
+            rentPayment.AmountPaid,
+            rentPayment.AmountDue,
+            rentPayment.DueDate,
+            today,
+            effectiveGraceDays);
+
+        rentPayment.RejectSubmission(request.SubmissionId, request.Reason, rejectedBy, rejectedAt, restoredStatus);
 
         await _context.SaveChangesAsync(cancellationToken);
 

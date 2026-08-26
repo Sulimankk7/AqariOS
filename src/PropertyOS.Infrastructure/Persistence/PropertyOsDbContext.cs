@@ -120,6 +120,13 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
     public DbSet<PropertyOS.Domain.Notifications.NotificationDelivery> NotificationDeliveries => Set<PropertyOS.Domain.Notifications.NotificationDelivery>();
 
     // ---------------------------------------------------------------------------
+    // Module 12 — Utility Bills (Electricity & Water)
+    // ---------------------------------------------------------------------------
+    public DbSet<PropertyOS.Domain.UtilityBills.UtilityAccount> UtilityAccounts => Set<PropertyOS.Domain.UtilityBills.UtilityAccount>();
+    public DbSet<PropertyOS.Domain.UtilityBills.UtilityBill> UtilityBills => Set<PropertyOS.Domain.UtilityBills.UtilityBill>();
+
+
+    // ---------------------------------------------------------------------------
     // Module 3 — Security / Identity / RBAC / Audit
     // ---------------------------------------------------------------------------
 
@@ -202,6 +209,12 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Notifications.Enums.DeliveryChannel>(name: "delivery_channel_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Notifications.Enums.DeliveryStatus>(name: "delivery_status_enum");
 
+        // Module 12 — Utility Bills
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityType>(name: "utility_type_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.UtilityBills.Enums.UtilitySyncStatus>(name: "utility_sync_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.UtilityBills.Enums.UtilityBillPaymentStatus>(name: "utility_bill_status_enum");
+
+
         // All entity configurations are discovered from IEntityTypeConfiguration<T>
         // classes in this assembly. This is the only call in OnModelCreating —
         // per the approved architecture, no configuration logic lives here.
@@ -220,6 +233,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
         {
             await using var tx = await Database.BeginTransactionAsync(cancellationToken);
             var result = await operation(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
             return result;
         });
@@ -232,6 +246,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
         {
             await using var tx = await Database.BeginTransactionAsync(cancellationToken);
             await operation(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
         });
     }

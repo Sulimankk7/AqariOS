@@ -249,7 +249,7 @@ public class DevelopmentPaymentVerificationSeedService : IDevelopmentPaymentVeri
             await _dbContext.SaveChangesAsync(ct);
 
             // 6. Submit for Verification
-            rentPayment.SubmitForVerification(PaymentMethod.BankTransfer, referenceNumber, fileStorage.Id, tenantUser.Id, now);
+            rentPayment.SubmitForVerification(500m, PaymentMethod.BankTransfer, referenceNumber, fileStorage.Id, tenantUser.Id, now);
             await _dbContext.SaveChangesAsync(ct);
 
             var newSubmission = rentPayment.Submissions.First(s => s.ReferenceNumber == referenceNumber);

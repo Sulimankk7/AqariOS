@@ -138,14 +138,23 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(PropertyOS.Application.Leasing.Security.LeasingPermissions.Approve, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Leasing.Security.LeasingPermissions.Approve, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 
+    options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.PaymentsRead, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.PaymentsRead, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
     options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.PaymentsApprove, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.PaymentsApprove, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ChequesRead, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ChequesRead, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 
     options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesCreate, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesCreate, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 
     options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesApprove, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ExpensesApprove, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ReceiptsRead, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ReceiptsRead, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 
     options.AddPolicy(PropertyOS.Application.Financials.Security.FinancialsPermissions.ReceiptsIssue, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Financials.Security.FinancialsPermissions.ReceiptsIssue, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
@@ -179,6 +188,11 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy(PropertyOS.Application.Companies.Security.CompaniesPermissions.Manage, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Companies.Security.CompaniesPermissions.Manage, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
+    // Module 12 — Utility Bills
+    options.AddPolicy(PropertyOS.Application.UtilityBills.Security.UtilityBillsPermissions.Manage, policy =>
+        policy.RequireClaim("permissions", PropertyOS.Application.UtilityBills.Security.UtilityBillsPermissions.Manage, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
+
 });
 
 // In-app notification transport over SignalR (implements the Application-layer pusher).
@@ -412,6 +426,40 @@ if (!string.IsNullOrEmpty(connectionString))
         job => job.ExecuteSweepAsync(PropertyOS.Infrastructure.Notifications.Jobs.DispatchNotificationsJob.DefaultBatchSize, CancellationToken.None),
         "*/5 * * * *",
         new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
+
+    // Module 12 — Utility Bills: Electricity (3 morning slots on billing window days 1–3)
+    var ammanTz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman");
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.UtilityBills.Jobs.CheckElectricityBillsJob>(
+        "utility-electricity-07h",
+        job => job.ExecuteBatchAsync(CancellationToken.None),
+        "0 7 1-3 * *",
+        new RecurringJobOptions { TimeZone = ammanTz });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.UtilityBills.Jobs.CheckElectricityBillsJob>(
+        "utility-electricity-09h",
+        job => job.ExecuteBatchAsync(CancellationToken.None),
+        "0 9 1-3 * *",
+        new RecurringJobOptions { TimeZone = ammanTz });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.UtilityBills.Jobs.CheckElectricityBillsJob>(
+        "utility-electricity-11h",
+        job => job.ExecuteBatchAsync(CancellationToken.None),
+        "0 11 1-3 * *",
+        new RecurringJobOptions { TimeZone = ammanTz });
+
+    // Module 12 — Utility Bills: Water (daily 06:00 — NextCheckAt filter limits actual work)
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.UtilityBills.Jobs.CheckWaterBillsJob>(
+        "utility-water-06h",
+        job => job.ExecuteBatchAsync(CancellationToken.None),
+        "0 6 * * *",
+        new RecurringJobOptions { TimeZone = ammanTz });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.UtilityBills.Jobs.BootstrapPendingUtilityAccountsJob>(
+        "utility-bootstrap-pending-0530",
+        job => job.ExecuteBatchAsync(CancellationToken.None),
+        "30 5 * * *",
+        new RecurringJobOptions { TimeZone = ammanTz });
 }
 
 app.MapHub<PropertyOS.Api.Hubs.NotificationsHub>("/hubs/notifications");

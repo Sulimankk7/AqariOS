@@ -154,7 +154,13 @@ public class RentPayment : ISoftDeletable
     /// the returned receipt to the context (repository AddReceiptAsync): it carries a
     /// client-generated ID, so navigation-only discovery would mistake it for an existing row.
     /// </summary>
-    public RentPaymentReceipt IssueReceipt(string receiptNumber, DateTimeOffset issuedAt, Guid? issuedBy, string? notes = null, Guid? fileId = null)
+    public RentPaymentReceipt IssueReceipt(
+        string receiptNumber,
+        DateTimeOffset issuedAt,
+        Guid? issuedBy,
+        string? notes = null,
+        Guid? fileId = null,
+        decimal? amount = null)
     {
         if (Receipt != null && Receipt.DeletedAt == null)
             throw new InvalidOperationException("A receipt has already been issued for this payment.");
@@ -162,23 +168,38 @@ public class RentPayment : ISoftDeletable
         if (DueDateStatus == DueDateStatus.Cancelled)
             throw new InvalidOperationException("Cannot issue a receipt for a cancelled payment.");
 
+        decimal receiptAmount;
+
         if (PaymentPurpose == PaymentPurpose.UnallocatedReceipt)
         {
             if (AmountDue <= 0)
                 throw new InvalidOperationException("Cannot issue a receipt for a received payment with non-positive AmountDue.");
+
+            receiptAmount = amount ?? AmountDue;
         }
         else if (PaymentPurpose == PaymentPurpose.ScheduledInstallment)
         {
-            if (DueDateStatus != DueDateStatus.Paid)
-                throw new InvalidOperationException("Cannot issue a receipt for an installment that is not fully paid.");
+            if (DueDateStatus == DueDateStatus.Paid && AmountPaid != AmountDue)
+                throw new InvalidOperationException("Cannot issue a receipt for an installment marked as Paid when AmountPaid is not equal to AmountDue.");
 
-            if (AmountPaid != AmountDue)
-                throw new InvalidOperationException("Cannot issue a receipt for an installment where AmountPaid is not equal to AmountDue.");
+            if (AmountPaid <= 0 && amount == null)
+                throw new InvalidOperationException("Cannot issue a receipt for an installment with no paid amount.");
+
+            receiptAmount = amount ?? (AmountPaid > 0 ? AmountPaid : AmountDue);
+
+            if (receiptAmount <= 0)
+                throw new InvalidOperationException("Receipt amount must be positive.");
+
+            if (receiptAmount > AmountDue)
+                throw new InvalidOperationException("Receipt amount cannot exceed the installment amount due.");
         }
         else
         {
             throw new InvalidOperationException("Cannot issue a receipt for an adjustment record.");
         }
+
+        if (receiptAmount <= 0)
+            throw new ArgumentException("Receipt amount must be positive.", nameof(amount));
 
         Receipt = RentPaymentReceipt.Create(
             companyId: CompanyId,
@@ -186,7 +207,7 @@ public class RentPayment : ISoftDeletable
             receiptNumber: receiptNumber,
             issueDate: DateOnly.FromDateTime(issuedAt.DateTime),
             issuedBy: issuedBy,
-            amount: AmountDue,
+            amount: receiptAmount,
             currency: Currency,
             notes: notes,
             fileId: fileId,
@@ -215,6 +236,7 @@ public class RentPayment : ISoftDeletable
     }
 
     public void SubmitForVerification(
+        decimal amount,
         PaymentMethod method,
         string? reference,
         Guid? proofFileId,
@@ -225,15 +247,23 @@ public class RentPayment : ISoftDeletable
         DateOnly? chequeIssueDate = null,
         DateOnly? chequeDueDate = null)
     {
+        if (amount <= 0)
+            throw new ArgumentException("Submitted payment amount must be greater than zero.", nameof(amount));
+
         if (_submissions.Any(s => s.Status == SubmissionStatus.Pending))
             throw new InvalidOperationException("A payment submission is already pending verification.");
 
         if (DueDateStatus == DueDateStatus.Paid)
             throw new InvalidOperationException("Cannot submit a verification for an already paid obligation.");
 
+        var remainingBalance = AmountDue - AmountPaid;
+        if (amount > remainingBalance)
+            throw new InvalidOperationException($"Submitted payment amount ({amount} {Currency}) cannot exceed the outstanding balance ({remainingBalance} {Currency}).");
+
         var submission = PaymentSubmission.Create(
             CompanyId,
             Id,
+            amount,
             method,
             reference,
             proofFileId,
@@ -252,7 +282,7 @@ public class RentPayment : ISoftDeletable
         _domainEvents.Add(new RentPaymentSubmittedEvent(Id, submission.Id));
     }
 
-    public void ApproveSubmission(Guid submissionId, Guid verifiedBy, DateTimeOffset verifiedAt)
+    public void ApproveSubmission(Guid submissionId, Guid verifiedBy, DateTimeOffset verifiedAt, Guid? receivingPaymentId = null)
     {
         var submission = _submissions.FirstOrDefault(s => s.Id == submissionId)
             ?? throw new ArgumentException("Submission not found.", nameof(submissionId));
@@ -265,18 +295,18 @@ public class RentPayment : ISoftDeletable
         UpdatedAt = verifiedAt;
         UpdatedBy = verifiedBy;
 
-        _domainEvents.Add(new RentPaymentApprovedEvent(Id, submission.Id, verifiedBy));
+        _domainEvents.Add(new RentPaymentApprovedEvent(Id, submission.Id, verifiedBy, receivingPaymentId));
     }
 
-    public void RejectSubmission(Guid submissionId, string reason, Guid rejectedBy, DateTimeOffset rejectedAt)
+    public void RejectSubmission(Guid submissionId, string reason, Guid rejectedBy, DateTimeOffset rejectedAt, DueDateStatus restoredStatus = DueDateStatus.Pending)
     {
         var submission = _submissions.FirstOrDefault(s => s.Id == submissionId)
             ?? throw new ArgumentException("Submission not found.", nameof(submissionId));
 
         submission.Reject(reason, rejectedBy, rejectedAt);
 
-        // Revert financial state
-        DueDateStatus = DueDateStatus.Pending;
+        // Revert financial status to derived authoritative settlement status
+        DueDateStatus = restoredStatus;
 
         UpdatedAt = rejectedAt;
         UpdatedBy = rejectedBy;

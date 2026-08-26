@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
+using PropertyOS.Application.Files;
+using PropertyOS.Application.Files.Services;
 using PropertyOS.Application.Financials;
 using PropertyOS.Application.Financials.Commands.IssueRentPaymentReceipt;
 using PropertyOS.Application.Financials.Queries.Common;
 using PropertyOS.Application.Financials.Queries.GetRentPaymentById;
 using PropertyOS.Domain.Financials;
 using PropertyOS.Domain.Financials.Enums;
+using PropertyOS.Infrastructure.Persistence;
 using Xunit;
 
 namespace PropertyOS.Tests.Unit.Application.Financials;
@@ -133,9 +138,30 @@ public class IssueRentPaymentReceiptCommandHandlerTests
     {
         var paymentRepo = new FakeRentPaymentRepository();
         var sequenceRepo = new FakeCompanyReceiptSequenceRepository();
+
+        var options = new DbContextOptionsBuilder<PropertyOsDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var dbContext = new PropertyOsDbContext(options);
+
+        var pdfGenerator = Substitute.For<IReceiptPdfGenerator>();
+        pdfGenerator.GenerateReceiptPdfAsync(Arg.Any<RentPayment>(), Arg.Any<ReceiptPdfModel>(), Arg.Any<CancellationToken>())
+            .Returns(new byte[] { 1, 2, 3 });
+
+        var fileStorageRepo = Substitute.For<IFileStorageRepository>();
+        var storageProvider = Substitute.For<IStorageProvider>();
+
+        var clock = Substitute.For<IBusinessClock>();
+        clock.UtcNow.Returns(DateTimeOffset.UtcNow);
+
         var handler = new IssueRentPaymentReceiptCommandHandler(
             paymentRepo,
             sequenceRepo,
+            pdfGenerator,
+            fileStorageRepo,
+            storageProvider,
+            dbContext,
+            clock,
             new FakeTenantContext { CompanyId = companyId },
             new FakeCurrentUserContext());
         return (handler, paymentRepo, sequenceRepo);

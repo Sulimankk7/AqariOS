@@ -11,5 +11,11 @@ public enum NotificationType
     MaintenanceRequestUpdated,
     MarketplaceViewingRequest,
     DocumentExpiring,
-    GeneralNotification
+    GeneralNotification,
+
+    // ── Utility Billing (Module 12) ──────────────────────────────────────────
+    /// <summary>Tenant has a new outstanding electricity bill.</summary>
+    UtilityBillElectricity,
+    /// <summary>Tenant has a new outstanding water bill.</summary>
+    UtilityBillWater
 }

@@ -4,8 +4,7 @@
  */
 
 import React from "react";
-import { Building2, Calendar, RefreshCw } from "lucide-react";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Calendar, RefreshCw } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
 
 export interface DashboardHeaderProps {
@@ -19,7 +18,6 @@ export function DashboardHeader({
   isRefetching,
   dataUpdatedAt,
 }: DashboardHeaderProps) {
-  const { user } = useAuth();
   const { t, formatDate, formatTime } = useTranslation();
 
   const formattedDate = formatDate(new Date(), {
@@ -31,22 +29,11 @@ export function DashboardHeader({
 
   const lastUpdatedTime = dataUpdatedAt ? formatTime(new Date(dataUpdatedAt)) : null;
 
-  const companyDisplayName = user?.companyId
-    ? `Company #${user.companyId.slice(0, 8)}`
-    : null;
-
   return (
     <div className="w-full space-y-4 pb-4 border-b border-border">
       {/* Top Bar: Scope Metadata & Refresh Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-3 flex-wrap">
-          {companyDisplayName && (
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-border bg-secondary text-secondary-foreground font-medium">
-              <Building2 className="w-3.5 h-3.5 text-brand-green-600" />
-              <span>{companyDisplayName}</span>
-            </div>
-          )}
-
           <div className="inline-flex items-center gap-1.5 px-2 py-1 text-muted-foreground">
             <Calendar className="w-3.5 h-3.5" />
             <span>{formattedDate}</span>

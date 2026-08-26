@@ -507,6 +507,29 @@ public class NotificationCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_CreateNotification_WithoutCurrentUser_PreservesNullSystemActor()
+    {
+        var notificationRepo = new FakeNotificationRepository();
+        var templateRepo = new FakeNotificationTemplateRepository();
+        var tenantCtx = new FakeTenantContext();
+        var userCtx = new FakeCurrentUserContext { UserId = null };
+        var handler = new CreateNotificationCommandHandler(
+            notificationRepo, templateRepo, tenantCtx, userCtx);
+
+        await handler.Handle(new CreateNotificationCommand(
+            RecipientUserId: Guid.NewGuid(),
+            TemplateId: null,
+            Subject: "System notification",
+            Body: "Created by a background process.",
+            NotificationType: NotificationType.UtilityBillElectricity,
+            Priority: NotificationPriority.Normal,
+            Channels: new List<DeliveryChannel> { DeliveryChannel.InApp }),
+            CancellationToken.None);
+
+        Assert.Null(Assert.Single(notificationRepo.Notifications).CreatedBy);
+    }
+
+    [Fact]
     public async Task Handle_CreateNotification_WithMissingTemplate_ThrowsNotFoundException()
     {
         // Arrange

@@ -52,7 +52,7 @@ public class SubmitPaymentRequestCommandHandlerTests
         currentUser.UserId.Returns(tenantUserId);
 
         var handler = new SubmitPaymentRequestCommandHandler(dbContext, currentUser, clock, publisher);
-        var command = new SubmitPaymentRequestCommand(rentPayment.Id, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+        var command = new SubmitPaymentRequestCommand(rentPayment.Id, 1000, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -63,8 +63,106 @@ public class SubmitPaymentRequestCommandHandlerTests
         
         var createdSubmission = updatedPayment.Submissions.Single();
         result.Should().Be(createdSubmission.Id);
+        createdSubmission.Amount.Should().Be(1000);
         
         updatedPayment.DueDateStatus.Should().Be(DueDateStatus.PendingVerification);
+    }
+
+    [Fact]
+    public async Task Handle_AuthenticatedTenantSubmitsPartialPayment_SucceedsWithExactAmount()
+    {
+        // Arrange
+        using var dbContext = CreateInMemoryDbContext();
+        var currentUser = Substitute.For<ICurrentUserContext>();
+        var clock = Substitute.For<IBusinessClock>();
+        var publisher = Substitute.For<IPublisher>();
+
+        clock.UtcNow.Returns(DateTimeOffset.UtcNow);
+
+        var companyId = Guid.NewGuid();
+        var tenantUserId = Guid.NewGuid();
+        
+        var tenant = Tenant.Create(companyId, "Test Tenant", "123", "0790000000", DateTimeOffset.UtcNow, null, userId: tenantUserId);
+        var rentPayment = RentPayment.Create(companyId, Guid.NewGuid(), tenant.Id, Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
+
+        await dbContext.Tenants.AddAsync(tenant);
+        await dbContext.RentPayments.AddAsync(rentPayment);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        currentUser.UserId.Returns(tenantUserId);
+
+        var handler = new SubmitPaymentRequestCommandHandler(dbContext, currentUser, clock, publisher);
+        var command = new SubmitPaymentRequestCommand(rentPayment.Id, 350.500m, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var updatedPayment = await dbContext.RentPayments.Include(rp => rp.Submissions).FirstAsync(rp => rp.Id == rentPayment.Id);
+        var createdSubmission = updatedPayment.Submissions.Single();
+        createdSubmission.Amount.Should().Be(350.500m);
+    }
+
+    [Fact]
+    public async Task Handle_TenantSubmitsZeroOrNegativeAmount_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        using var dbContext = CreateInMemoryDbContext();
+        var currentUser = Substitute.For<ICurrentUserContext>();
+        var clock = Substitute.For<IBusinessClock>();
+        var publisher = Substitute.For<IPublisher>();
+
+        var companyId = Guid.NewGuid();
+        var tenantUserId = Guid.NewGuid();
+        var tenant = Tenant.Create(companyId, "Test Tenant", "123", "0790000000", DateTimeOffset.UtcNow, null, userId: tenantUserId);
+        var rentPayment = RentPayment.Create(companyId, Guid.NewGuid(), tenant.Id, Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 1000, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
+
+        await dbContext.Tenants.AddAsync(tenant);
+        await dbContext.RentPayments.AddAsync(rentPayment);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        currentUser.UserId.Returns(tenantUserId);
+
+        var handler = new SubmitPaymentRequestCommandHandler(dbContext, currentUser, clock, publisher);
+        var zeroCommand = new SubmitPaymentRequestCommand(rentPayment.Id, 0, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+        var negCommand = new SubmitPaymentRequestCommand(rentPayment.Id, -50, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+
+        // Act & Assert
+        await FluentActions.Invoking(() => handler.Handle(zeroCommand, CancellationToken.None))
+            .Should().ThrowAsync<BusinessRuleException>();
+        await FluentActions.Invoking(() => handler.Handle(negCommand, CancellationToken.None))
+            .Should().ThrowAsync<BusinessRuleException>();
+    }
+
+    [Fact]
+    public async Task Handle_TenantSubmitsAmountExceedingOutstandingBalance_ThrowsBusinessRuleException()
+    {
+        // Arrange
+        using var dbContext = CreateInMemoryDbContext();
+        var currentUser = Substitute.For<ICurrentUserContext>();
+        var clock = Substitute.For<IBusinessClock>();
+        var publisher = Substitute.For<IPublisher>();
+
+        var companyId = Guid.NewGuid();
+        var tenantUserId = Guid.NewGuid();
+        var tenant = Tenant.Create(companyId, "Test Tenant", "123", "0790000000", DateTimeOffset.UtcNow, null, userId: tenantUserId);
+        var rentPayment = RentPayment.Create(companyId, Guid.NewGuid(), tenant.Id, Guid.NewGuid(), Guid.NewGuid(), PaymentPurpose.ScheduledInstallment, 500, "JOD", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)), DateTimeOffset.UtcNow, null);
+
+        await dbContext.Tenants.AddAsync(tenant);
+        await dbContext.RentPayments.AddAsync(rentPayment);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        currentUser.UserId.Returns(tenantUserId);
+
+        var handler = new SubmitPaymentRequestCommandHandler(dbContext, currentUser, clock, publisher);
+        var excessiveCommand = new SubmitPaymentRequestCommand(rentPayment.Id, 500.001m, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+
+        // Act & Assert
+        await FluentActions.Invoking(() => handler.Handle(excessiveCommand, CancellationToken.None))
+            .Should().ThrowAsync<BusinessRuleException>();
     }
 
     [Fact]
@@ -91,7 +189,7 @@ public class SubmitPaymentRequestCommandHandlerTests
         currentUser.UserId.Returns(attackingUserId);
 
         var handler = new SubmitPaymentRequestCommandHandler(dbContext, currentUser, clock, publisher);
-        var command = new SubmitPaymentRequestCommand(rentPayment.Id, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+        var command = new SubmitPaymentRequestCommand(rentPayment.Id, 1000, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
 
         // Act & Assert
         await FluentActions.Invoking(() => handler.Handle(command, CancellationToken.None))
@@ -122,7 +220,7 @@ public class SubmitPaymentRequestCommandHandlerTests
         currentUser.UserId.Returns(tenantUserId);
 
         var handler = new SubmitPaymentRequestCommandHandler(dbContext, currentUser, clock, publisher);
-        var command = new SubmitPaymentRequestCommand(rentPayment.Id, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+        var command = new SubmitPaymentRequestCommand(rentPayment.Id, 1000, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
 
         // Act & Assert
         await FluentActions.Invoking(() => handler.Handle(command, CancellationToken.None))
@@ -147,7 +245,7 @@ public class SubmitPaymentRequestCommandHandlerTests
         currentUser.UserId.Returns(Guid.NewGuid());
 
         var handler = new SubmitPaymentRequestCommandHandler(dbContext, currentUser, clock, publisher);
-        var command = new SubmitPaymentRequestCommand(rentPayment.Id, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
+        var command = new SubmitPaymentRequestCommand(rentPayment.Id, 1000, PaymentMethod.BankTransfer, "REF123", Guid.NewGuid());
 
         // Act & Assert
         await FluentActions.Invoking(() => handler.Handle(command, CancellationToken.None))

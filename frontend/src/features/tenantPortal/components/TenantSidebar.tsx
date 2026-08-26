@@ -1,7 +1,8 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router";
-import { LayoutDashboard, UserCircle, FileText, CreditCard, X } from "lucide-react";
+import { LayoutDashboard, UserCircle, FileText, CreditCard, Zap, X } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
+import { ROUTES } from "@/config/routes";
 
 export interface TenantSidebarProps {
   isOpenMobile: boolean;
@@ -16,28 +17,35 @@ export function TenantSidebar({ isOpenMobile, onCloseMobile }: TenantSidebarProp
     {
       id: "dashboard",
       label: t("tenant.navigation.dashboard", "Dashboard"),
-      path: "/tenant/dashboard",
+      path: ROUTES.tenant.dashboard,
       icon: LayoutDashboard,
     },
     {
       id: "lease",
       label: t("tenant.navigation.lease", "My Lease"),
-      path: "/tenant/lease",
+      path: ROUTES.tenant.lease,
       icon: FileText,
     },
     {
       id: "payments",
       label: t("tenant.navigation.payments", "My Payments"),
-      path: "/tenant/payments",
+      path: ROUTES.tenant.payments,
       icon: CreditCard,
+    },
+    {
+      id: "bills",
+      label: t("tenant.navigation.bills", "فواتيري"),
+      path: ROUTES.tenant.bills,
+      icon: Zap,
     },
     {
       id: "profile",
       label: t("tenant.navigation.profile", "My Profile"),
-      path: "/tenant/profile",
+      path: ROUTES.tenant.profile,
       icon: UserCircle,
     },
   ];
+
 
   const sidebarContent = (
     <aside

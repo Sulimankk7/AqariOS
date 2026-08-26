@@ -5,7 +5,9 @@ import { useMyPayments } from "../hooks/useTenantPayments";
 import type { TenantPaymentDto } from "../types/tenantPortal.types";
 import { SubmitPaymentVerificationModal } from "../components/SubmitPaymentVerificationModal";
 import { paymentsApi } from "@/features/payments/api/payments.api";
+import { tenantPortalApi } from "../api/tenantPortal.api";
 import { filesApi } from "@/shared/services/files.api";
+import { toast } from "sonner";
 import {
   CreditCard,
   Calendar,
@@ -23,6 +25,7 @@ import {
   ArrowUpRight,
   Info,
   Download,
+  RotateCcw,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -43,10 +46,7 @@ function formatDate(dateStr?: string | null, locale = "en-US"): string {
 }
 
 function formatCurrency(amount: number, currency = "JOD"): string {
-  return `${amount.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} ${currency}`;
+  return `${amount.toFixed(2)} ${currency}`;
 }
 
 function normalizeDueDateStatus(status: unknown): string {
@@ -78,16 +78,14 @@ function normalizeDueDateStatus(status: unknown): string {
     }
   }
 
-  const str = String(val).trim();
-  const normalizedStr = str.replace(/[^a-zA-Z]/g, "").toLowerCase();
-
-  switch (normalizedStr) {
+  const str = String(val).trim().toLowerCase();
+  switch (str) {
+    case "paid":
+      return "paid";
     case "pending":
       return "pending";
     case "pendingverification":
       return "pendingverification";
-    case "paid":
-      return "paid";
     case "partiallypaid":
       return "partiallypaid";
     case "late":
@@ -101,6 +99,31 @@ function normalizeDueDateStatus(status: unknown): string {
     default:
       return "unknown";
   }
+}
+
+function normalizeSubmissionStatus(status: unknown): string {
+  if (status === null || status === undefined) return "none";
+  let val = status;
+  if (typeof val === "string" && !isNaN(Number(val)) && val.trim() !== "") {
+    val = Number(val);
+  }
+  if (typeof val === "number") {
+    switch (val) {
+      case 0:
+        return "pending";
+      case 1:
+        return "approved";
+      case 2:
+        return "rejected";
+      default:
+        return "none";
+    }
+  }
+  const str = String(val).trim().toLowerCase();
+  if (str === "pending") return "pending";
+  if (str === "approved") return "approved";
+  if (str === "rejected") return "rejected";
+  return "none";
 }
 
 function normalizePaymentPurpose(purpose: unknown): string {
@@ -269,15 +292,22 @@ interface PaymentCardProps {
 function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+  const [isDownloadingSettlement, setIsDownloadingSettlement] = useState(false);
 
   const statusBadge = getStatusBadge(payment.dueDateStatus, t);
   const canSubmit = isSubmittable(payment.dueDateStatus);
   const isPendingVerification = normalizeDueDateStatus(payment.dueDateStatus) === "pendingverification";
+  const isRejected = normalizeSubmissionStatus(payment.latestSubmissionStatus) === "rejected" && normalizeDueDateStatus(payment.dueDateStatus) !== "paid";
   const amountRemaining = Math.max(0, payment.amountDue - payment.amountPaid);
 
   const handleDownloadReceipt = async () => {
     setIsDownloadingReceipt(true);
     try {
+      if (payment.receiptFileId) {
+        const fileRes = await filesApi.getFileDownloadUrl(payment.receiptFileId, false);
+        window.open(fileRes.downloadUrl, '_blank');
+        return;
+      }
       const receiptRes = await paymentsApi.getReceiptByRentPaymentId(payment.id);
       if (receiptRes?.fileId) {
         const fileRes = await filesApi.getFileDownloadUrl(receiptRes.fileId, false);
@@ -291,6 +321,50 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
       setIsDownloadingReceipt(false);
     }
   };
+
+  const handleDownloadTxReceipt = async (fileId?: string | null) => {
+    if (fileId) {
+      try {
+        const fileRes = await filesApi.getFileDownloadUrl(fileId, false);
+        window.open(fileRes.downloadUrl, '_blank');
+        return;
+      } catch (err) {
+        console.error('Failed to download transaction receipt:', err);
+      }
+    }
+    handleDownloadReceipt();
+  };
+
+  const handleDownloadSettlementStatement = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (isDownloadingSettlement) return;
+    setIsDownloadingSettlement(true);
+    try {
+      const blob = await tenantPortalApi.downloadSettlementStatement(payment.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = payment.receiptNumber ? `Settlement_Statement_${payment.receiptNumber}.pdf` : 'Settlement_Statement.pdf';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (document.body.contains(a)) {
+          document.body.removeChild(a);
+        }
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (err: any) {
+      console.error("Failed to download settlement statement:", err);
+      toast.error(err?.message || t("tenant.payments.downloadSettlementError", "Failed to download settlement statement."));
+    } finally {
+      setIsDownloadingSettlement(false);
+    }
+  };
+
+  const hasTxReceipts = payment.transactionReceipts && payment.transactionReceipts.length > 0;
+  const isSettled = payment.settlementSummary?.isAvailable || (normalizeDueDateStatus(payment.dueDateStatus) === "paid" && payment.amountPaid >= payment.amountDue);
 
   return (
     <div
@@ -361,8 +435,81 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
           </div>
         )}
 
-        {/* Approved Receipt Badge (Only shown when receiptNumber is provided by backend) */}
-        {payment.receiptNumber && (
+        {/* Rejected Submission Notice Banner */}
+        {isRejected && (
+          <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-foreground text-xs space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-destructive font-bold">
+                <XCircle className="w-4 h-4 shrink-0" />
+                <span>{t("tenant.payments.submissionRejectedTitle", "تم رفض إثبات الدفع")}</span>
+              </div>
+              {payment.latestSubmissionAmount && (
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  {t("tenant.payments.submittedAmount", "المبلغ المقدم")}: {formatCurrency(payment.latestSubmissionAmount, payment.currency)}
+                </span>
+              )}
+            </div>
+            {payment.latestSubmissionRejectionReason && (
+              <div className="p-2.5 rounded-lg bg-background/60 border border-destructive/20 text-xs space-y-1">
+                <p className="text-[11px] text-muted-foreground font-semibold">
+                  {t("tenant.payments.rejectionReason", "سبب الرفض:")}
+                </p>
+                <p className="text-foreground leading-relaxed font-medium">
+                  {payment.latestSubmissionRejectionReason}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Transaction Receipts List (Hybrid Model) */}
+        {hasTxReceipts && (
+          <div className="p-3 rounded-xl bg-secondary/30 border border-border/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-primary" />
+                <span>{t("tenant.payments.paymentTransactions", "حركات الدفع")} ({payment.transactionReceipts!.length})</span>
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {payment.transactionReceipts!.map((tx, idx) => (
+                <div
+                  key={tx.receiptId || idx}
+                  className="p-2 rounded-lg bg-card border border-border/60 text-xs flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10.5px] font-bold flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-foreground font-mono">
+                          {formatCurrency(tx.amount, payment.currency)}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground font-mono">
+                          {tx.receiptNumber}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatDate(tx.issuedAt, language)}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDownloadTxReceipt(tx.fileId)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600/20 rounded-md text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>{t("tenant.payments.viewTransactionReceipt", "عرض السند")}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Single Approved Receipt Fallback (if transactionReceipts not populated) */}
+        {!hasTxReceipts && payment.receiptNumber && (
           <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Receipt className="w-4 h-4 shrink-0" />
@@ -377,6 +524,36 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
             >
               <Download className="w-3.5 h-3.5" />
               <span>{isDownloadingReceipt ? t("common.loading", "Loading...") : t("tenant.payments.downloadReceipt", "Download Receipt (سند قبض)")}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Final Settlement Statement Banner (Available strictly upon full settlement) */}
+        {isSettled && (
+          <div className="p-3 rounded-xl bg-primary/8 border border-primary/25 text-foreground text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+              <div>
+                <span className="font-bold text-primary">
+                  {t("tenant.payments.settlementStatement", "سند تسوية القسط")}
+                </span>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("tenant.payments.settledInFull", "مدفوع بالكامل")} ({formatCurrency(payment.amountDue, payment.currency)})
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleDownloadSettlementStatement}
+              disabled={isDownloadingSettlement}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer disabled:opacity-50 shrink-0"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>
+                {isDownloadingSettlement
+                  ? t("common.loading", "Loading...")
+                  : t("tenant.payments.downloadSettlementStatement", "عرض سند التسوية النهائي")}
+              </span>
             </button>
           </div>
         )}
@@ -402,10 +579,16 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
             {canSubmit && (
               <button
                 onClick={() => onSubmitVerification(payment)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-xs ${
+                  isRejected
+                    ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                }`}
               >
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                {t("tenant.payments.submitPaymentAction", "Submit Payment")}
+                {isRejected ? <RotateCcw className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+                {isRejected
+                  ? t("tenant.payments.resubmitPaymentAction", "إعادة تقديم الدفعة")
+                  : t("tenant.payments.submitPaymentAction", "Submit Payment")}
               </button>
             )}
             <button
