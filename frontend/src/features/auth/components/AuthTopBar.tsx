@@ -35,15 +35,11 @@ export function AuthTopBar({ lang, isDark, onLangChange, onToggleTheme }: AuthTo
 
   return (
     <div
-      className={`w-full flex items-center justify-between px-8 py-4 border-b transition-colors duration-350 shrink-0 ${
-        isDark ? "bg-[#161B22]/60 border-white/10 backdrop-blur-md" : "bg-white/70 border-[#F3F4F6] backdrop-blur-md"
-      }`}
+      className="w-full flex items-center justify-between px-8 py-4 border-b border-outline-variant bg-topbar/95 backdrop-blur-md transition-colors duration-350 shrink-0"
     >
       {/* Quick Workflow Navigation Pill Selector */}
       <div
-        className={`flex items-center gap-1 p-1 rounded-lg border transition-colors duration-350 ${
-          isDark ? "bg-[#0E1116] border-white/10" : "bg-[#F9FAFB] border-[#E5E7EB]"
-        }`}
+        className="flex items-center gap-1 p-1 rounded-lg border border-outline-variant bg-surface-container transition-colors duration-350"
       >
         <button
           type="button"
@@ -51,11 +47,11 @@ export function AuthTopBar({ lang, isDark, onLangChange, onToggleTheme }: AuthTo
           className={`text-[12.5px] font-medium px-3 py-1.5 rounded-md transition-all duration-150 cursor-pointer ${
             isSignInActive
               ? isDark
-                ? "bg-[#1C2128] text-white shadow-xs font-semibold border border-white/10"
-                : "bg-white text-[#333D29] shadow-xs font-semibold"
+                ? "bg-card text-foreground shadow-e1 font-semibold border border-outline-variant"
+                : "bg-card text-foreground shadow-e1 font-semibold border border-outline-variant"
               : isDark
-              ? "text-gray-400 hover:text-gray-200"
-              : "text-[#6B7280] hover:text-[#374151]"
+              ? "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {t.signInTab}
@@ -66,11 +62,11 @@ export function AuthTopBar({ lang, isDark, onLangChange, onToggleTheme }: AuthTo
           className={`text-[12.5px] font-medium px-3 py-1.5 rounded-md transition-all duration-150 cursor-pointer ${
             isRegisterActive
               ? isDark
-                ? "bg-[#1C2128] text-white shadow-xs font-semibold border border-white/10"
-                : "bg-white text-[#333D29] shadow-xs font-semibold"
+                ? "bg-card text-foreground shadow-e1 font-semibold border border-outline-variant"
+                : "bg-card text-foreground shadow-e1 font-semibold border border-outline-variant"
               : isDark
-              ? "text-gray-400 hover:text-gray-200"
-              : "text-[#6B7280] hover:text-[#374151]"
+              ? "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {t.createAccountTab}
@@ -84,7 +80,7 @@ export function AuthTopBar({ lang, isDark, onLangChange, onToggleTheme }: AuthTo
 
         {/* Bilingual English / Arabic Language Switcher */}
         <div className="flex items-center gap-1.5 text-[13px]">
-          <Globe size={14} className={isDark ? "text-gray-400" : "text-[#9CA3AF]"} />
+          <Globe size={14} className="text-muted-foreground" />
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -92,27 +88,27 @@ export function AuthTopBar({ lang, isDark, onLangChange, onToggleTheme }: AuthTo
               className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
                 lang === "en"
                   ? isDark
-                    ? "font-semibold text-white"
-                    : "font-semibold text-[#333D29]"
+                    ? "font-semibold text-foreground"
+                    : "font-semibold text-foreground"
                   : isDark
-                  ? "text-gray-400 hover:text-gray-200"
-                  : "text-[#9CA3AF] hover:text-[#4B5563]"
+                  ? "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               English
             </button>
-            <span className={isDark ? "text-gray-600" : "text-[#D1D5DB]"}>|</span>
+            <span className="text-outline">|</span>
             <button
               type="button"
               onClick={() => onLangChange("ar")}
               className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
                 lang === "ar"
                   ? isDark
-                    ? "font-semibold text-white"
-                    : "font-semibold text-[#333D29]"
+                    ? "font-semibold text-foreground"
+                    : "font-semibold text-foreground"
                   : isDark
-                  ? "text-gray-400 hover:text-gray-200"
-                  : "text-[#9CA3AF] hover:text-[#4B5563]"
+                  ? "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               العربية

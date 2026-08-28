@@ -33,9 +33,9 @@ public class CreateUserCompanyMembershipStep : ITenantProvisioningStep
             UserId = user.Id,
             CompanyId = company.Id,
             RoleId = adminRole.Id,
-            Status = MembershipStatus.Active,
+            Status = MembershipStatus.InvitedPending,
             InvitedAt = context.CreatedAt,
-            JoinedAt = context.CreatedAt,
+            JoinedAt = null,
             CreatedAt = context.CreatedAt,
             UpdatedAt = context.CreatedAt
         };

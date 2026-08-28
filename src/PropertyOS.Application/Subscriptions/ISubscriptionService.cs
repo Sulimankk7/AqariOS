@@ -33,36 +33,39 @@ public interface ISubscriptionService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Subscribes a user's company to a subscription plan.
+    /// Legacy direct tenant subscription mutation. Retired by the plans/subscriptions business rules.
     /// </summary>
     /// <param name="userId">The authenticated user's unique identifier.</param>
     /// <param name="dto">The subscription creation request parameters.</param>
     /// <param name="cancellationToken">Cancellation token to cancel execution.</param>
     /// <returns>The newly created subscription details.</returns>
+    [Obsolete("Tenant self-service subscription creation is retired. Use platform subscription administration instead.")]
     Task<UserSubscriptionDto> SubscribeAsync(
         Guid userId,
         CreateSubscriptionRequestDto dto,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Modifies, upgrades, or downgrades an existing active subscription.
+    /// Legacy direct tenant plan mutation. Retired by the plans/subscriptions business rules.
     /// </summary>
     /// <param name="userId">The authenticated user's unique identifier.</param>
     /// <param name="dto">The plan change request parameters.</param>
     /// <param name="cancellationToken">Cancellation token to cancel execution.</param>
     /// <returns>The updated subscription details.</returns>
+    [Obsolete("Direct tenant plan changes are retired. Use the plan change request workflow instead.")]
     Task<UserSubscriptionDto> ChangePlanAsync(
         Guid userId,
         ChangePlanRequestDto dto,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Safely cancels the active subscription for the user's company.
+    /// Legacy direct tenant cancellation. Retired by the plans/subscriptions business rules.
     /// </summary>
     /// <param name="userId">The authenticated user's unique identifier.</param>
     /// <param name="reason">Optional cancellation reason.</param>
     /// <param name="cancellationToken">Cancellation token to cancel execution.</param>
     /// <returns>The updated subscription details showing cancelled status.</returns>
+    [Obsolete("Tenant self-service cancellation is retired until a business rule explicitly defines it.")]
     Task<UserSubscriptionDto> CancelSubscriptionAsync(
         Guid userId,
         string? reason,

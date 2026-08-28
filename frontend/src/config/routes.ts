@@ -79,6 +79,7 @@ export const ROUTES = {
     root: "/utility-bills",
     details: (id: string) => `/utility-bills/${id}`,
   },
+  subscriptions: { root: "/subscriptions" },
 
   // Operations
   /** /maintenance */
@@ -97,6 +98,15 @@ export const ROUTES = {
   profile: { root: "/profile" },
   /** /preferences */
   preferences: { root: "/preferences" },
+
+  platform: {
+    root: "/platform",
+    dashboard: "/platform/dashboard",
+    landlordRegistrations: "/platform/landlord-registrations",
+    plans: "/platform/plans",
+    subscriptions: "/platform/subscriptions",
+    planChangeRequests: "/platform/plan-change-requests",
+  },
 
   // Tenant Portal Self-Service
   tenant: {

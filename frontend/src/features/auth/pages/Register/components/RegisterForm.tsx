@@ -18,8 +18,6 @@ import { LANGUAGES } from "@/features/auth/constants/languages";
 import { CompanyType } from "@/features/auth/types/auth.types";
 import { isPasswordMismatch } from "@/features/auth/validation/resetPassword.schema";
 import { authApi } from "@/features/auth/api/auth.api";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import { ApiError } from "@/shared/lib/http";
 import { ROUTES } from "@/config/routes";
 
 interface RegisterFormProps {
@@ -29,7 +27,6 @@ interface RegisterFormProps {
 
 export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const context = useOutletContext<{ isDark?: boolean }>();
   const isDark = context?.isDark ?? false;
   const t = TRANSLATIONS[lang];
@@ -77,14 +74,10 @@ export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
         preferredLanguage: prefLanguage || "ar",
       });
 
-      const verifiedUser = await login(response.accessToken, response.user);
-
       if (onFeedbackMessage) {
-        onFeedbackMessage("Registration successful! Welcome to AqariOS.");
+        onFeedbackMessage(lang === "ar" ? "تم استلام طلب التسجيل وهو الآن بانتظار المراجعة." : response.message);
       }
-      
-      const targetPath = verifiedUser.roleCode === "TENANT" ? "/tenant/dashboard" : ROUTES.dashboard.root;
-      navigate(targetPath, { replace: true });
+      navigate(ROUTES.auth.login, { replace: true });
     } catch (err: any) {
       const errorMsg = err?.detail || err?.message || "An unexpected error occurred during registration.";
       setErrorMessage(errorMsg);

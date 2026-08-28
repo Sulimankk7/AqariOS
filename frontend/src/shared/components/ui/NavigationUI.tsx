@@ -90,7 +90,7 @@ export function Pagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           aria-label={t("table.previous")}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-border bg-card hover:bg-secondary text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-outline-variant bg-card hover:bg-surface-container-low text-foreground disabled:border-transparent disabled:bg-disabled-container disabled:text-disabled-foreground disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-3.5 h-3.5 rtl:rotate-180" />
           <span>{t("table.previous")}</span>
@@ -104,7 +104,7 @@ export function Pagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           aria-label={t("table.next")}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-border bg-card hover:bg-secondary text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-outline-variant bg-card hover:bg-surface-container-low text-foreground disabled:border-transparent disabled:bg-disabled-container disabled:text-disabled-foreground disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           <span>{t("table.next")}</span>
           <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />

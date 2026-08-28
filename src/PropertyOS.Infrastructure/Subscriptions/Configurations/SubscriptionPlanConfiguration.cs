@@ -109,9 +109,15 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         // Check Constraints
         builder.ToTable(t => 
         {
-            t.HasCheckConstraint("chk_subscription_plans_trial_duration", "trial_duration_days IS NOT NULL OR supports_trial = false");
+            t.HasCheckConstraint("chk_subscription_plans_trial_duration", "(supports_trial = true AND trial_duration_days > 0) OR (supports_trial = false AND trial_duration_days IS NULL)");
             t.HasCheckConstraint("chk_subscription_plans_prices_positive", "monthly_price > 0 AND yearly_price > 0");
             t.HasCheckConstraint("chk_subscription_plans_quotas_positive", "(max_buildings IS NULL OR max_buildings > 0) AND (max_users IS NULL OR max_users > 0) AND (max_storage_mb IS NULL OR max_storage_mb > 0)");
+            t.HasCheckConstraint("chk_subscription_plans_sort_order", "sort_order >= 0");
         });
+
+        builder.Property<uint>("xmin")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .IsRowVersion();
     }
 }

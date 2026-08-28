@@ -20,6 +20,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { AuthLayout } from "@/app/layouts/AuthLayout";
 import { AppLayout } from "@/app/layouts/AppLayout";
+import { PlatformAdminLayout } from "@/app/layouts/PlatformAdminLayout";
 import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { ModulePlaceholder } from "@/shared/components/layout/ModulePlaceholder";
 import { ROUTES } from "@/config/routes";
@@ -89,6 +90,12 @@ import { UtilityAccountDetailsPage } from "@/features/utilityBills/pages/Utility
 import { MaintenancePage } from "@/features/maintenance/pages/MaintenancePage";
 
 import { AuthLoadingScreen } from "@/features/auth/components/AuthLoadingScreen";
+import { PlatformAdminDashboardPage } from "@/features/platformAdmin/pages/PlatformAdminDashboardPage";
+import { LandlordRegistrationsPage } from "@/features/platformAdmin/pages/LandlordRegistrationsPage";
+import { CompanySubscriptionsPage } from "@/features/subscriptions/pages/CompanySubscriptionsPage";
+import { PlatformPlansPage } from "@/features/subscriptions/pages/PlatformPlansPage";
+import { PlatformSubscriptionsPage } from "@/features/subscriptions/pages/PlatformSubscriptionsPage";
+import { PlatformPlanChangeRequestsPage } from "@/features/subscriptions/pages/PlatformPlanChangeRequestsPage";
 
 /** Root redirect — sends authenticated users to their respective dashboard, others to /auth/login */
 function RootRedirect() {
@@ -108,6 +115,10 @@ function RootRedirect() {
 
   if (user.roleCode === "COMPANY_ADMIN") {
     return <Navigate to={ROUTES.dashboard.root} replace />;
+  }
+
+  if (user.roleCode === "SYSTEM_ADMIN") {
+    return <Navigate to={ROUTES.platform.dashboard} replace />;
   }
 
   // Unsupported role fallback (fails closed)
@@ -199,6 +210,7 @@ export function AppRouter() {
               <Route index element={<UtilityAccountsPage />} />
               <Route path=":id" element={<UtilityAccountDetailsPage />} />
             </Route>
+            <Route path={ROUTES.subscriptions.root} element={<CompanySubscriptionsPage />} />
 
             {/* Operations */}
             <Route
@@ -267,6 +279,26 @@ export function AppRouter() {
                 />
               }
             />
+          </Route>
+        </Route>
+
+        {/* ── Protected Platform Administration Routes ───────────────────── */}
+        <Route element={<ProtectedRoute allowedRoles={["SYSTEM_ADMIN"]} />}>
+          <Route element={<PlatformAdminLayout />}>
+            <Route path={ROUTES.platform.root} element={<Navigate to={ROUTES.platform.dashboard} replace />} />
+            <Route path={ROUTES.platform.dashboard} element={<PlatformAdminDashboardPage />} />
+            <Route element={<ProtectedRoute requiredPermissions={["platform.landlord_registrations.read"]} />}>
+              <Route path={ROUTES.platform.landlordRegistrations} element={<LandlordRegistrationsPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermissions={["platform.plans.read"]} />}>
+              <Route path={ROUTES.platform.plans} element={<PlatformPlansPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermissions={["platform.subscriptions.read"]} />}>
+              <Route path={ROUTES.platform.subscriptions} element={<PlatformSubscriptionsPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredPermissions={["platform.plan_change_requests.read"]} />}>
+              <Route path={ROUTES.platform.planChangeRequests} element={<PlatformPlanChangeRequestsPage />} />
+            </Route>
           </Route>
         </Route>
 

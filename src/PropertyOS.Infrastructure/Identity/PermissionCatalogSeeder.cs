@@ -124,6 +124,7 @@ public class PermissionCatalogSeeder : IPermissionCatalogSeeder
                       AND r.company_id IS NOT NULL
                       AND r.deleted_at IS NULL
                       AND p.is_deprecated = false
+                      AND p.key NOT LIKE 'platform.%'
                       AND NOT EXISTS (
                           SELECT 1 FROM role_permissions rp
                           WHERE rp.role_id = r.id AND rp.permission_id = p.id)
@@ -138,7 +139,7 @@ public class PermissionCatalogSeeder : IPermissionCatalogSeeder
                 // Non-relational provider (in-memory test double): raw SQL is unavailable,
                 // so fall back to the tracked-entity reconciliation with identical semantics.
                 var activePermissionIds = await _dbContext.Permissions
-                    .Where(p => !p.IsDeprecated)
+                    .Where(p => !p.IsDeprecated && !p.Key.StartsWith("platform."))
                     .Select(p => p.Id)
                     .ToListAsync(cancellationToken);
 
@@ -179,7 +180,51 @@ public class PermissionCatalogSeeder : IPermissionCatalogSeeder
                 _logger.LogInformation("Reconciled COMPANY_ADMIN role grants: {GrantedCount} new role-permission grants added.", grantedCount);
             }
 
-            // 3. Reconcile System TENANT Role & Permissions
+            // 3. Reconcile global SYSTEM_ADMIN role and its platform-only permissions.
+            var systemAdminRole = await _dbContext.Roles
+                .FirstOrDefaultAsync(r => r.Code == PlatformRoles.SystemAdmin && r.IsSystem && r.CompanyId == null && r.DeletedAt == null, cancellationToken);
+
+            if (systemAdminRole == null)
+            {
+                systemAdminRole = new Role
+                {
+                    Id = Guid.CreateVersion7(),
+                    Code = PlatformRoles.SystemAdmin,
+                    NameEn = "System Administrator",
+                    NameAr = "مدير النظام",
+                    IsSystem = true,
+                    CompanyId = null,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                _dbContext.Roles.Add(systemAdminRole);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            var platformPermissionIds = await _dbContext.Permissions
+                .Where(p => !p.IsDeprecated && p.Key.StartsWith("platform."))
+                .Select(p => p.Id)
+                .ToListAsync(cancellationToken);
+
+            var existingSystemAdminPermissionIds = await _dbContext.RolePermissions
+                .Where(rp => rp.RoleId == systemAdminRole.Id)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync(cancellationToken);
+
+            foreach (var permissionId in platformPermissionIds.Except(existingSystemAdminPermissionIds))
+            {
+                _dbContext.RolePermissions.Add(new RolePermission
+                {
+                    Id = Guid.CreateVersion7(),
+                    RoleId = systemAdminRole.Id,
+                    PermissionId = permissionId,
+                    GrantedAt = now
+                });
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // 4. Reconcile System TENANT Role & Permissions
             var tenantRole = await _dbContext.Roles
                 .FirstOrDefaultAsync(r => r.Code == "TENANT" && r.IsSystem && r.CompanyId == null && r.DeletedAt == null, cancellationToken);
 

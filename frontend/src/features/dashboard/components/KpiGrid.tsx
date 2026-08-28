@@ -40,7 +40,7 @@ export function KpiGrid({ data }: KpiGridProps) {
 
       {/* ── Section 1: Property Portfolio ── */}
       <section aria-label="Property Portfolio">
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        <h2 className="type-label-medium text-on-surface-variant uppercase mb-3">
           {t("dashboard.propertyPortfolio")}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -89,7 +89,7 @@ export function KpiGrid({ data }: KpiGridProps) {
 
       {/* ── Section 2: Leasing ── */}
       <section aria-label="Leasing Agreements">
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        <h2 className="type-label-medium text-on-surface-variant uppercase mb-3">
           {t("dashboard.leasingAgreements")}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -122,7 +122,7 @@ export function KpiGrid({ data }: KpiGridProps) {
 
       {/* ── Section 3: Financial Collections ── */}
       <section aria-label="Payments and Financials">
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        <h2 className="type-label-medium text-on-surface-variant uppercase mb-3">
           {t("dashboard.paymentsFinancials")}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

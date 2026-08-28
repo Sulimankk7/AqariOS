@@ -35,6 +35,8 @@ public class CreateCompanyStep : ITenantProvisioningStep
             createdBy: user.Id,
             primaryEmail: cmd.Email);
 
+        company.MarkPendingApproval(context.CreatedAt, user.Id);
+
         _dbContext.Companies.Add(company);
         context.Company = company;
 

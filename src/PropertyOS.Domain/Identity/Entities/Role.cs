@@ -20,4 +20,5 @@ public class Role : ISoftDeletable
     public Company? Company { get; set; }
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     public ICollection<UserCompanyRole> UserCompanyRoles { get; set; } = new List<UserCompanyRole>();
+    public ICollection<UserSystemRole> UserSystemRoles { get; set; } = new List<UserSystemRole>();
 }

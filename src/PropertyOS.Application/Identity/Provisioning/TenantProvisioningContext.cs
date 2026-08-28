@@ -21,7 +21,7 @@ public class TenantProvisioningContext
     public CompanySettings? CompanySettings { get; set; }
     public Role? AdminRole { get; set; }
     public UserCompanyRole? UserCompanyRole { get; set; }
-    public RefreshToken? RefreshTokenEntity { get; set; }
+    public LandlordRegistration? Registration { get; set; }
     public RegisterResponseDto? Response { get; set; }
 
     /// <summary>

@@ -112,6 +112,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         dataSourceBuilder.MapEnum<LateFeeType>("late_fee_type_enum");
         dataSourceBuilder.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
         dataSourceBuilder.MapEnum<BillingCycleEnum>("billing_cycle_enum");
+        dataSourceBuilder.MapEnum<PlanChangeRequestStatus>("plan_change_request_status_enum");
         // Module 3
         dataSourceBuilder.MapEnum<AuditAction>("audit_action_enum");
         dataSourceBuilder.MapEnum<AuditSeverity>("audit_severity_enum");
@@ -190,6 +191,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
         appUserDataSourceBuilder.MapEnum<LateFeeType>("late_fee_type_enum");
         appUserDataSourceBuilder.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
         appUserDataSourceBuilder.MapEnum<BillingCycleEnum>("billing_cycle_enum");
+        appUserDataSourceBuilder.MapEnum<PlanChangeRequestStatus>("plan_change_request_status_enum");
         // Module 3
         appUserDataSourceBuilder.MapEnum<AuditAction>("audit_action_enum");
         appUserDataSourceBuilder.MapEnum<AuditSeverity>("audit_severity_enum");
@@ -263,6 +265,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<LateFeeType>("late_fee_type_enum");
                 o.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
                 o.MapEnum<BillingCycleEnum>("billing_cycle_enum");
+                o.MapEnum<PlanChangeRequestStatus>("plan_change_request_status_enum");
                 // Module 3
                 o.MapEnum<AuditAction>("audit_action_enum");
                 o.MapEnum<AuditSeverity>("audit_severity_enum");
@@ -338,6 +341,7 @@ public sealed class PostgresTestFixture : IAsyncLifetime
                 o.MapEnum<LateFeeType>("late_fee_type_enum");
                 o.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
                 o.MapEnum<BillingCycleEnum>("billing_cycle_enum");
+                o.MapEnum<PlanChangeRequestStatus>("plan_change_request_status_enum");
                 // Module 3
                 o.MapEnum<AuditAction>("audit_action_enum");
                 o.MapEnum<AuditSeverity>("audit_severity_enum");

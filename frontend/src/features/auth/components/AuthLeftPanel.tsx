@@ -20,11 +20,7 @@ export function AuthLeftPanel({ lang, isDark = false }: AuthLeftPanelProps) {
 
   return (
     <div
-      className={`hidden lg:flex lg:w-[40%] flex-col justify-between relative overflow-hidden transition-colors duration-350 ${
-        isDark
-          ? "bg-gradient-to-b from-[#090B0E] via-[#0E1116] to-[#161B22] border-r border-white/10 text-gray-200"
-          : "bg-gradient-to-b from-[#FAFAF7] via-[#F2F1EB] to-[#E6E4D9] border-r border-[#E5E7EB] text-[#111827]"
-      }`}
+      className="hidden lg:flex lg:w-[40%] flex-col justify-between relative overflow-hidden bg-sidebar border-e border-sidebar-border text-foreground transition-colors duration-350"
       aria-hidden="true"
     >
       {/* Background Architectural Glass Reflection Streak */}
@@ -43,7 +39,7 @@ export function AuthLeftPanel({ lang, isDark = false }: AuthLeftPanelProps) {
           <AqariOSLogo size={36} />
           <span
             className={`text-2xl font-semibold tracking-tight ${
-              isDark ? "text-white" : "text-[#333D29]"
+              "text-foreground"
             }`}
           >
             AqariOS
@@ -56,7 +52,7 @@ export function AuthLeftPanel({ lang, isDark = false }: AuthLeftPanelProps) {
         />
         <p
           className={`text-[12.5px] font-medium tracking-wider uppercase transition-colors duration-350 ${
-            isDark ? "text-[#A4AC86]" : "text-[#656D4A]"
+            isDark ? "text-primary" : "text-primary"
           }`}
         >
           {t.platformSubtitle}
@@ -74,7 +70,7 @@ export function AuthLeftPanel({ lang, isDark = false }: AuthLeftPanelProps) {
       <div className="relative z-10 p-12 pt-0">
         <p
           className={`text-[12px] font-normal tracking-tight transition-colors duration-350 ${
-            isDark ? "text-gray-500" : "text-[#9CA3AF]"
+            "text-muted-foreground"
           }`}
         >
           {t.copyright}

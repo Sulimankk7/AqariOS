@@ -48,19 +48,15 @@ export function AuthLayout() {
 
   return (
     <div
-      className={`min-h-screen w-full flex text-foreground select-none transition-colors duration-350 ${
-        isDark ? "dark bg-[#0E1116] text-[#F0F3F6]" : "bg-[#FAFAF7] text-[#111827]"
-      }`}
-      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+      className={`min-h-screen w-full flex bg-background text-foreground select-none transition-colors duration-350 ${isDark ? "dark" : ""}`}
+      style={{ fontFamily: lang === "ar" ? "var(--font-arabic)" : "var(--font-english)" }}
     >
       {/* LEFT PANEL — Fixed branding & architectural illustration (40% width) */}
       <AuthLeftPanel lang={lang} isDark={isDark} />
 
       {/* RIGHT PANEL — Route content container (60% width) */}
       <div
-        className={`flex-1 lg:w-[60%] flex flex-col min-h-screen transition-colors duration-350 ${
-          isDark ? "bg-[#0E1116]" : "bg-white/80"
-        }`}
+        className="flex-1 lg:w-[60%] flex flex-col min-h-screen bg-surface transition-colors duration-350"
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         {/* Fixed Top Bar */}

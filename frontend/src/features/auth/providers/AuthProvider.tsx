@@ -21,7 +21,7 @@ import type { UserProfileDto } from "@/features/auth/types/auth.types";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-export type AppRole = "COMPANY_ADMIN" | "TENANT";
+export type AppRole = "COMPANY_ADMIN" | "TENANT" | "SYSTEM_ADMIN";
 
 export interface UserProfile {
   id: string;
@@ -30,6 +30,7 @@ export interface UserProfile {
   avatar?: string;
   roleCode: AppRole;
   companyId?: string;
+  permissions: string[];
 }
 
 export type AuthStatus = "initializing" | "authenticated" | "unauthenticated" | "unsupported_role";
@@ -52,6 +53,10 @@ export interface AuthContextValue {
  * Evaluates activeCompanyId first if present, otherwise finds a valid system role.
  */
 export function resolveUserRole(profile: UserProfileDto): { roleCode: AppRole | undefined; companyId: string | undefined } {
+  if (profile?.systemRoles?.includes("SYSTEM_ADMIN")) {
+    return { roleCode: "SYSTEM_ADMIN", companyId: undefined };
+  }
+
   if (!profile || !profile.companyRoles || profile.companyRoles.length === 0) {
     return { roleCode: undefined, companyId: undefined };
   }
@@ -188,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: profile.email || profile.phone || "",
           roleCode,
           companyId,
+          permissions: profile.permissions ?? [],
         };
 
         if (isMounted) {
@@ -219,6 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: profile.email || profile.phone || "",
               roleCode,
               companyId,
+              permissions: profile.permissions ?? [],
             };
 
             if (isMounted) {
@@ -238,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (rawUser) {
             try {
               const parsed: UserProfile = JSON.parse(rawUser);
-              if (parsed && (parsed.roleCode === "COMPANY_ADMIN" || parsed.roleCode === "TENANT")) {
+              if (parsed && (parsed.roleCode === "COMPANY_ADMIN" || parsed.roleCode === "TENANT" || parsed.roleCode === "SYSTEM_ADMIN")) {
                 if (isMounted) {
                   setUser(parsed);
                   setAuthStatus("authenticated");
@@ -409,6 +416,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: profile.email || profile.phone || "",
       roleCode,
       companyId,
+      permissions: profile.permissions ?? [],
     };
 
     // 5. Commit state atomically

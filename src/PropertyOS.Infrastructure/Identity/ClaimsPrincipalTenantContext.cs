@@ -1,6 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Http;
 using PropertyOS.Application.Common.Interfaces;
+using PropertyOS.Application.Common.Security;
 
 namespace PropertyOS.Infrastructure.Identity;
 
@@ -48,7 +49,7 @@ public sealed class ClaimsPrincipalTenantContext : ITenantContext
                 return false;
             }
 
-            return user.IsInRole("SystemAdmin") || user.HasClaim("is_platform_admin", "true");
+            return user.IsInRole(PlatformRoles.SystemAdmin);
         }
     }
 }

@@ -10,7 +10,7 @@ export function getSemanticColor(
   token: keyof typeof colors.light,
   mode: ThemeMode = "light"
 ): string {
-  return colors[mode][token] || colors.light[token];
+  return colors[mode][token];
 }
 
 export function getCurrentThemeMode(): ThemeMode {

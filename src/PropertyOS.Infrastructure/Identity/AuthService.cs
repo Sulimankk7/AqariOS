@@ -63,10 +63,16 @@ public class AuthService : IAuthService
                 ? u.Email != null && u.Email.ToLower() == input.ToLower()
                 : u.Phone != null && u.Phone == input, cancellationToken);
 
-        if (user == null || !user.IsActive || user.DeletedAt != null)
+        if (user == null || user.DeletedAt != null)
         {
             await RecordLoginHistoryAsync(user?.Id, input, ipAddress, userAgent, LoginStatus.FailedNotFound, cancellationToken);
             throw new UnauthorizedAccessException("Invalid email/phone or password.");
+        }
+
+        if (!user.IsActive)
+        {
+            await RecordLoginHistoryAsync(user.Id, input, ipAddress, userAgent, LoginStatus.FailedNotFound, cancellationToken);
+            throw new BusinessRuleException("This account is not currently available.", "ACCOUNT_NOT_ACTIVE");
         }
 
         if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTimeOffset.UtcNow)
@@ -430,7 +436,11 @@ public class AuthService : IAuthService
 
         var companyRoles = await _dbContext.UserCompanyRoles
             .AsNoTracking()
-            .Where(ucr => ucr.UserId == userId && ucr.DeletedAt == null)
+            .Where(ucr => ucr.UserId == userId &&
+                          ucr.DeletedAt == null &&
+                          ucr.Status == MembershipStatus.Active &&
+                          ucr.Company.IsActive &&
+                          ucr.Company.DeletedAt == null)
             .Select(ucr => new
             {
                 ucr.Id,
@@ -444,8 +454,20 @@ public class AuthService : IAuthService
 
         var activeCompanyId = companyRoles.Select(cr => (Guid?)cr.CompanyId).FirstOrDefault();
 
-        var roleIds = companyRoles.Select(cr => cr.RoleId).Distinct().ToList();
-        var roleCodes = companyRoles.Select(cr => cr.RoleCode).Distinct().ToList();
+        var systemRoles = await _dbContext.UserSystemRoles
+            .AsNoTracking()
+            .Where(usr => usr.UserId == userId && usr.Role.IsSystem && usr.Role.CompanyId == null && usr.Role.DeletedAt == null)
+            .Select(usr => new { usr.RoleId, usr.Role.Code })
+            .ToListAsync(cancellationToken);
+
+        var roleIds = companyRoles.Select(cr => cr.RoleId)
+            .Concat(systemRoles.Select(sr => sr.RoleId))
+            .Distinct()
+            .ToList();
+        var roleCodes = companyRoles.Select(cr => cr.RoleCode)
+            .Concat(systemRoles.Select(sr => sr.Code))
+            .Distinct()
+            .ToList();
 
         var permissionKeys = await (from rp in _dbContext.RolePermissions.AsNoTracking()
                                    join p in _dbContext.Permissions.AsNoTracking() on rp.PermissionId equals p.Id
@@ -474,7 +496,8 @@ public class AuthService : IAuthService
             MfaEnabled = user?.MfaEnabled ?? false,
             ActiveCompanyId = activeCompanyId,
             CompanyRoles = companyRoleDtos,
-            Permissions = permissionKeys
+            Permissions = permissionKeys,
+            SystemRoles = systemRoles.Select(sr => sr.Code).Distinct().ToList()
         };
 
         return (profile, activeCompanyId, roleCodes, permissionKeys);

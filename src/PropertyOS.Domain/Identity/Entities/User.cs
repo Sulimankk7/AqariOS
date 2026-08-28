@@ -37,6 +37,7 @@ public class User : ISoftDeletable
     
     public User? DeletedByUser { get; set; }
     public ICollection<UserCompanyRole> CompanyRoles { get; set; } = new List<UserCompanyRole>();
+    public ICollection<UserSystemRole> SystemRoles { get; set; } = new List<UserSystemRole>();
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<LoginHistory> LoginHistories { get; set; } = new List<LoginHistory>();
 }

@@ -281,10 +281,13 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
             await tx.CommitAsync();
         });
         
-        using var countRoleCmd = new NpgsqlCommand("SELECT count(*) FROM audit_logs WHERE entity_name = 'Role'", conn);
+        using var countRoleCmd = new NpgsqlCommand(
+            "SELECT count(*) FROM audit_logs WHERE entity_name = 'Role' AND entity_id = @roleId", conn);
+        countRoleCmd.Parameters.AddWithValue("roleId", role.Id);
         var countAfter = (long)(await countRoleCmd.ExecuteScalarAsync())!;
-        
-        // 1 audit log created for Role.
+
+        // Exactly one audit log is created for the Role written by this test. The
+        // shared integration database may contain Role audit rows from other tests.
         Assert.Equal(1, countAfter);
     }
 

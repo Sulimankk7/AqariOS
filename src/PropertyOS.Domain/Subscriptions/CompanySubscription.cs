@@ -28,4 +28,18 @@ public class CompanySubscription
 
     public Company Company { get; set; } = null!;
     public SubscriptionPlan Plan { get; set; } = null!;
+
+    public void ApplyApprovedPlanChange(
+        Guid planId,
+        BillingCycleEnum billingCycle,
+        decimal priceAtSubscription,
+        string currencyAtSubscription,
+        DateTimeOffset changedAt)
+    {
+        PlanId = planId;
+        BillingCycle = billingCycle;
+        PriceAtSubscription = priceAtSubscription;
+        CurrencyAtSubscription = currencyAtSubscription;
+        UpdatedAt = changedAt;
+    }
 }

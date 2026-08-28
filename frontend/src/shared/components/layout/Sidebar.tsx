@@ -27,6 +27,7 @@ import {
   Bell,
   Settings,
   ReceiptText,
+  CreditCard,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -149,23 +150,30 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    groupKey: "nav.groupServices",
+    groupLabel: "Services & Platform",
+    items: [
+      { id: "subscriptions", label: "Plans & Subscriptions", labelKey: "subscriptions.title", path: ROUTES.subscriptions.root, icon: CreditCard },
+    ],
+  },
+  {
     groupKey: "nav.groupOperations",
     groupLabel: "Operations",
     items: [
-      {
-        id: "maintenance",
-        label: "Maintenance",
-        labelKey: "nav.maintenance",
-        path: ROUTES.maintenance.root,
-        icon: Wrench,
-      },
-      {
-        id: "marketplace",
-        label: "Marketplace",
-        labelKey: "nav.marketplace",
-        path: ROUTES.marketplace.root,
-        icon: Store,
-      },
+// {
+//   id: "maintenance",
+//   label: "Maintenance",
+//   labelKey: "nav.maintenance",
+//   path: ROUTES.maintenance.root,
+//   icon: Wrench,
+// },
+// {
+//   id: "marketplace",
+//   label: "Marketplace",
+//   labelKey: "nav.marketplace",
+//   path: ROUTES.marketplace.root,
+//   icon: Store,
+// },
       {
         id: "documents",
         label: "Documents",
@@ -250,22 +258,22 @@ export function Sidebar({
   const sidebarContent = (
     <aside
       aria-label="Main navigation"
-      className={`h-full flex flex-col bg-card border-e border-border z-40 select-none transition-[width] duration-300 ease-in-out ${
+      className={`h-full flex flex-col bg-sidebar border-e border-sidebar-border z-40 select-none transition-[width] duration-300 ease-in-out ${
         isCollapsed ? "w-[60px]" : "w-64"
       }`}
     >
       {/* Brand + Collapse Toggle */}
-      <div className="h-14 px-3 flex items-center justify-between border-b border-border shrink-0">
+      <div className="h-16 px-3 flex items-center justify-between border-b border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-7 h-7 rounded-md bg-brand-green-900 text-white flex items-center justify-center font-bold font-mono text-[11px] shadow-xs shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-primary text-primary-foreground flex items-center justify-center font-bold font-mono text-[11px] shrink-0">
             AQ
           </div>
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <span className="font-bold tracking-tight text-foreground text-sm block truncate leading-tight">
+              <span className="type-title-small text-foreground block truncate">
                 {t("common.appName")}
               </span>
-              <span className="text-[9px] text-muted-foreground block truncate leading-tight">
+              <span className="type-label-small text-on-surface-variant block truncate">
                 {t("common.tagline")}
               </span>
             </div>
@@ -276,7 +284,7 @@ export function Sidebar({
         <button
           onClick={onToggleCollapse}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer shrink-0"
+          className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full text-on-surface-variant hover:text-foreground hover:bg-surface-container-high transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {isCollapsed ? (
             <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
@@ -310,7 +318,7 @@ export function Sidebar({
                 <button
                   onClick={() => toggleGroup(groupIdx)}
                   aria-expanded={isGroupExpanded}
-                  className="w-full flex items-center justify-between px-2.5 py-1 cursor-pointer hover:bg-secondary rounded text-[10px] font-semibold text-muted-foreground uppercase tracking-wider transition-colors mb-0.5"
+                  className="w-full flex items-center justify-between px-3 py-1.5 cursor-pointer hover:bg-surface-container-high rounded-xs type-label-small text-on-surface-variant uppercase transition-colors mb-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span>{getGroupLabel(group)}</span>
                   <ChevronDown
@@ -338,15 +346,15 @@ export function Sidebar({
                           onClick={onCloseMobile}
                           aria-label={label}
                           aria-current={isActive ? "page" : undefined}
-                          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          className={`flex min-h-10 items-center gap-3 px-3 py-2 rounded-full type-label-large transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                             isActive
-                              ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                              : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                              ? "bg-primary-container text-on-primary-container"
+                              : "text-on-surface-variant hover:text-foreground hover:bg-surface-container-high"
                           } ${isCollapsed ? "justify-center" : ""}`}
                         >
                           <Icon
                             className={`w-4 h-4 shrink-0 ${
-                              isActive ? "text-primary-foreground" : "text-brand-green-600"
+                              isActive ? "text-on-primary-container" : "text-primary"
                             }`}
                           />
                           {!isCollapsed && (
@@ -358,7 +366,7 @@ export function Sidebar({
                         {isCollapsed && (
                           <div
                             role="tooltip"
-                            className="absolute start-full ms-2 top-1/2 -translate-y-1/2 hidden group-hover/item:flex items-center px-2.5 py-1.5 bg-popover text-popover-foreground text-xs rounded-lg border border-border whitespace-nowrap shadow-md z-50 pointer-events-none"
+                            className="absolute start-full ms-2 top-1/2 -translate-y-1/2 hidden group-hover/item:flex items-center px-3 py-1.5 bg-on-surface text-surface type-body-small rounded-xs whitespace-nowrap shadow-e1 z-50 pointer-events-none"
                           >
                             {label}
                           </div>
@@ -375,7 +383,7 @@ export function Sidebar({
 
       {/* Footer */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-border text-[10px] text-muted-foreground flex items-center justify-between shrink-0">
+        <div className="p-3 border-t border-sidebar-border type-label-small text-muted-foreground flex items-center justify-between shrink-0">
           <span>v1.0.0 Enterprise</span>
           <span className="w-1.5 h-1.5 rounded-full bg-success" aria-label="System online" />
         </div>

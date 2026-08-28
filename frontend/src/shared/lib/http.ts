@@ -99,6 +99,7 @@ export interface ProblemDetailsPayload {
   detail?: string;
   instance?: string;
   errors?: Record<string, string[]>;
+  code?: string;
   [key: string]: unknown;
 }
 
@@ -108,6 +109,7 @@ export class ApiError extends Error {
   public readonly detail?: string;
   public readonly validationErrors?: Record<string, string[]>;
   public readonly rawPayload?: unknown;
+  public readonly code?: string;
 
   constructor(status: number, message: string, payload?: ProblemDetailsPayload) {
     super(message);
@@ -117,6 +119,7 @@ export class ApiError extends Error {
     this.detail = payload?.detail;
     this.validationErrors = payload?.errors;
     this.rawPayload = payload;
+    this.code = payload?.code;
   }
 }
 

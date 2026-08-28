@@ -167,12 +167,10 @@ public class RegisterCommandHandlerTests
 
         var expectedResponse = new RegisterResponseDto
         {
-            UserId = Guid.NewGuid(),
-            CompanyId = Guid.NewGuid(),
-            AccessToken = "jwt-access-token",
-            RefreshToken = "raw-refresh-token",
-            ExpiresIn = 900,
-            User = new UserProfileDto { FullName = "New Admin", Email = "admin@newcompany.com" }
+            RegistrationId = Guid.NewGuid(),
+            Status = "Pending",
+            SubmittedAt = DateTimeOffset.UtcNow,
+            Message = "Pending approval"
         };
 
         provisioningServiceMock.ProvisionTenantAsync(command, Arg.Any<CancellationToken>())
@@ -210,7 +208,7 @@ public class RegisterCommandHandlerTests
             {
                 executionLog.Add("Step 30");
                 var ctx = call.Arg<TenantProvisioningContext>();
-                ctx.Response = new RegisterResponseDto { AccessToken = "token" };
+                ctx.Response = new RegisterResponseDto { RegistrationId = Guid.NewGuid(), Status = "Pending" };
                 return Task.CompletedTask;
             });
 
@@ -222,7 +220,7 @@ public class RegisterCommandHandlerTests
 
         // Assert
         executionLog.Should().ContainInOrder("Step 10", "Step 30", "Step 50");
-        result.AccessToken.Should().Be("token");
+        result.Status.Should().Be("Pending");
     }
 
     [Fact]

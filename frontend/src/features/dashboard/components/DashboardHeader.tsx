@@ -30,7 +30,7 @@ export function DashboardHeader({
   const lastUpdatedTime = dataUpdatedAt ? formatTime(new Date(dataUpdatedAt)) : null;
 
   return (
-    <div className="w-full space-y-4 pb-4 border-b border-border">
+    <div className="w-full space-y-4 pb-4 border-b border-outline-variant">
       {/* Top Bar: Scope Metadata & Refresh Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-3 flex-wrap">
@@ -61,10 +61,10 @@ export function DashboardHeader({
 
       {/* Page Title & Operational Subtitle */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="type-headline-small font-semibold text-foreground">
           {t("dashboard.title")}
         </h1>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="type-body-medium text-muted-foreground mt-1">
           {t("dashboard.subtitle")}
         </p>
       </div>

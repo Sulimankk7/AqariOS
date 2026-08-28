@@ -15,45 +15,33 @@ export function AuthFooter({ lang, isDark = false }: AuthFooterProps) {
 
   return (
     <div
-      className={`w-full px-8 py-4 border-t flex items-center justify-between text-[12px] transition-colors duration-350 shrink-0 ${
-        isDark
-          ? "bg-[#161B22]/40 border-white/10 text-gray-400"
-          : "bg-white/40 border-[#F3F4F6] text-[#9CA3AF]"
-      }`}
+      className="w-full px-8 py-4 border-t border-outline-variant bg-topbar/80 flex items-center justify-between text-[12px] font-medium text-muted-foreground transition-colors duration-350 shrink-0"
     >
       <span className="hidden sm:inline">{t.copyright}</span>
       <div className="flex items-center gap-4">
         <a
           href="#"
-          className={`transition-colors ${
-            isDark ? "hover:text-gray-200" : "hover:text-[#4B5563]"
-          }`}
+          className="transition-colors hover:text-foreground"
         >
           {t.privacy}
         </a>
         <span>·</span>
         <a
           href="#"
-          className={`transition-colors ${
-            isDark ? "hover:text-gray-200" : "hover:text-[#4B5563]"
-          }`}
+          className="transition-colors hover:text-foreground"
         >
           {t.terms}
         </a>
         <span>·</span>
         <a
           href="#"
-          className={`transition-colors ${
-            isDark ? "hover:text-gray-200" : "hover:text-[#4B5563]"
-          }`}
+          className="transition-colors hover:text-foreground"
         >
           {t.security}
         </a>
         <span>·</span>
         <span
-          className={`font-mono font-medium ${
-            isDark ? "text-[#A4AC86]" : "text-[#656D4A]"
-          }`}
+          className="font-mono font-semibold text-primary"
         >
           {t.version}
         </span>

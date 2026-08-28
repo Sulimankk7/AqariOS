@@ -105,7 +105,12 @@ public class PermissionCatalogSeederTests
 
         // Assert
         var adminGrants = await dbContext.RolePermissions.Where(rp => rp.RoleId == adminRole.Id).ToListAsync();
-        adminGrants.Should().HaveCount(PlatformPermissions.Catalog.Count);
+        adminGrants.Should().HaveCount(PlatformPermissions.Catalog.Count(p => !PlatformPermissions.IsPlatformOnly(p.Key)));
+        var platformPermissionIds = dbContext.Permissions
+            .Where(p => p.Key.StartsWith("platform."))
+            .Select(p => p.Id)
+            .ToHashSet();
+        adminGrants.Should().OnlyContain(g => !platformPermissionIds.Contains(g.PermissionId));
 
         var customGrants = await dbContext.RolePermissions.Where(rp => rp.RoleId == customRole.Id).ToListAsync();
         customGrants.Should().BeEmpty("Custom non-admin roles must not automatically receive permissions during reconciliation");
@@ -140,7 +145,7 @@ public class PermissionCatalogSeederTests
 
         // Assert
         var adminGrants = await dbContext.RolePermissions.Where(rp => rp.RoleId == adminRole.Id).ToListAsync();
-        adminGrants.Should().HaveCount(PlatformPermissions.Catalog.Count);
+        adminGrants.Should().HaveCount(PlatformPermissions.Catalog.Count(p => !PlatformPermissions.IsPlatformOnly(p.Key)));
     }
 
     [Fact]
@@ -200,5 +205,26 @@ public class PermissionCatalogSeederTests
         // Assert
         var grants = await dbContext.RolePermissions.Where(rp => rp.RoleId == globalRole.Id).ToListAsync();
         grants.Should().BeEmpty("Global roles without a CompanyId must not receive automatic tenant admin grants");
+    }
+
+    [Fact]
+    public async Task SeedAndReconcileAsync_ShouldCreateSystemAdminWithOnlyPlatformPermissions()
+    {
+        using var dbContext = CreateDbContext();
+        var seeder = new PermissionCatalogSeeder(dbContext, NullLogger<PermissionCatalogSeeder>.Instance);
+
+        await seeder.SeedAndReconcileAsync();
+
+        var role = await dbContext.Roles.SingleAsync(r => r.Code == PlatformRoles.SystemAdmin);
+        role.CompanyId.Should().BeNull();
+        role.IsSystem.Should().BeTrue();
+
+        var grantedKeys = await (from rp in dbContext.RolePermissions
+                                 join permission in dbContext.Permissions on rp.PermissionId equals permission.Id
+                                 where rp.RoleId == role.Id
+                                 select permission.Key).ToListAsync();
+
+        grantedKeys.Should().BeEquivalentTo(
+            PlatformPermissions.Catalog.Where(p => PlatformPermissions.IsPlatformOnly(p.Key)).Select(p => p.Key));
     }
 }

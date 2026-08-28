@@ -165,6 +165,23 @@ public class Company : ISoftDeletable
         IsActive = false;
     }
 
+    public void MarkPendingApproval(DateTimeOffset updatedAt, Guid? updatedBy)
+    {
+        IsActive = false;
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
+    }
+
+    public void ActivateAfterApproval(DateTimeOffset updatedAt, Guid updatedBy)
+    {
+        if (DeletedAt.HasValue)
+            throw new InvalidOperationException("A deleted company cannot be activated.");
+
+        IsActive = true;
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
+    }
+
     /// <summary>Attaches a Settings instance (used by Infrastructure during hydration).</summary>
     internal void SetSettings(CompanySettings settings)
     {

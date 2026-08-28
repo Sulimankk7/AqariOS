@@ -120,6 +120,52 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddAuthorization(options =>
 {
+    void AddPlatformSubscriptionPolicy(string permission) => options.AddPolicy(permission, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole(PropertyOS.Application.Common.Security.PlatformRoles.SystemAdmin);
+        policy.RequireClaim("permissions", permission);
+    });
+
+    void AddCompanySubscriptionPolicy(string permission) => options.AddPolicy(permission, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole(PropertyOS.Application.Common.Security.CompanyRoles.CompanyAdmin);
+        policy.RequireClaim("permissions", permission);
+    });
+
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformPlansRead);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformPlansCreate);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformPlansLifecycle);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformSubscriptionsRead);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformSubscriptionsManage);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformPlanChangeRequestsRead);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformPlanChangeRequestsReview);
+    AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.SubscriptionPlansView);
+    AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.OwnSubscriptionView);
+    AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.OwnPlanChangeRequestsRead);
+    AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.OwnPlanChangeRequestsCreate);
+    AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.OwnPlanChangeRequestsCancel);
+
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.LandlordRegistrationsRead, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole(PropertyOS.Application.Common.Security.PlatformRoles.SystemAdmin);
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.LandlordRegistrationsRead);
+    });
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.LandlordRegistrationsApprove, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole(PropertyOS.Application.Common.Security.PlatformRoles.SystemAdmin);
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.LandlordRegistrationsApprove);
+    });
+    options.AddPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.LandlordRegistrationsReject, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole(PropertyOS.Application.Common.Security.PlatformRoles.SystemAdmin);
+        policy.RequireClaim("permissions", PropertyOS.Application.Common.Security.PlatformPermissions.LandlordRegistrationsReject);
+    });
+
     options.AddPolicy(PropertyOS.Application.Properties.Security.PropertyPermissions.Read, policy =>
         policy.RequireClaim("permissions", PropertyOS.Application.Properties.Security.PropertyPermissions.Read, PropertyOS.Application.Properties.Security.PropertyPermissions.Manage));
 
@@ -388,6 +434,7 @@ app.UseSerilogRequestLogging(options =>
 app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
+app.UseMiddleware<PropertyOS.Api.Middleware.AccountAccessMiddleware>();
 app.UseAuthorization();
 app.UseRateLimiter();
 

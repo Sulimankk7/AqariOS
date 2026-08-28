@@ -28,8 +28,9 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvisioningStep, CreateCompanySettingsStep>();
         services.AddScoped<ITenantProvisioningStep, CreateCompanyAdminRoleStep>();
         services.AddScoped<ITenantProvisioningStep, CreateUserCompanyMembershipStep>();
+        services.AddScoped<ITenantProvisioningStep, CreateLandlordRegistrationStep>();
         services.AddScoped<ITenantProvisioningStep, SaveProvisionedTenantEntitiesStep>();
-        services.AddScoped<ITenantProvisioningStep, GenerateAuthSessionStep>();
+        services.AddScoped<ITenantProvisioningStep, BuildPendingRegistrationResponseStep>();
         services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
 
         services.AddScoped<PropertyOS.Application.Files.Services.IFileValidationService, PropertyOS.Application.Files.Services.FileValidationService>();

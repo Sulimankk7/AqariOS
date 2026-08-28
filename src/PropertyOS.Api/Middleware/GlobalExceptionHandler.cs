@@ -75,7 +75,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                 problemDetails.Title = "Resource Conflict";
                 problemDetails.Detail = conflictException.Message;
 
-                if (conflictException is DuplicateEmailException)
+                if (!string.IsNullOrWhiteSpace(conflictException.Code))
+                {
+                    problemDetails.Extensions["code"] = conflictException.Code;
+                }
+                else if (conflictException is DuplicateEmailException)
                 {
                     problemDetails.Extensions["code"] = "EMAIL_ALREADY_EXISTS";
                 }
@@ -161,11 +165,53 @@ public class GlobalExceptionHandler : IExceptionHandler
                         problemDetails.Detail = "This utility account is already linked.";
                         problemDetails.Extensions["code"] = "UTILITY_ACCOUNT_ALREADY_LINKED";
                     }
+                    else if (pgEx.ConstraintName == "uq_company_subscriptions_one_active")
+                    {
+                        problemDetails.Detail = "The company already has a current subscription.";
+                        problemDetails.Extensions["code"] = "CURRENT_SUBSCRIPTION_ALREADY_EXISTS";
+                    }
+                    else if (pgEx.ConstraintName == "uq_plan_change_requests_one_pending_per_company")
+                    {
+                        problemDetails.Detail = "The company already has a pending Plan change request.";
+                        problemDetails.Extensions["code"] = "PENDING_PLAN_CHANGE_ALREADY_EXISTS";
+                    }
+                    else if (pgEx.ConstraintName == "uq_subscription_plans_code")
+                    {
+                        problemDetails.Detail = "A subscription Plan with this code already exists.";
+                        problemDetails.Extensions["code"] = "PLAN_CODE_ALREADY_EXISTS";
+                    }
                     else
                     {
                         problemDetails.Detail = "A conflicting resource already exists.";
                         problemDetails.Extensions["code"] = "RESOURCE_ALREADY_EXISTS";
                     }
+                }
+                else if (pgEx.SqlState == "23514" && pgEx.ConstraintName == "chk_subscription_plans_used_immutable")
+                {
+                    statusCode = StatusCodes.Status422UnprocessableEntity;
+                    problemDetails.Status = statusCode;
+                    problemDetails.Title = "Unprocessable Entity";
+                    problemDetails.Detail = "A Plan used by a subscription cannot have its commercial definition modified.";
+                    problemDetails.Extensions["code"] = "USED_PLAN_IMMUTABLE";
+                }
+                else if (pgEx.SqlState == "23514" && pgEx.ConstraintName is
+                    "chk_plan_change_request_pending_transition" or
+                    "chk_plan_change_request_platform_transition" or
+                    "chk_plan_change_request_company_transition")
+                {
+                    statusCode = StatusCodes.Status409Conflict;
+                    problemDetails.Status = statusCode;
+                    problemDetails.Title = "Resource Conflict";
+                    problemDetails.Detail = "The Plan change request is no longer in a state that permits this action.";
+                    problemDetails.Extensions["code"] = "PLAN_CHANGE_INVALID_LIFECYCLE_TRANSITION";
+                }
+                else if (pgEx.SqlState == "23514" && pgEx.ConstraintName == "chk_plan_change_request_intent_immutable")
+                {
+                    statusCode = StatusCodes.Status409Conflict;
+                    problemDetails.Status = statusCode;
+                    problemDetails.Title = "Resource Conflict";
+                    problemDetails.Detail = "Plan change request intent cannot be modified.";
+                    problemDetails.Extensions["code"] = "PLAN_CHANGE_REQUEST_IMMUTABLE";
                 }
                 else
                 {

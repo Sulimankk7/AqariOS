@@ -59,7 +59,7 @@ export function QuickActions() {
 
   return (
     <section aria-label="Quick Actions" className="w-full space-y-3 pt-2">
-      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <h2 className="type-label-medium text-on-surface-variant uppercase">
         {t("dashboard.quickOperations")}
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -71,24 +71,24 @@ export function QuickActions() {
               id={`quick-action-${act.id}`}
               onClick={() => navigate(act.path)}
               aria-label={act.label}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border text-foreground text-xs font-medium transition-all duration-150 cursor-pointer space-y-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border type-label-medium transition-all duration-150 cursor-pointer space-y-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 act.isPrimary
-                  ? "border-primary/40 bg-primary/5 hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                  : "border-border bg-card hover:bg-secondary hover:border-border-strong"
+                  ? "border-primary bg-primary text-primary-foreground shadow-e1 hover:shadow-e2"
+                  : "border-outline-variant bg-card text-foreground hover:bg-surface-container-low hover:border-outline"
               }`}
             >
               <div
                 className={`p-2 rounded-md transition-colors ${
                   act.isPrimary
-                    ? "bg-primary/10 group-hover:bg-white/20"
-                    : "bg-secondary group-hover:bg-primary group-hover:text-primary-foreground"
+                    ? "bg-white/15 text-primary-foreground"
+                    : "border border-outline-variant bg-surface-container-high text-primary group-hover:bg-primary group-hover:text-primary-foreground"
                 }`}
               >
                 <Icon
                   className={`w-4 h-4 ${
                     act.isPrimary
-                      ? "text-primary group-hover:text-white"
-                      : "text-brand-green-600 group-hover:text-primary-foreground"
+                      ? "text-primary-foreground"
+                      : "text-primary group-hover:text-primary-foreground"
                   }`}
                 />
               </div>

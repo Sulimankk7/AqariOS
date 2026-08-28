@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/shared/theme";
 import { I18nProvider } from "@/shared/i18n";
 import { AuthProvider } from "@/features/auth/providers/AuthProvider";
+import { Toaster } from "@/shared/ui/sonner";
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -29,9 +30,12 @@ export function AppProvider({ children }: AppProviderProps) {
 
   return (
     <ThemeProvider defaultTheme="system">
-      <I18nProvider defaultLanguage="en">
+      <I18nProvider defaultLanguage="ar">
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </QueryClientProvider>
       </I18nProvider>
     </ThemeProvider>

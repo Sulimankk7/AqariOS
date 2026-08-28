@@ -104,7 +104,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-30 w-full h-14 border-b border-border bg-card/95 backdrop-blur-md px-3 sm:px-5 flex items-center justify-between gap-3 shadow-xs"
+      className="sticky top-0 z-30 flex h-16 w-full items-center justify-between gap-3 border-b border-border-strong bg-topbar/95 px-3 backdrop-blur-md sm:px-5"
       role="banner"
     >
       {/* ── Start (Left in LTR / Right in RTL): Mobile Hamburger + Context Indicator ── */}

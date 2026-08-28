@@ -38,6 +38,7 @@ export interface UserProfileDto {
   activeCompanyId?: string;
   companyRoles: UserCompanyRoleDto[];
   permissions: string[];
+  systemRoles: string[];
 }
 
 export interface RegisterRequestDto {
@@ -53,13 +54,10 @@ export interface RegisterRequestDto {
 }
 
 export interface RegisterResponseDto {
-  userId: string;
-  companyId: string;
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-  expiresIn: number;
-  user: UserProfileDto;
+  registrationId: string;
+  status: string;
+  submittedAt: string;
+  message: string;
 }
 
 export interface LoginRequestDto {

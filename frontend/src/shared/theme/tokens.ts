@@ -1,131 +1,33 @@
-/**
- * AqariOS Design Token System — Programmatic TypeScript Token Architecture.
- *
- * Central single source of truth for Typography, Spacing, Radius, Elevation,
- * Borders, Animations, Focus Rings, Status Colors, and Chart Palette.
- */
-
 import { brandColors, colors } from "./colors";
 
 export const tokens = {
   brand: brandColors,
   colors,
-
   typography: {
     fontFamily: {
-      sans: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      mono: 'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+      arabic: 'Tajawal, Arial, sans-serif',
+      english: '"Roboto Flex", Roboto, Arial, sans-serif',
+      mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
     },
-    fontSize: {
-      xs: ["0.75rem", { lineHeight: "1rem" }],       // 12px
-      sm: ["0.875rem", { lineHeight: "1.25rem" }],   // 14px
-      base: ["1rem", { lineHeight: "1.5rem" }],      // 16px
-      lg: ["1.125rem", { lineHeight: "1.75rem" }],   // 18px
-      xl: ["1.25rem", { lineHeight: "1.75rem" }],    // 20px
-      "2xl": ["1.5rem", { lineHeight: "2rem" }],     // 24px
-      "3xl": ["1.875rem", { lineHeight: "2.25rem" }],// 30px
-      "4xl": ["2.25rem", { lineHeight: "2.5rem" }],  // 36px
-    },
-    fontWeight: {
-      normal: "400",
-      medium: "500",
-      semibold: "600",
-      bold: "700",
+    scale: {
+      display: { large: [57, 64, 400], medium: [45, 52, 400], small: [36, 44, 400] },
+      headline: { large: [32, 40, 400], medium: [28, 36, 400], small: [24, 32, 400] },
+      title: { large: [22, 28, 400], medium: [16, 24, 500], small: [14, 20, 500] },
+      body: { large: [16, 24, 400], medium: [14, 20, 400], small: [12, 16, 400] },
+      label: { large: [14, 20, 500], medium: [12, 16, 500], small: [11, 16, 500] },
     },
   },
-
-  spacing: {
-    0: "0px",
-    1: "0.25rem",  // 4px
-    2: "0.5rem",   // 8px
-    3: "0.75rem",  // 12px
-    4: "1rem",      // 16px
-    5: "1.25rem",  // 20px
-    6: "1.5rem",   // 24px
-    8: "2rem",      // 32px
-    10: "2.5rem",  // 40px
-    12: "3rem",     // 48px
-    16: "4rem",     // 64px
-  },
-
-  radius: {
-    none: "0px",
-    xs: "0.125rem", // 2px
-    sm: "0.25rem",  // 4px
-    md: "0.375rem", // 6px
-    lg: "0.5rem",   // 8px (default --radius)
-    xl: "0.75rem",  // 12px
-    full: "9999px",
-  },
-
+  spacing: { 0: "0", 1: "0.25rem", 2: "0.5rem", 3: "0.75rem", 4: "1rem", 5: "1.25rem", 6: "1.5rem", 8: "2rem", 10: "2.5rem", 12: "3rem", 16: "4rem" },
+  shape: { xs: "4px", sm: "8px", md: "16px", lg: "28px", full: "9999px" },
   elevation: {
-    none: "none",
-    xs: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-    sm: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
-    md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
-    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
-    xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-    "2xl": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+    e0: "none",
+    e1: "0 1px 2px rgb(51 61 41 / 0.08), 0 1px 3px 1px rgb(51 61 41 / 0.05)",
+    e2: "0 1px 2px rgb(51 61 41 / 0.08), 0 2px 6px 2px rgb(51 61 41 / 0.06)",
+    e3: "0 1px 3px rgb(51 61 41 / 0.08), 0 4px 8px 3px rgb(51 61 41 / 0.07)",
+    e4: "0 2px 3px rgb(51 61 41 / 0.08), 0 6px 10px 4px rgb(51 61 41 / 0.07)",
   },
-
-  borders: {
-    default: "var(--border)",
-    strong: "var(--border-strong)",
-    muted: "var(--border-muted)",
-    focus: "var(--border-focus)",
-  },
-
-  animations: {
-    duration: {
-      fast: "75ms",
-      normal: "150ms",
-      medium: "200ms",
-      slow: "300ms",
-    },
-    easing: {
-      easeInOut: "cubic-bezier(0.4, 0, 0.2, 1)",
-      easeOut: "cubic-bezier(0, 0, 0.2, 1)",
-      easeIn: "cubic-bezier(0.4, 0, 1, 1)",
-    },
-  },
-
-  focusRings: {
-    ring: "var(--ring)",
-    offset: "2px",
-    width: "2px",
-    classes: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-  },
-
-  statusColors: {
-    success: {
-      text: "var(--success)",
-      bg: "var(--success-bg)",
-      foreground: "var(--success-foreground)",
-    },
-    warning: {
-      text: "var(--warning)",
-      bg: "var(--warning-bg)",
-      foreground: "var(--warning-foreground)",
-    },
-    danger: {
-      text: "var(--danger)",
-      bg: "var(--danger-bg)",
-      foreground: "var(--danger-foreground)",
-    },
-    info: {
-      text: "var(--info)",
-      bg: "var(--info-bg)",
-      foreground: "var(--info-foreground)",
-    },
-  },
-
-  chartPalette: {
-    chart1: "var(--chart-1)",
-    chart2: "var(--chart-2)",
-    chart3: "var(--chart-3)",
-    chart4: "var(--chart-4)",
-    chart5: "var(--chart-5)",
-  },
+  motion: { fast: "75ms", normal: "150ms", medium: "200ms", slow: "300ms" },
+  focusRing: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 } as const;
 
 export type DesignTokens = typeof tokens;

@@ -179,6 +179,11 @@ public class DispatchNotificationCommandHandlerTests
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.Permission> Permissions => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.RolePermission> RolePermissions => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.LoginHistory> LoginHistory => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.UserSystemRole> UserSystemRoles => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.LandlordRegistration> LandlordRegistrations => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Subscriptions.SubscriptionPlan> SubscriptionPlans => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Subscriptions.CompanySubscription> CompanySubscriptions => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Subscriptions.PlanChangeRequest> PlanChangeRequests => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Properties.Building> Buildings => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Properties.Apartment> Apartments => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Leasing.LeaseContract> LeaseContracts => throw new NotImplementedException();

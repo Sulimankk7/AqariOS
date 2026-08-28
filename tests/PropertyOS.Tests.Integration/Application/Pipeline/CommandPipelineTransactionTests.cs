@@ -53,6 +53,7 @@ public class CommandPipelineTransactionTests : IAsyncLifetime
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>("late_fee_type_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum");
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>("plan_change_request_status_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Audit.Enums.AuditAction>("audit_action_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Audit.Enums.AuditSeverity>("audit_severity_enum");
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Audit.Enums.AuditSource>("audit_source_enum");
@@ -104,6 +105,7 @@ public class CommandPipelineTransactionTests : IAsyncLifetime
                 o.MapEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>("late_fee_type_enum");
                 o.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum");
                 o.MapEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum");
+                o.MapEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>("plan_change_request_status_enum");
                 o.MapEnum<PropertyOS.Domain.Audit.Enums.AuditAction>("audit_action_enum");
                 o.MapEnum<PropertyOS.Domain.Audit.Enums.AuditSeverity>("audit_severity_enum");
                 o.MapEnum<PropertyOS.Domain.Audit.Enums.AuditSource>("audit_source_enum");

@@ -18,6 +18,24 @@ public record PermissionDefinition(
 /// </summary>
 public static class PlatformPermissions
 {
+    public const string LandlordRegistrationsRead = "platform.landlord_registrations.read";
+    public const string LandlordRegistrationsApprove = "platform.landlord_registrations.approve";
+    public const string LandlordRegistrationsReject = "platform.landlord_registrations.reject";
+
+    public const string PlatformPlansRead = "platform.plans.read";
+    public const string PlatformPlansCreate = "platform.plans.create";
+    public const string PlatformPlansLifecycle = "platform.plans.lifecycle";
+    public const string PlatformSubscriptionsRead = "platform.subscriptions.read";
+    public const string PlatformSubscriptionsManage = "platform.subscriptions.manage";
+    public const string PlatformPlanChangeRequestsRead = "platform.plan_change_requests.read";
+    public const string PlatformPlanChangeRequestsReview = "platform.plan_change_requests.review";
+
+    public const string SubscriptionPlansView = "subscriptions.plans.view";
+    public const string OwnSubscriptionView = "subscriptions.own.read";
+    public const string OwnPlanChangeRequestsRead = "subscriptions.plan_change_requests.own.read";
+    public const string OwnPlanChangeRequestsCreate = "subscriptions.plan_change_requests.own.create";
+    public const string OwnPlanChangeRequestsCancel = "subscriptions.plan_change_requests.own.cancel";
+
     // Module 1 / 3 — System & Company Management
     public const string CompanyManage = "company.manage";
 
@@ -70,6 +88,21 @@ public static class PlatformPermissions
     /// </summary>
     public static readonly IReadOnlyList<PermissionDefinition> Catalog = new List<PermissionDefinition>
     {
+        new(LandlordRegistrationsRead, "PlatformAdministration", "View landlord registration applications", "عرض طلبات تسجيل الملاك"),
+        new(LandlordRegistrationsApprove, "PlatformAdministration", "Approve landlord registration applications", "الموافقة على طلبات تسجيل الملاك"),
+        new(LandlordRegistrationsReject, "PlatformAdministration", "Reject landlord registration applications", "رفض طلبات تسجيل الملاك"),
+        new(PlatformPlansRead, "Subscriptions", "View the platform Plan catalog", "عرض كتالوج خطط المنصة"),
+        new(PlatformPlansCreate, "Subscriptions", "Create commercial Plans", "إنشاء خطط تجارية"),
+        new(PlatformPlansLifecycle, "Subscriptions", "Activate and deactivate Plans", "تفعيل وتعطيل الخطط"),
+        new(PlatformSubscriptionsRead, "Subscriptions", "View company subscriptions", "عرض اشتراكات الشركات"),
+        new(PlatformSubscriptionsManage, "Subscriptions", "Create company subscriptions", "إنشاء اشتراكات الشركات"),
+        new(PlatformPlanChangeRequestsRead, "Subscriptions", "View Plan change requests", "عرض طلبات تغيير الخطط"),
+        new(PlatformPlanChangeRequestsReview, "Subscriptions", "Approve and reject Plan change requests", "الموافقة على طلبات تغيير الخطط ورفضها"),
+        new(SubscriptionPlansView, "Subscriptions", "View available active Plans", "عرض الخطط النشطة المتاحة"),
+        new(OwnSubscriptionView, "Subscriptions", "View the company's own subscription", "عرض اشتراك الشركة"),
+        new(OwnPlanChangeRequestsRead, "Subscriptions", "View the company's Plan change requests", "عرض طلبات الشركة لتغيير الخطط"),
+        new(OwnPlanChangeRequestsCreate, "Subscriptions", "Create a Plan change request for the company", "إنشاء طلب لتغيير خطة الشركة"),
+        new(OwnPlanChangeRequestsCancel, "Subscriptions", "Cancel a pending Plan change request for the company", "إلغاء طلب معلق لتغيير خطة الشركة"),
         new(TenantPortalAccess, "Leasing", "Access tenant portal self-service capabilities", "الوصول إلى خدمات بوابة المستأجر الذاتية"),
 
         new(CompanyManage, "Identity", "Manage company settings and tenant parameters", "إدارة إعدادات الشركة ومعايير المستأجر"),
@@ -107,4 +140,7 @@ public static class PlatformPermissions
         new(NotificationsManageTemplates, "Notifications", "Manage notification templates", "إدارة قوالب الإشعارات"),
         new(NotificationsViewAll, "Notifications", "Administrative view of all tenant notification inboxes", "عرض إداري لجميع صناديق إشعارات المستأجرين")
     };
+
+    public static bool IsPlatformOnly(string permissionKey) =>
+        permissionKey.StartsWith("platform.", System.StringComparison.Ordinal);
 }

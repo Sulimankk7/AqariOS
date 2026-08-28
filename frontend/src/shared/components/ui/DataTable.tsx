@@ -188,10 +188,10 @@ export function DataTable<T extends Record<string, any>>({
       )}
 
       {/* Main Table Surface */}
-      <div className="w-full rounded-xl border border-border bg-card shadow-xs">
+      <div className="w-full rounded-lg border border-outline-variant bg-card shadow-e0">
         <div className="overflow-x-auto min-h-[350px]">
           <table className="w-full text-xs text-start border-collapse">
-            <thead className="bg-secondary/70 border-b border-border text-muted-foreground font-semibold uppercase tracking-wider">
+            <thead className="bg-surface-container-high border-b border-outline-variant text-on-surface-variant type-label-medium uppercase">
               <tr>
                 {columns.map((col) => (
                   <th
@@ -223,7 +223,7 @@ export function DataTable<T extends Record<string, any>>({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-border/60">
+            <tbody className="divide-y divide-outline-variant/80">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, rIdx) => (
                   <tr key={rIdx}>
@@ -269,7 +269,7 @@ export function DataTable<T extends Record<string, any>>({
                     key={rIdx}
                     onClick={() => onRowClick && onRowClick(row)}
                     className={`transition-colors ${
-                      onRowClick ? "hover:bg-secondary/80 cursor-pointer" : "hover:bg-secondary/40"
+                      onRowClick ? "hover:bg-surface-container-low cursor-pointer" : "hover:bg-surface-container-low/70"
                     }`}
                   >
                     {columns.map((col) => (

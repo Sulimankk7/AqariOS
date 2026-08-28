@@ -7,11 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.DTOs.Subscriptions;
 using PropertyOS.Application.Subscriptions;
-using PropertyOS.Domain.Companies;
-using PropertyOS.Domain.Companies.Enums;
-using PropertyOS.Domain.Identity.Enums;
-using PropertyOS.Domain.Subscriptions;
-using PropertyOS.Domain.Subscriptions.Enums;
 using PropertyOS.Infrastructure.Persistence;
 
 namespace PropertyOS.Infrastructure.Subscriptions.Services;
@@ -139,100 +134,10 @@ public class SubscriptionService : ISubscriptionService
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
 
-        var plan = await _dbContext.SubscriptionPlans
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == dto.PlanId && p.IsActive, cancellationToken);
-
-        if (plan == null)
-        {
-            throw new NotFoundException($"Subscription plan with ID '{dto.PlanId}' was not found or is inactive.");
-        }
-
-        var companyId = await GetOrCreateCompanyForUserAsync(userId, cancellationToken);
-
-        // Check for existing active subscription
-        var existingActive = await _dbContext.CompanySubscriptions
-            .AsNoTracking()
-            .AnyAsync(s => s.CompanyId == companyId &&
-                           (s.Status == SubscriptionStatusEnum.Active ||
-                            s.Status == SubscriptionStatusEnum.Trialing ||
-                            s.Status == SubscriptionStatusEnum.PastDue), cancellationToken);
-
-        if (existingActive)
-        {
-            throw new ConflictException("User or company already has an active subscription. Use change-plan endpoint to modify current subscription.");
-        }
-
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var endDate = dto.BillingCycle == BillingCycleEnum.Yearly
-            ? today.AddYears(1)
-            : today.AddMonths(1);
-
-        var price = dto.BillingCycle == BillingCycleEnum.Yearly
-            ? plan.YearlyPrice
-            : plan.MonthlyPrice;
-
-        DateOnly? trialEndDate = null;
-        var initialStatus = SubscriptionStatusEnum.Active;
-
-        if (plan.SupportsTrial && plan.TrialDurationDays.HasValue && plan.TrialDurationDays.Value > 0)
-        {
-            trialEndDate = today.AddDays(plan.TrialDurationDays.Value);
-            initialStatus = SubscriptionStatusEnum.Trialing;
-        }
-
-        var subscription = new CompanySubscription
-        {
-            CompanyId = companyId,
-            PlanId = plan.Id,
-            Status = initialStatus,
-            StartDate = today,
-            EndDate = endDate,
-            TrialEndDate = trialEndDate,
-            PriceAtSubscription = price,
-            CurrencyAtSubscription = plan.Currency,
-            BillingCycle = dto.BillingCycle,
-            AutoRenew = true,
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-
-        _dbContext.CompanySubscriptions.Add(subscription);
-
-        try
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("uq_company_subscriptions_one_active") == true)
-        {
-            throw new ConflictException("A subscription for this company was created concurrently by another request.");
-        }
-
-        return new UserSubscriptionDto
-        {
-            Id = subscription.Id,
-            CompanyId = subscription.CompanyId,
-            PlanId = subscription.PlanId,
-            PlanCode = plan.Code,
-            PlanNameEn = plan.NameEn,
-            PlanNameAr = plan.NameAr,
-            Status = subscription.Status.ToString(),
-            StartDate = subscription.StartDate,
-            EndDate = subscription.EndDate,
-            TrialEndDate = subscription.TrialEndDate,
-            PriceAtSubscription = subscription.PriceAtSubscription,
-            CurrencyAtSubscription = subscription.CurrencyAtSubscription,
-            BillingCycle = subscription.BillingCycle.ToString(),
-            AutoRenew = subscription.AutoRenew,
-            SuspendedAt = subscription.SuspendedAt,
-            SuspensionReason = subscription.SuspensionReason,
-            CancelledAt = subscription.CancelledAt,
-            CancellationReason = subscription.CancellationReason,
-            ExpiredAt = subscription.ExpiredAt,
-            ExternalBillingRef = subscription.ExternalBillingRef,
-            CreatedAt = subscription.CreatedAt,
-            UpdatedAt = subscription.UpdatedAt
-        };
+        await Task.CompletedTask;
+        throw new BusinessRuleException(
+            "Tenant self-service subscription creation is retired. Subscriptions must be created by platform administration.",
+            "SUBSCRIPTION_DIRECT_CREATE_RETIRED");
     }
 
     /// <inheritdoc />
@@ -244,81 +149,10 @@ public class SubscriptionService : ISubscriptionService
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
 
-        var newPlan = await _dbContext.SubscriptionPlans
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == dto.NewPlanId && p.IsActive, cancellationToken);
-
-        if (newPlan == null)
-        {
-            throw new NotFoundException($"Subscription plan with ID '{dto.NewPlanId}' was not found or is inactive.");
-        }
-
-        var companyId = await ResolveCompanyIdForUserAsync(userId, cancellationToken);
-        if (!companyId.HasValue)
-        {
-            throw new NotFoundException("No active subscription found for user because no associated company exists.");
-        }
-
-        var subscription = await _dbContext.CompanySubscriptions
-            .FirstOrDefaultAsync(s => s.CompanyId == companyId.Value &&
-                                      (s.Status == SubscriptionStatusEnum.Active ||
-                                       s.Status == SubscriptionStatusEnum.Trialing ||
-                                       s.Status == SubscriptionStatusEnum.PastDue), cancellationToken);
-
-        if (subscription == null)
-        {
-            throw new NotFoundException("No active or trialing subscription was found to modify.");
-        }
-
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var price = dto.NewBillingCycle == BillingCycleEnum.Yearly
-            ? newPlan.YearlyPrice
-            : newPlan.MonthlyPrice;
-
-        subscription.PlanId = newPlan.Id;
-        subscription.BillingCycle = dto.NewBillingCycle;
-        subscription.PriceAtSubscription = price;
-        subscription.CurrencyAtSubscription = newPlan.Currency;
-        subscription.EndDate = dto.NewBillingCycle == BillingCycleEnum.Yearly
-            ? today.AddYears(1)
-            : today.AddMonths(1);
-        subscription.Status = SubscriptionStatusEnum.Active;
-        subscription.UpdatedAt = DateTimeOffset.UtcNow;
-
-        try
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new ConflictException("The subscription was updated concurrently by another operation. Please retry.");
-        }
-
-        return new UserSubscriptionDto
-        {
-            Id = subscription.Id,
-            CompanyId = subscription.CompanyId,
-            PlanId = subscription.PlanId,
-            PlanCode = newPlan.Code,
-            PlanNameEn = newPlan.NameEn,
-            PlanNameAr = newPlan.NameAr,
-            Status = subscription.Status.ToString(),
-            StartDate = subscription.StartDate,
-            EndDate = subscription.EndDate,
-            TrialEndDate = subscription.TrialEndDate,
-            PriceAtSubscription = subscription.PriceAtSubscription,
-            CurrencyAtSubscription = subscription.CurrencyAtSubscription,
-            BillingCycle = subscription.BillingCycle.ToString(),
-            AutoRenew = subscription.AutoRenew,
-            SuspendedAt = subscription.SuspendedAt,
-            SuspensionReason = subscription.SuspensionReason,
-            CancelledAt = subscription.CancelledAt,
-            CancellationReason = subscription.CancellationReason,
-            ExpiredAt = subscription.ExpiredAt,
-            ExternalBillingRef = subscription.ExternalBillingRef,
-            CreatedAt = subscription.CreatedAt,
-            UpdatedAt = subscription.UpdatedAt
-        };
+        await Task.CompletedTask;
+        throw new BusinessRuleException(
+            "Direct tenant plan changes are retired. Company administrators must submit a plan change request.",
+            "SUBSCRIPTION_DIRECT_PLAN_CHANGE_RETIRED");
     }
 
     /// <inheritdoc />
@@ -327,64 +161,10 @@ public class SubscriptionService : ISubscriptionService
         string? reason,
         CancellationToken cancellationToken = default)
     {
-        var companyId = await ResolveCompanyIdForUserAsync(userId, cancellationToken);
-        if (!companyId.HasValue)
-        {
-            throw new NotFoundException("No active subscription found for user because no associated company exists.");
-        }
-
-        var subscription = await _dbContext.CompanySubscriptions
-            .Include(s => s.Plan)
-            .FirstOrDefaultAsync(s => s.CompanyId == companyId.Value &&
-                                      (s.Status == SubscriptionStatusEnum.Active ||
-                                       s.Status == SubscriptionStatusEnum.Trialing ||
-                                       s.Status == SubscriptionStatusEnum.PastDue), cancellationToken);
-
-        if (subscription == null)
-        {
-            throw new NotFoundException("No active subscription was found to cancel.");
-        }
-
-        subscription.Status = SubscriptionStatusEnum.Cancelled;
-        subscription.CancelledAt = DateTimeOffset.UtcNow;
-        subscription.CancellationReason = string.IsNullOrWhiteSpace(reason) ? "Cancelled by user" : reason.Trim();
-        subscription.AutoRenew = false;
-        subscription.UpdatedAt = DateTimeOffset.UtcNow;
-
-        try
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new ConflictException("The subscription status was modified concurrently by another operation. Please retry.");
-        }
-
-        return new UserSubscriptionDto
-        {
-            Id = subscription.Id,
-            CompanyId = subscription.CompanyId,
-            PlanId = subscription.PlanId,
-            PlanCode = subscription.Plan.Code,
-            PlanNameEn = subscription.Plan.NameEn,
-            PlanNameAr = subscription.Plan.NameAr,
-            Status = subscription.Status.ToString(),
-            StartDate = subscription.StartDate,
-            EndDate = subscription.EndDate,
-            TrialEndDate = subscription.TrialEndDate,
-            PriceAtSubscription = subscription.PriceAtSubscription,
-            CurrencyAtSubscription = subscription.CurrencyAtSubscription,
-            BillingCycle = subscription.BillingCycle.ToString(),
-            AutoRenew = subscription.AutoRenew,
-            SuspendedAt = subscription.SuspendedAt,
-            SuspensionReason = subscription.SuspensionReason,
-            CancelledAt = subscription.CancelledAt,
-            CancellationReason = subscription.CancellationReason,
-            ExpiredAt = subscription.ExpiredAt,
-            ExternalBillingRef = subscription.ExternalBillingRef,
-            CreatedAt = subscription.CreatedAt,
-            UpdatedAt = subscription.UpdatedAt
-        };
+        await Task.CompletedTask;
+        throw new BusinessRuleException(
+            "Tenant self-service subscription cancellation is retired until a business rule explicitly defines it.",
+            "SUBSCRIPTION_DIRECT_CANCEL_RETIRED");
     }
 
     private async Task<Guid?> ResolveCompanyIdForUserAsync(Guid userId, CancellationToken cancellationToken)
@@ -411,32 +191,4 @@ public class SubscriptionService : ISubscriptionService
         return companyByOwner;
     }
 
-    private async Task<Guid> GetOrCreateCompanyForUserAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        var existingCompanyId = await ResolveCompanyIdForUserAsync(userId, cancellationToken);
-        if (existingCompanyId.HasValue)
-        {
-            return existingCompanyId.Value;
-        }
-
-        var user = await _dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
-
-        var displayName = user?.FullName ?? $"User-{userId.ToString()[..8]}";
-        var company = Company.Create(
-            legalName: displayName,
-            displayName: displayName,
-            primaryPhone: user?.Phone ?? "+962790000000",
-            companyType: CompanyType.IndividualOwner,
-            countryCode: "JO",
-            createdAt: DateTimeOffset.UtcNow,
-            createdBy: userId,
-            primaryEmail: user?.Email);
-
-        _dbContext.Companies.Add(company);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return company.Id;
-    }
 }

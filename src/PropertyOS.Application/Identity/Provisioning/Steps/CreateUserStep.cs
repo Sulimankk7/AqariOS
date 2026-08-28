@@ -36,7 +36,7 @@ public class CreateUserStep : ITenantProvisioningStep
             PasswordAlgorithm = "argon2id",
             FullName = cmd.FullName.Trim(),
             PreferredLanguage = string.IsNullOrWhiteSpace(cmd.PreferredLanguage) ? "ar" : cmd.PreferredLanguage,
-            IsActive = true,
+            IsActive = false,
             CreatedAt = context.CreatedAt,
             UpdatedAt = context.CreatedAt
         };

@@ -20,11 +20,11 @@ export interface StatCardProps {
 }
 
 const variantStyles = {
-  default: "bg-secondary text-secondary-foreground",
-  info: "bg-info-bg text-info",
-  success: "bg-success-bg text-success",
-  warning: "bg-warning-bg text-warning",
-  danger: "bg-danger-bg text-danger",
+  default: "border-outline-variant bg-surface-container-high text-primary",
+  info: "border-info/30 bg-info-bg text-info",
+  success: "border-success/30 bg-success-bg text-success",
+  warning: "border-warning/30 bg-warning-bg text-warning",
+  danger: "border-danger/30 bg-danger-bg text-danger",
 };
 
 export function StatCard({
@@ -60,17 +60,17 @@ export function StatCard({
         }
       }}
       aria-label={ariaLabel || `${title}: ${value}`}
-      className={`group relative flex flex-col justify-between p-5 rounded-lg border border-border bg-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-        path || onClick ? "hover:border-border-strong hover:shadow-md cursor-pointer" : ""
+      className={`group relative flex flex-col justify-between p-5 rounded-lg border border-outline-variant bg-card shadow-e0 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+        path || onClick ? "hover:border-outline hover:shadow-e1 cursor-pointer" : ""
       }`}
     >
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider line-clamp-1">
+        <h3 className="type-label-medium text-on-surface-variant uppercase line-clamp-1">
           {title}
         </h3>
         <div className="flex items-center gap-1.5">
           {Icon && (
-            <div className={`p-2 rounded-md shrink-0 ${variantStyles[variant]}`}>
+            <div className={`p-2 rounded-md border shrink-0 ${variantStyles[variant]}`}>
               <Icon className="w-4 h-4" />
             </div>
           )}
@@ -81,12 +81,12 @@ export function StatCard({
       </div>
 
       <div className="space-y-2">
-        <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+        <div className="type-headline-small font-bold font-mono tracking-tight text-foreground">
           {value}
         </div>
 
         {(description || change) && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-2 type-body-small text-muted-foreground flex-wrap">
             {change && (
               <span
                 className={`inline-flex items-center gap-1 font-semibold ${

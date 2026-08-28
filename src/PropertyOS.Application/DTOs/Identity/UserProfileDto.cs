@@ -52,4 +52,6 @@ public class UserProfileDto
     /// List of granted permission keys (e.g., "documents.view_confidential", "properties.manage").
     /// </summary>
     public IReadOnlyList<string> Permissions { get; set; } = new List<string>();
+
+    public IReadOnlyList<string> SystemRoles { get; set; } = new List<string>();
 }

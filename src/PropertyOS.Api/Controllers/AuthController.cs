@@ -83,9 +83,7 @@ public class AuthController : ControllerBase
         );
 
         var response = await _mediator.Send(command, cancellationToken);
-        SetRefreshTokenCookie(response.RefreshToken);
-
-        return CreatedAtAction(nameof(GetMyProfile), response);
+        return StatusCode(StatusCodes.Status201Created, response);
     }
 
     /// <summary>

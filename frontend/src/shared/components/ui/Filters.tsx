@@ -4,8 +4,9 @@
  */
 
 import React from "react";
-import { Search, X, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
+import { SearchField } from "@/shared/ui/search-field";
 
 export interface SearchBarProps {
   value: string;
@@ -23,25 +24,13 @@ export function SearchBar({
   const { t } = useTranslation();
 
   return (
-    <div className={`relative flex items-center w-full max-w-sm ${className}`}>
-      <Search className="w-4 h-4 absolute start-3 text-muted-foreground pointer-events-none" />
-      <input
-        type="text"
+    <SearchField
+        className={`w-full max-w-sm ${className}`}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onValueChange={onChange}
         placeholder={placeholder || t("common.searchPlaceholder")}
-        className="w-full ps-9 pe-8 py-1.5 rounded-lg border border-border bg-card text-foreground text-xs placeholder:text-muted-foreground focus:outline-none focus:border-border-strong focus:ring-1 focus:ring-ring transition-colors"
-      />
-      {value && (
-        <button
-          onClick={() => onChange("")}
-          aria-label={t("common.clear")}
-          className="absolute end-2 p-1 text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      )}
-    </div>
+        clearLabel={t("common.clear")}
+    />
   );
 }
 

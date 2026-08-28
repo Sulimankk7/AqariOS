@@ -60,7 +60,9 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment_frequency_enum", new[] { "monthly", "quarterly", "semi_annual", "annual" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment_method_enum", new[] { "cash", "bank_transfer", "cheque", "efawateercom", "cli_q" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "payment_purpose_enum", new[] { "scheduled_installment", "unallocated_receipt", "adjustment" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "plan_change_request_status_enum", new[] { "pending", "approved", "rejected", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "receipt_reset_policy_enum", new[] { "never", "yearly", "monthly" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "registration_approval_status_enum", new[] { "pending", "approved", "rejected" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "revoke_reason_enum", new[] { "rotated", "logout", "theft_detected", "admin_revoked", "expired" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "submission_status_enum", new[] { "pending", "approved", "rejected" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "subscription_status_enum", new[] { "trialing", "active", "past_due", "suspended", "cancelled", "expired" });
@@ -1902,6 +1904,121 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.LandlordRegistration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v7()");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("MembershipId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("membership_id");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("registration_approval_status_enum")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_landlord_registrations_company_id");
+
+                    b.HasIndex("MembershipId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_landlord_registrations_membership_id");
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_landlord_registrations_user_id");
+
+                    b.HasIndex("Status", "SubmittedAt")
+                        .HasDatabaseName("idx_landlord_registrations_status_submitted_at");
+
+                    b.ToTable("landlord_registrations", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_landlord_registrations_review", "(status = 'pending' AND reviewed_at IS NULL AND reviewed_by IS NULL AND rejection_reason IS NULL) OR (status = 'approved' AND rejection_reason IS NULL AND ((reviewed_at IS NULL AND reviewed_by IS NULL) OR (reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL))) OR (status = 'rejected' AND reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL AND rejection_reason IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.LandlordRegistration", b =>
+                {
+                    b.HasOne("PropertyOS.Domain.Companies.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.UserCompanyRole", "Membership")
+                        .WithMany()
+                        .HasForeignKey("MembershipId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.User", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                    b.Navigation("Membership");
+                    b.Navigation("Reviewer");
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.LoginHistory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2532,6 +2649,76 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("chk_user_company_roles_joined_at", "joined_at IS NULL OR joined_at >= invited_at");
                         });
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.UserSystemRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v7()");
+
+                    b.Property<Guid?>("GrantedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("granted_by");
+
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("granted_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GrantedBy");
+
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("idx_user_system_roles_role_id");
+
+                    b.HasIndex("UserId", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_user_system_roles_user_role");
+
+                    b.ToTable("user_system_roles", (string)null);
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.UserSystemRole", b =>
+                {
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.User", "GrantedByUser")
+                        .WithMany()
+                        .HasForeignKey("GrantedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.Role", "Role")
+                        .WithMany("UserSystemRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.User", "User")
+                        .WithMany("SystemRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GrantedByUser");
+                    b.Navigation("Role");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PropertyOS.Domain.Leasing.ContractDocument", b =>
@@ -5492,6 +5679,112 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertyOS.Domain.Subscriptions.PlanChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v7()");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<int>("CurrentBillingCycle")
+                        .HasColumnType("billing_cycle_enum")
+                        .HasColumnName("current_billing_cycle");
+
+                    b.Property<Guid>("CurrentPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_plan_id");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("decision_note");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewer_id");
+
+                    b.Property<int>("RequestedBillingCycle")
+                        .HasColumnType("billing_cycle_enum")
+                        .HasColumnName("requested_billing_cycle");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("RequestedPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_plan_id");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("plan_change_request_status_enum")
+                        .HasColumnName("status")
+                        .HasDefaultValueSql("'pending'::plan_change_request_status_enum");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subscription_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_plan_change_requests_one_pending_per_company")
+                        .HasFilter("status = 'pending'");
+
+                    b.HasIndex("CurrentPlanId")
+                        .HasDatabaseName("ix_plan_change_requests_current_plan_id");
+
+                    b.HasIndex("RequestedBy")
+                        .HasDatabaseName("ix_plan_change_requests_requested_by");
+
+                    b.HasIndex("RequestedPlanId")
+                        .HasDatabaseName("ix_plan_change_requests_requested_plan_id");
+
+                    b.HasIndex("ReviewerId")
+                        .HasDatabaseName("ix_plan_change_requests_reviewer_id");
+
+                    b.HasIndex("SubscriptionId")
+                        .HasDatabaseName("ix_plan_change_requests_subscription_id");
+
+                    b.HasIndex("CompanyId", "RequestedAt")
+                        .HasDatabaseName("idx_plan_change_requests_company_requested_at");
+
+                    b.HasIndex("Status", "RequestedAt")
+                        .HasDatabaseName("idx_plan_change_requests_status_requested_at");
+
+                    b.ToTable("plan_change_requests", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_plan_change_requests_review_state", "(status = 'pending' AND reviewer_id IS NULL AND reviewed_at IS NULL AND rejection_reason IS NULL) OR (status = 'cancelled' AND reviewer_id IS NULL AND reviewed_at IS NULL AND rejection_reason IS NULL) OR (status = 'approved' AND reviewer_id IS NOT NULL AND reviewed_at IS NOT NULL AND rejection_reason IS NULL) OR (status = 'rejected' AND reviewer_id IS NOT NULL AND reviewed_at IS NOT NULL AND rejection_reason IS NOT NULL AND length(btrim(rejection_reason)) > 0)");
+                        });
+                });
+
             modelBuilder.Entity("PropertyOS.Domain.Subscriptions.SubscriptionPlan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5594,6 +5887,12 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(12,3)")
                         .HasColumnName("yearly_price");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -5610,7 +5909,9 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("chk_subscription_plans_quotas_positive", "(max_buildings IS NULL OR max_buildings > 0) AND (max_users IS NULL OR max_users > 0) AND (max_storage_mb IS NULL OR max_storage_mb > 0)");
 
-                            t.HasCheckConstraint("chk_subscription_plans_trial_duration", "trial_duration_days IS NOT NULL OR supports_trial = false");
+                            t.HasCheckConstraint("chk_subscription_plans_sort_order", "sort_order >= 0");
+
+                            t.HasCheckConstraint("chk_subscription_plans_trial_duration", "(supports_trial = true AND trial_duration_days > 0) OR (supports_trial = false AND trial_duration_days IS NULL)");
                         });
                 });
 
@@ -6992,6 +7293,51 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("PropertyOS.Domain.Subscriptions.PlanChangeRequest", b =>
+                {
+                    b.HasOne("PropertyOS.Domain.Companies.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Subscriptions.SubscriptionPlan", "CurrentPlan")
+                        .WithMany()
+                        .HasForeignKey("CurrentPlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.User", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequestedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Subscriptions.SubscriptionPlan", "RequestedPlan")
+                        .WithMany()
+                        .HasForeignKey("RequestedPlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.User", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PropertyOS.Domain.Subscriptions.CompanySubscription", "Subscription")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                    b.Navigation("CurrentPlan");
+                    b.Navigation("Requester");
+                    b.Navigation("RequestedPlan");
+                    b.Navigation("Reviewer");
+                    b.Navigation("Subscription");
+                });
+
             modelBuilder.Entity("PropertyOS.Domain.Companies.Company", b =>
                 {
                     b.Navigation("Settings");
@@ -7019,11 +7365,15 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserCompanyRoles");
+
+                    b.Navigation("UserSystemRoles");
                 });
 
             modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.User", b =>
                 {
                     b.Navigation("CompanyRoles");
+
+                    b.Navigation("SystemRoles");
 
                     b.Navigation("LoginHistories");
 

@@ -14,16 +14,12 @@ interface FieldLabelProps {
 export function FieldLabel({ children, optional, isDark = false }: FieldLabelProps) {
   return (
     <label
-      className={`text-[12.5px] font-medium flex items-center gap-1.5 mb-1.5 select-none transition-colors duration-350 ${
-        isDark ? "text-gray-300" : "text-[#374151]"
-      }`}
+      className="text-[13px] font-semibold flex items-center gap-1.5 mb-1.5 text-on-surface-variant select-none transition-colors duration-350"
     >
       {children}
       {optional && (
         <span
-          className={`text-[11px] font-normal transition-colors duration-350 ${
-            isDark ? "text-gray-500" : "text-[#9CA3AF]"
-          }`}
+          className="text-[11px] font-medium text-muted-foreground transition-colors duration-350"
         >
           {optional}
         </span>
@@ -34,4 +30,4 @@ export function FieldLabel({ children, optional, isDark = false }: FieldLabelPro
 
 /** Standardized input element styling class string matching architectural glass spec */
 export const inputClass =
-  "w-full h-10 px-3.5 bg-white dark:bg-[#161B22]/80 text-[#111827] dark:text-gray-100 text-[13.5px] border border-[#E5E7EB] dark:border-white/10 rounded-lg outline-none transition-all duration-200 focus:border-[#A4AC86] dark:focus:border-[#656D4A] focus:ring-2 focus:ring-[#A4AC86]/20 dark:focus:ring-[#656D4A]/25 placeholder-[#C2C5AA] dark:placeholder-gray-500 shadow-2xs backdrop-blur-xs";
+  "w-full h-10 px-3.5 bg-input-background text-foreground text-[13.5px] border border-outline rounded-lg outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground disabled:bg-disabled-container disabled:text-disabled-foreground";

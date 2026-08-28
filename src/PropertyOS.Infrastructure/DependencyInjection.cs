@@ -67,6 +67,10 @@ public static class DependencyInjection
             pgName: "late_fee_type_enum",
             nameTranslator: null);
 
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>("plan_change_request_status_enum", null);
+
         // Module 3 Enums
         dataSourceBuilder.MapEnum<AuditAction>("audit_action_enum", null);
         dataSourceBuilder.MapEnum<AuditSeverity>("audit_severity_enum", null);
@@ -76,6 +80,7 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<MfaType>("mfa_type_enum", null);
         dataSourceBuilder.MapEnum<OtpPurpose>("otp_purpose_enum", null);
         dataSourceBuilder.MapEnum<RevokeReason>("revoke_reason_enum", null);
+        dataSourceBuilder.MapEnum<RegistrationApprovalStatus>("registration_approval_status_enum", null);
 
         // Module 4 enums
         dataSourceBuilder.MapEnum<BuildingType>("building_type_enum", null);
@@ -326,6 +331,7 @@ public static class DependencyInjection
 
         // Module 2 - Subscriptions
         services.AddScoped<PropertyOS.Application.Subscriptions.ISubscriptionService, PropertyOS.Infrastructure.Subscriptions.Services.SubscriptionService>();
+        services.AddScoped<PropertyOS.Application.Subscriptions.ISubscriptionPersistence, PropertyOS.Infrastructure.Subscriptions.Repositories.SubscriptionPersistence>();
 
         services.AddScoped<AuditSaveChangesInterceptor>();
 
@@ -357,6 +363,9 @@ public static class DependencyInjection
                     // Map enums for EF Core runtime type mapping
                     npgsqlOptions.MapEnum<CompanyType>("company_type_enum");
                     npgsqlOptions.MapEnum<LateFeeType>("late_fee_type_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>("plan_change_request_status_enum");
 
                     // Module 3
                     npgsqlOptions.MapEnum<AuditAction>("audit_action_enum");
@@ -367,6 +376,7 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<MfaType>("mfa_type_enum");
                     npgsqlOptions.MapEnum<OtpPurpose>("otp_purpose_enum");
                     npgsqlOptions.MapEnum<RevokeReason>("revoke_reason_enum");
+                    npgsqlOptions.MapEnum<RegistrationApprovalStatus>("registration_approval_status_enum");
 
                     // Module 4
                     npgsqlOptions.MapEnum<BuildingType>("building_type_enum");

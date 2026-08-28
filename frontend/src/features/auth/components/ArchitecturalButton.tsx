@@ -30,10 +30,10 @@ export function ArchitecturalButton({
     <button
       type={type}
       disabled={disabled || isLoading}
-      className={`group relative w-full h-10 rounded-lg text-[13.5px] font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer overflow-hidden outline-none select-none disabled:opacity-60 ${
+      className={`group relative w-full h-10 rounded-lg text-[13.5px] font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer overflow-hidden outline-none select-none disabled:bg-disabled-container disabled:text-disabled-foreground ${
         isDark
-          ? "bg-[#161B22] text-[#F0F3F6] border border-white/10 hover:border-white/25 shadow-lg shadow-black/40 hover:shadow-black/60 focus:ring-2 focus:ring-[#656D4A]/40"
-          : "bg-[#414833] hover:bg-[#333D29] text-white shadow-xs focus:ring-2 focus:ring-[#A4AC86]/40"
+          ? "bg-primary text-primary-foreground border border-primary hover:shadow-e2 shadow-e1 focus:ring-2 focus:ring-primary/40"
+          : "bg-primary hover:bg-primary/90 text-primary-foreground border border-primary shadow-e1 hover:shadow-e2 focus:ring-2 focus:ring-primary/30"
       } ${className}`}
       {...props}
     >

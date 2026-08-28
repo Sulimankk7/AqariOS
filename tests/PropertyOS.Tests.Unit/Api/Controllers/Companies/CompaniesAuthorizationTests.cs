@@ -23,9 +23,6 @@ public class CompaniesAuthorizationTests
     [Theory]
     [InlineData(typeof(CompaniesController), "UpdateCompany")]
     [InlineData(typeof(CompaniesController), "UpdateCompanySettings")]
-    [InlineData(typeof(SubscriptionController), "Subscribe")]
-    [InlineData(typeof(SubscriptionController), "ChangePlan")]
-    [InlineData(typeof(SubscriptionController), "Cancel")]
     public void OrgLevelMutatingAction_ShouldRequireCompanyManagePolicy(Type controllerType, string methodName)
     {
         var method = controllerType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
@@ -36,6 +33,17 @@ public class CompaniesAuthorizationTests
         authorizeAttr!.Policy.Should().Be(
             CompaniesPermissions.Manage,
             $"Action {controllerType.Name}.{methodName} must require policy '{CompaniesPermissions.Manage}'");
+    }
+
+    [Theory]
+    [InlineData("Subscribe")]
+    [InlineData("ChangePlan")]
+    [InlineData("Cancel")]
+    public void LegacySubscriptionMutation_ShouldBeRetired(string methodName)
+    {
+        var method = typeof(SubscriptionController).GetMethod(methodName);
+        method.Should().NotBeNull();
+        method!.GetCustomAttribute<ObsoleteAttribute>().Should().NotBeNull();
     }
 
     [Fact]

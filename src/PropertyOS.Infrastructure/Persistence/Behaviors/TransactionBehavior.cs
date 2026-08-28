@@ -30,7 +30,7 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
         // 1. If not an ICommand<TResponse>, call next() and do not begin a transaction.
-        if (request is not ICommand<TResponse> && request is not ICommand)
+        if (request is not ICommand<TResponse> && request is not ICommand && request is not ITransactionalRequest<TResponse>)
         {
             return await next();
         }

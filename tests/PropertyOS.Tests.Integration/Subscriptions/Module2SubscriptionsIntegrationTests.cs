@@ -48,10 +48,10 @@ public class Module2SubscriptionsIntegrationTests : IAsyncLifetime
         public Guid? UserId { get; set; }
     }
 
-    private PropertyOsDbContext CreateContext(Guid? companyId, bool isPlatformAdmin = false)
+    private PropertyOsDbContext CreateContext(Guid? companyId, bool isPlatformAdmin = false, Guid? userId = null)
     {
         var tenantContext = new StaticTenantContext { CompanyId = companyId, IsPlatformAdmin = isPlatformAdmin };
-        var userContext = new StaticCurrentUserContext { UserId = null };
+        var userContext = new StaticCurrentUserContext { UserId = userId };
 
         var connection = isPlatformAdmin 
             ? _fixture.Context.Database.GetDbConnection() 
@@ -64,6 +64,7 @@ public class Module2SubscriptionsIntegrationTests : IAsyncLifetime
                 o.MapEnum<LateFeeType>("late_fee_type_enum");
                 o.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
                 o.MapEnum<BillingCycleEnum>("billing_cycle_enum");
+                o.MapEnum<PlanChangeRequestStatus>("plan_change_request_status_enum");
             })
             .AddInterceptors(new PropertyOS.Infrastructure.Persistence.Interceptors.TenantSessionInterceptor(tenantContext, userContext))
             .Options;
@@ -286,5 +287,180 @@ public class Module2SubscriptionsIntegrationTests : IAsyncLifetime
             count.Should().Be(0);
             await ctxNoTenant.Database.RollbackTransactionAsync();
         }
+    }
+
+    [Fact]
+    public async Task UsedPlan_CommercialFields_AreImmutableAtDatabaseBoundary()
+    {
+        var companyId = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+
+        await using var adminCtx = CreateContext(null, isPlatformAdmin: true);
+        await adminCtx.Database.BeginTransactionAsync();
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO companies (id, legal_name, display_name, primary_phone, company_type, country_code) VALUES ({0}, 'Used Plan Co', 'Used Plan Co', '+962790000101', 'individual_owner', 'JO')", companyId);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO subscription_plans (id, code, name_en, name_ar, monthly_price, yearly_price, currency) VALUES ({0}, 'used_plan', 'Used Plan', 'Used Plan', 10, 100, 'JOD')", planId);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO company_subscriptions (company_id, plan_id, status, start_date, end_date, price_at_subscription) VALUES ({0}, {1}, 'active', '2026-01-01', '2026-12-31', 10)", companyId, planId);
+
+        await adminCtx.Database.ExecuteSqlRawAsync("SAVEPOINT before_plan_update");
+        var ex = await Record.ExceptionAsync(async () => await adminCtx.Database.ExecuteSqlRawAsync(
+            "UPDATE subscription_plans SET monthly_price = 25 WHERE id = {0}", planId));
+
+        ex.Should().BeOfType<PostgresException>().Which.ConstraintName
+            .Should().Be("chk_subscription_plans_used_immutable");
+        await adminCtx.Database.ExecuteSqlRawAsync("ROLLBACK TO SAVEPOINT before_plan_update");
+        await adminCtx.Database.RollbackTransactionAsync();
+    }
+
+    [Fact]
+    public async Task PlanChangeRequests_AllowOnlyOnePendingRequestPerCompany()
+    {
+        var companyId = Guid.NewGuid();
+        var currentPlanId = Guid.NewGuid();
+        var requestedPlanId = Guid.NewGuid();
+        var subscriptionId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        await using var adminCtx = CreateContext(null, isPlatformAdmin: true);
+        await adminCtx.Database.BeginTransactionAsync();
+        await SeedPlanChangeRequestGraph(adminCtx, companyId, currentPlanId, requestedPlanId, subscriptionId, userId);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO plan_change_requests (company_id, subscription_id, current_plan_id, requested_plan_id, current_billing_cycle, requested_billing_cycle, requested_by) VALUES ({0}, {1}, {2}, {3}, 'monthly', 'yearly', {4})",
+            companyId, subscriptionId, currentPlanId, requestedPlanId, userId);
+
+        await adminCtx.Database.ExecuteSqlRawAsync("SAVEPOINT before_second_request");
+        var ex = await Record.ExceptionAsync(async () => await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO plan_change_requests (company_id, subscription_id, current_plan_id, requested_plan_id, current_billing_cycle, requested_billing_cycle, requested_by) VALUES ({0}, {1}, {2}, {3}, 'monthly', 'yearly', {4})",
+            companyId, subscriptionId, currentPlanId, requestedPlanId, userId));
+
+        ex.Should().BeOfType<PostgresException>().Which.ConstraintName
+            .Should().Be("uq_plan_change_requests_one_pending_per_company");
+        await adminCtx.Database.ExecuteSqlRawAsync("ROLLBACK TO SAVEPOINT before_second_request");
+        await adminCtx.Database.RollbackTransactionAsync();
+    }
+
+    [Fact]
+    public async Task PlanChangeRequests_RlsRestrictsCompanyVisibilityAndInsertScope()
+    {
+        var companyAId = Guid.NewGuid();
+        var companyBId = Guid.NewGuid();
+        var currentPlanId = Guid.NewGuid();
+        var requestedPlanId = Guid.NewGuid();
+        var subscriptionAId = Guid.NewGuid();
+        var subscriptionBId = Guid.NewGuid();
+        var userAId = Guid.NewGuid();
+        var userBId = Guid.NewGuid();
+
+        await using (var adminCtx = CreateContext(null, isPlatformAdmin: true))
+        {
+            await adminCtx.Database.BeginTransactionAsync();
+            await SeedPlanChangeRequestGraph(adminCtx, companyAId, currentPlanId, requestedPlanId, subscriptionAId, userAId, "+962790000111", "a@example.test", "Company A");
+            await adminCtx.Database.ExecuteSqlRawAsync(
+                "INSERT INTO companies (id, legal_name, display_name, primary_phone, company_type, country_code) VALUES ({0}, 'Company B', 'Company B', '+962790000112', 'individual_owner', 'JO')", companyBId);
+            await adminCtx.Database.ExecuteSqlRawAsync(
+                "INSERT INTO users (id, email, full_name) VALUES ({0}, 'b@example.test', 'User B')", userBId);
+            await adminCtx.Database.ExecuteSqlRawAsync(
+                "INSERT INTO company_subscriptions (id, company_id, plan_id, status, start_date, end_date, price_at_subscription) VALUES ({0}, {1}, {2}, 'active', '2026-01-01', '2026-12-31', 10)",
+                subscriptionBId, companyBId, currentPlanId);
+            await adminCtx.Database.ExecuteSqlRawAsync(
+                "INSERT INTO plan_change_requests (company_id, subscription_id, current_plan_id, requested_plan_id, current_billing_cycle, requested_billing_cycle, requested_by) VALUES ({0}, {1}, {2}, {3}, 'monthly', 'yearly', {4})",
+                companyBId, subscriptionBId, currentPlanId, requestedPlanId, userBId);
+            await adminCtx.Database.CommitTransactionAsync();
+        }
+
+        await using var ctxA = CreateContext(companyAId, userId: userAId);
+        await ctxA.Database.BeginTransactionAsync();
+        var visibleRequests = await ctxA.PlanChangeRequests.IgnoreQueryFilters().ToListAsync();
+        visibleRequests.Should().HaveCount(0, "company A has no requests and must not see company B requests");
+
+        await ctxA.Database.ExecuteSqlRawAsync("SAVEPOINT before_cross_company_insert");
+        var ex = await Record.ExceptionAsync(async () => await ctxA.Database.ExecuteSqlRawAsync(
+            "INSERT INTO plan_change_requests (company_id, subscription_id, current_plan_id, requested_plan_id, current_billing_cycle, requested_billing_cycle, requested_by) VALUES ({0}, {1}, {2}, {3}, 'monthly', 'yearly', {4})",
+            companyBId, subscriptionBId, currentPlanId, requestedPlanId, userAId));
+        ex.Should().BeOfType<PostgresException>().Which.SqlState.Should().Be("42501");
+        await ctxA.Database.ExecuteSqlRawAsync("ROLLBACK TO SAVEPOINT before_cross_company_insert");
+        await ctxA.Database.RollbackTransactionAsync();
+    }
+
+    [Fact]
+    public async Task PlanChangeRequests_ReferencedPlans_CannotBeDeleted()
+    {
+        var companyId = Guid.NewGuid();
+        var currentPlanId = Guid.NewGuid();
+        var requestedPlanId = Guid.NewGuid();
+        var subscriptionId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        await using var adminCtx = CreateContext(null, isPlatformAdmin: true);
+        await adminCtx.Database.BeginTransactionAsync();
+        await SeedPlanChangeRequestGraph(adminCtx, companyId, currentPlanId, requestedPlanId, subscriptionId, userId);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO plan_change_requests (company_id, subscription_id, current_plan_id, requested_plan_id, current_billing_cycle, requested_billing_cycle, requested_by) VALUES ({0}, {1}, {2}, {3}, 'monthly', 'yearly', {4})",
+            companyId, subscriptionId, currentPlanId, requestedPlanId, userId);
+
+        await adminCtx.Database.ExecuteSqlRawAsync("SAVEPOINT before_delete_plan");
+        var ex = await Record.ExceptionAsync(async () => await adminCtx.Database.ExecuteSqlRawAsync(
+            "DELETE FROM subscription_plans WHERE id = {0}", requestedPlanId));
+
+        ex.Should().BeOfType<PostgresException>().Which.SqlState.Should().Be("23503");
+        await adminCtx.Database.ExecuteSqlRawAsync("ROLLBACK TO SAVEPOINT before_delete_plan");
+        await adminCtx.Database.RollbackTransactionAsync();
+    }
+
+    [Fact]
+    public async Task DeactivatingAPlan_DoesNotAlterExistingSubscriptionSnapshot()
+    {
+        var companyId = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+
+        await using var adminCtx = CreateContext(null, isPlatformAdmin: true);
+        await adminCtx.Database.BeginTransactionAsync();
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO companies (id, legal_name, display_name, primary_phone, company_type, country_code) VALUES ({0}, 'Deactivate Co', 'Deactivate Co', '+962790000121', 'individual_owner', 'JO')", companyId);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO subscription_plans (id, code, name_en, name_ar, monthly_price, yearly_price, currency, is_active) VALUES ({0}, 'deactivate_plan', 'Deactivate Plan', 'Deactivate Plan', 10, 100, 'JOD', true)", planId);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO company_subscriptions (company_id, plan_id, status, start_date, end_date, price_at_subscription, currency_at_subscription) VALUES ({0}, {1}, 'active', '2026-01-01', '2026-12-31', 10, 'JOD')",
+            companyId, planId);
+
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "UPDATE subscription_plans SET is_active = false WHERE id = {0}", planId);
+
+        var subscription = await adminCtx.CompanySubscriptions.AsNoTracking()
+            .SingleAsync(x => x.CompanyId == companyId);
+        subscription.PlanId.Should().Be(planId);
+        subscription.Status.Should().Be(SubscriptionStatusEnum.Active);
+        subscription.PriceAtSubscription.Should().Be(10);
+        subscription.CurrencyAtSubscription.Should().Be("JOD");
+        await adminCtx.Database.RollbackTransactionAsync();
+    }
+
+    private static async Task SeedPlanChangeRequestGraph(
+        PropertyOsDbContext adminCtx,
+        Guid companyId,
+        Guid currentPlanId,
+        Guid requestedPlanId,
+        Guid subscriptionId,
+        Guid userId,
+        string phone = "+962790000110",
+        string email = "requester@example.test",
+        string companyName = "Request Company")
+    {
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO companies (id, legal_name, display_name, primary_phone, company_type, country_code) VALUES ({0}, {1}, {1}, {2}, 'individual_owner', 'JO')",
+            companyId, companyName, phone);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO users (id, email, full_name) VALUES ({0}, {1}, 'Request User')", userId, email);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO subscription_plans (id, code, name_en, name_ar, monthly_price, yearly_price, currency) VALUES ({0}, {1}, 'Current Plan', 'Current Plan', 10, 100, 'JOD')",
+            currentPlanId, $"current_{currentPlanId:N}"[..20]);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO subscription_plans (id, code, name_en, name_ar, monthly_price, yearly_price, currency) VALUES ({0}, {1}, 'Requested Plan', 'Requested Plan', 20, 200, 'JOD')",
+            requestedPlanId, $"requested_{requestedPlanId:N}"[..20]);
+        await adminCtx.Database.ExecuteSqlRawAsync(
+            "INSERT INTO company_subscriptions (id, company_id, plan_id, status, start_date, end_date, price_at_subscription) VALUES ({0}, {1}, {2}, 'active', '2026-01-01', '2026-12-31', 10)",
+            subscriptionId, companyId, currentPlanId);
     }
 }

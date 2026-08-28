@@ -44,7 +44,7 @@ public class CreateCompanyAdminRoleStep : ITenantProvisioningStep
 
         var activePermissions = await _dbContext.Permissions
             .AsNoTracking()
-            .Where(p => !p.IsDeprecated)
+            .Where(p => !p.IsDeprecated && !p.Key.StartsWith("platform."))
             .ToListAsync(cancellationToken);
 
         foreach (var perm in activePermissions)

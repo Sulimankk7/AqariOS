@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using PropertyOS.Domain.Companies;
 using PropertyOS.Domain.Identity.Entities;
+using PropertyOS.Domain.Subscriptions;
 
 namespace PropertyOS.Application.Common.Interfaces;
 
@@ -22,6 +23,11 @@ public interface IApplicationDbContext
     DbSet<Permission> Permissions { get; }
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<LoginHistory> LoginHistory { get; }
+    DbSet<UserSystemRole> UserSystemRoles { get; }
+    DbSet<LandlordRegistration> LandlordRegistrations { get; }
+    DbSet<SubscriptionPlan> SubscriptionPlans { get; }
+    DbSet<CompanySubscription> CompanySubscriptions { get; }
+    DbSet<PlanChangeRequest> PlanChangeRequests { get; }
 
     DbSet<PropertyOS.Domain.Properties.Building> Buildings { get; }
     DbSet<PropertyOS.Domain.Properties.Apartment> Apartments { get; }

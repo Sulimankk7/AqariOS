@@ -5,6 +5,7 @@
 import React from "react";
 import { FolderOpen, AlertCircle, RefreshCw } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
+import { Button } from "@/shared/ui/button";
 
 export interface EmptyStateProps {
   title?: string;
@@ -22,15 +23,15 @@ export function EmptyState({
   const { t } = useTranslation();
 
   return (
-    <div className="w-full flex flex-col items-center justify-center p-12 text-center rounded-xl border border-dashed border-border bg-card space-y-4">
-      <div className="p-4 rounded-full bg-secondary text-muted-foreground">
+    <div className="w-full flex min-h-48 flex-col items-center justify-center p-10 text-center space-y-4">
+      <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-high text-on-surface-variant">
         <Icon className="w-8 h-8" />
       </div>
       <div className="max-w-md space-y-1">
-        <h3 className="text-base font-bold text-foreground">
+        <h3 className="type-title-medium text-foreground">
           {title || t("table.emptyState")}
         </h3>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {description && <p className="type-body-medium text-on-surface-variant">{description}</p>}
       </div>
       {action}
     </div>
@@ -47,24 +48,25 @@ export function ErrorState({ title, message, onRetry }: ErrorStateProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="w-full flex flex-col items-center justify-center p-8 text-center rounded-xl border border-danger/30 bg-danger-bg/50 space-y-4">
+    <div role="alert" className="w-full flex min-h-48 flex-col items-center justify-center p-8 text-center rounded-md bg-error-container/55 space-y-4">
       <div className="p-3 rounded-full bg-danger-bg text-danger">
         <AlertCircle className="w-6 h-6" />
       </div>
       <div className="max-w-md space-y-1">
-        <h3 className="text-base font-bold text-danger">
+        <h3 className="type-title-medium text-destructive">
           {title || t("errors.generic")}
         </h3>
-        {message && <p className="text-xs text-muted-foreground">{message}</p>}
+        {message && <p className="type-body-medium text-on-surface-variant">{message}</p>}
       </div>
       {onRetry && (
-        <button
+        <Button
           onClick={onRetry}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-danger text-danger-foreground text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+          variant="outlined"
+          size="sm"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>{t("common.retry")}</span>
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -77,7 +79,7 @@ export interface SkeletonProps {
 export function Skeleton({ className = "" }: SkeletonProps) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-secondary/80 ${className}`}
+      className={`animate-pulse rounded-xs bg-surface-container-highest ${className}`}
       aria-hidden="true"
     />
   );

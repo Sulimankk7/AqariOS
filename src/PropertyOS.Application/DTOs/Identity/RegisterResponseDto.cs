@@ -7,38 +7,8 @@ namespace PropertyOS.Application.DTOs.Identity;
 /// </summary>
 public class RegisterResponseDto
 {
-    /// <summary>
-    /// Created User unique identifier.
-    /// </summary>
-    public Guid UserId { get; set; }
-
-    /// <summary>
-    /// Created Company/Tenant unique identifier.
-    /// </summary>
-    public Guid CompanyId { get; set; }
-
-    /// <summary>
-    /// JWT Access Token string.
-    /// </summary>
-    public string AccessToken { get; set; } = null!;
-
-    /// <summary>
-    /// Opaque refresh token string.
-    /// </summary>
-    public string RefreshToken { get; set; } = null!;
-
-    /// <summary>
-    /// Token type (e.g. "Bearer").
-    /// </summary>
-    public string TokenType { get; set; } = "Bearer";
-
-    /// <summary>
-    /// Access token validity duration in seconds.
-    /// </summary>
-    public int ExpiresIn { get; set; }
-
-    /// <summary>
-    /// User profile and authorization details.
-    /// </summary>
-    public UserProfileDto User { get; set; } = null!;
+    public Guid RegistrationId { get; set; }
+    public string Status { get; set; } = null!;
+    public DateTimeOffset SubmittedAt { get; set; }
+    public string Message { get; set; } = null!;
 }

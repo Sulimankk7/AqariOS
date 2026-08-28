@@ -102,6 +102,10 @@ export const TRANSLATIONS = {
     sendingCode: "Sending SMS code...",
     verifying: "Verifying code...",
     updating: "Updating password...",
+    
+    // Errors
+    pendingApproval: "Your account is pending approval. You will be able to access the platform once your registration is approved by the system administrator.",
+    fixErrors: "Please correct the following errors:",
   },
 
   ar: {
@@ -197,6 +201,10 @@ export const TRANSLATIONS = {
     sendingCode: "جاري إرسال الرمز...",
     verifying: "جاري التحقق...",
     updating: "جاري التحديث...",
+    
+    // Errors
+    pendingApproval: "حسابك قيد المراجعة ولم تتم الموافقة عليه بعد. ستتمكن من الدخول إلى المنصة بعد موافقة إدارة النظام.",
+    fixErrors: "يرجى تصحيح الأخطاء التالية:"
   },
 } as const;
 

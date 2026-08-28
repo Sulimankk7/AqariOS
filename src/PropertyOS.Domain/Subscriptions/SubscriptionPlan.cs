@@ -23,4 +23,22 @@ public class SubscriptionPlan
     public short SortOrder { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+
+    public void Activate(DateTimeOffset changedAt)
+    {
+        if (IsActive)
+            return;
+
+        IsActive = true;
+        UpdatedAt = changedAt;
+    }
+
+    public void Deactivate(DateTimeOffset changedAt)
+    {
+        if (!IsActive)
+            return;
+
+        IsActive = false;
+        UpdatedAt = changedAt;
+    }
 }

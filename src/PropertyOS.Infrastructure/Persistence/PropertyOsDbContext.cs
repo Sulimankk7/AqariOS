@@ -44,6 +44,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
 
     public DbSet<PropertyOS.Domain.Subscriptions.SubscriptionPlan> SubscriptionPlans => Set<PropertyOS.Domain.Subscriptions.SubscriptionPlan>();
     public DbSet<PropertyOS.Domain.Subscriptions.CompanySubscription> CompanySubscriptions => Set<PropertyOS.Domain.Subscriptions.CompanySubscription>();
+    public DbSet<PropertyOS.Domain.Subscriptions.PlanChangeRequest> PlanChangeRequests => Set<PropertyOS.Domain.Subscriptions.PlanChangeRequest>();
 
     // ---------------------------------------------------------------------------
     // Module 4 — Properties (Phase 1: buildings, building_addresses, floors, apartments)
@@ -137,6 +138,8 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
     public DbSet<PropertyOS.Domain.Identity.Entities.RolePermission> RolePermissions => Set<PropertyOS.Domain.Identity.Entities.RolePermission>();
     public DbSet<PropertyOS.Domain.Identity.Entities.RefreshToken> RefreshTokens => Set<PropertyOS.Domain.Identity.Entities.RefreshToken>();
     public DbSet<PropertyOS.Domain.Identity.Entities.LoginHistory> LoginHistory => Set<PropertyOS.Domain.Identity.Entities.LoginHistory>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.UserSystemRole> UserSystemRoles => Set<PropertyOS.Domain.Identity.Entities.UserSystemRole>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.LandlordRegistration> LandlordRegistrations => Set<PropertyOS.Domain.Identity.Entities.LandlordRegistration>();
     public DbSet<PropertyOS.Domain.Identity.Entities.OtpChallenge> OtpChallenges => Set<PropertyOS.Domain.Identity.Entities.OtpChallenge>();
     public DbSet<PropertyOS.Domain.Audit.Entities.AuditLog> AuditLogs => Set<PropertyOS.Domain.Audit.Entities.AuditLog>();
 
@@ -149,6 +152,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Companies.Enums.LateFeeType>(name: "late_fee_type_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>(name: "subscription_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>(name: "billing_cycle_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>(name: "plan_change_request_status_enum");
 
         // Module 3
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MfaType>(name: "mfa_type_enum");
@@ -156,6 +160,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.RevokeReason>(name: "revoke_reason_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.LoginStatus>(name: "login_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.OtpPurpose>(name: "otp_purpose_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.RegistrationApprovalStatus>(name: "registration_approval_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditAction>(name: "audit_action_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSeverity>(name: "audit_severity_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Audit.Enums.AuditSource>(name: "audit_source_enum");
