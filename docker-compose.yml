@@ -45,29 +45,41 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_HTTP_PORTS: "8080"
+
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-AqariOS};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
       Jwt__Issuer: ${JWT_ISSUER:-PropertyOS}
       Jwt__Audience: ${JWT_AUDIENCE:-PropertyOS-Clients}
+
       Cors__AllowedOrigins__0: http://localhost:${FRONTEND_PORT:-5173}
       Frontend__BaseUrl: http://localhost:${FRONTEND_PORT:-5173}
+
       FileStorage__Provider: Physical
       FileStorage__StorageBasePath: /app/storage
       FileStorage__UrlSigningSecret: ${FILE_STORAGE_URL_SIGNING_SECRET:?Set FILE_STORAGE_URL_SIGNING_SECRET in .env}
       FileStorage__ConnectionString: ""
+
       Sentry__Dsn: ${SENTRY_DSN:-}
       Brevo__ApiKey: ${BREVO_API_KEY:-}
+
       Twilio__AccountSid: ${TWILIO_ACCOUNT_SID:-}
       Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
       Twilio__MessagingServiceSid: ${TWILIO_MESSAGING_SERVICE_SID:-}
+
       Efawateercom__ApiKey: ${EFAWATEERCOM_API_KEY:-}
+
+
     ports:
       - "127.0.0.1:${API_PORT:-5235}:8080"
+
     volumes:
       - api_storage:/app/storage
+
     depends_on:
       migrate:
         condition: service_completed_successfully
+
     networks:
       - backend
       - web
@@ -87,10 +99,13 @@ services:
     networks:
       - web
 
+
 networks:
   backend:
     internal: true
+
   web:
+
 
 volumes:
   postgres_data:

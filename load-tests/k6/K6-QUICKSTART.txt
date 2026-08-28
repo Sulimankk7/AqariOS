@@ -1,0 +1,58 @@
+AqariOS k6 Quick Start
+
+1) CLEAN DATABASE (only when you intentionally want to destroy test data)
+   docker compose down -v
+   docker compose up -d --build
+   docker compose ps
+
+2) SEED ONCE
+   python.exe .\seed_aqarios.py
+
+   Expected output:
+   load-tests\output\aqarios_seed_<RUN_ID>.json
+
+3) VERIFY RATE LIMITER WHILE IT IS STILL ENABLED
+   .\load-tests\k6\run-k6.ps1 -Profile ratelimit
+
+   Expected:
+   responses_429 > 0
+   responses_unexpected = 0
+
+4) FOR CAPACITY TESTING
+   Raise/disable the global rate limiter only in the load-testing/development
+   configuration. Do not remove production protection.
+
+5) START RESOURCE MONITOR IN A SECOND POWERSHELL
+   .\load-tests\k6\monitor-docker.ps1
+
+6) RUN TESTS IN ORDER
+   .\load-tests\k6\run-k6.ps1 -Profile smoke
+   .\load-tests\k6\run-k6.ps1 -Profile load
+   .\load-tests\k6\run-k6.ps1 -Profile stress
+   .\load-tests\k6\run-k6.ps1 -Profile spike
+   .\load-tests\k6\run-k6.ps1 -Profile breakpoint
+
+Profiles:
+- smoke:      1 VU, connectivity/sanity
+- load:       ramps 10 -> 25 -> 50 VUs
+- stress:     ramps 25 -> 50 -> 100 -> 150 -> 200 -> 250 VUs
+- spike:      sudden jump to 150 VUs
+- breakpoint: ramps to 400 VUs to find degradation/failure point
+
+Traffic mix:
+- 70% Owner requests
+- 25% Tenant requests
+- 5% Anonymous marketplace requests
+
+Main thresholds:
+- checks > 99%
+- HTTP failed < 1%
+- p95 < 1000 ms
+- p99 < 2000 ms
+- rate_limited == 0 during capacity tests
+
+Important:
+- The runner automatically uses the newest aqarios_seed_*.json.
+- Seed JSON contains test credentials/tokens. Keep it private.
+- Results measure the capacity of THIS machine + Docker setup, not production
+  hardware unless you run the same test there.
