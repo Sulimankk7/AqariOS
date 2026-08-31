@@ -13,6 +13,7 @@ import { toApartmentForm } from '../utils/apartmentMappers';
 import { useFloors, useFloor } from '@/features/floors/hooks/useFloors';
 import { useBuildings } from '@/features/buildings/hooks/useBuildings';
 import { useTranslation } from '@/shared/i18n';
+import { apartmentsApi } from '../api/apartments.api';
 import { 
   Form, 
   FormControl, 
@@ -91,6 +92,14 @@ export function ApartmentForm({
   });
 
   const watchOwnership = form.watch('ownershipStatus');
+  const selectedFloorId = form.watch('floorId');
+
+  useEffect(() => {
+    if (initialData || !selectedFloorId) return;
+    apartmentsApi.getNextUnitNumber(selectedFloorId).then(({ value }) => {
+      if (!form.getFieldState('unitNumber').isDirty) form.setValue('unitNumber', value);
+    }).catch(() => undefined);
+  }, [selectedFloorId, initialData, form]);
 
   // Requirement 3: Automatically clear external owner fields when Ownership Model is not ThirdPartyOwned
   useEffect(() => {
@@ -210,6 +219,7 @@ export function ApartmentForm({
                       {...field} 
                     />
                   </FormControl>
+                  {!isEditMode && <p className="text-xs text-muted-foreground">{language === 'ar' ? 'تم توليد الرقم تلقائيًا ويمكن تعديله.' : 'Generated automatically and can be edited.'}</p>}
                   <FormMessage />
                 </FormItem>
               )}

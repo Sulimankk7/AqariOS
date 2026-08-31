@@ -9,6 +9,9 @@ import { ApartmentFormValues } from '../schemas/apartments.schema';
 import { toCreateApartmentRequest, toUpdateApartmentRequest } from '../utils/apartmentMappers';
 
 export const apartmentsApi = {
+  getNextUnitNumber(floorId: string): Promise<{ value: string }> {
+    return http.get(`/api/v1/floors/${floorId}/apartments/next-number`);
+  },
   /**
    * Lists apartments across floors, optionally filtered by buildingId or floorId.
    * GET /api/v1/apartments

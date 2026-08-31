@@ -38,6 +38,7 @@ import {
 import { useTranslation } from '@/shared/i18n';
 import { DatePicker } from '@/shared/components/ui/DatePicker';
 import { getApartmentRentDefault } from '../utils/leaseDefaults';
+import { leasingApi } from '../api/leasing.api';
 
 interface LeaseContractFormProps {
   initialValues?: Partial<LeaseContractDto>;
@@ -62,7 +63,6 @@ export function LeaseContractForm({
 
   const [selectedBuildingId, setSelectedBuildingId] = React.useState<string>('');
   const [rentDefaultSourceApartmentId, setRentDefaultSourceApartmentId] = React.useState<string | null>(null);
-
   // Fetch initial apartment details if editing an existing lease to determine buildingId
   const initialApartmentId = initialValues?.apartmentId;
   const { data: initialApartment } = useApartment(initialApartmentId || '');
@@ -105,6 +105,8 @@ export function LeaseContractForm({
     handleSubmit,
     setValue,
     setError,
+    getFieldState,
+    getValues,
     watch,
     reset,
     formState: { errors },
@@ -125,6 +127,14 @@ export function LeaseContractForm({
       notes: initialValues?.notes || '',
     },
   });
+
+  React.useEffect(() => {
+    if (initialValues?.id) return;
+    leasingApi.getNextContractNumber().then(({ value }) => {
+      if (!getFieldState('contractNumber').isDirty && !getValues('contractNumber'))
+        setValue('contractNumber', value);
+    }).catch(() => undefined);
+  }, []); // suggestion is requested once; user edits are never overwritten
 
   useEffect(() => {
     setRootError(null);
@@ -218,6 +228,7 @@ export function LeaseContractForm({
                 aria-describedby={errors.contractNumber ? 'contractNumber-error' : undefined}
                 {...register('contractNumber')}
               />
+              {!isEdit && <p className="text-xs text-muted-foreground">{language === 'ar' ? 'تم توليد الرقم تلقائيًا ويمكن تعديله.' : 'Generated automatically and can be edited.'}</p>}
               {errors.contractNumber && (
                 <p id="contractNumber-error" role="alert" className="text-xs text-destructive">
                   {localizeValidationMessage(errors.contractNumber.message)}

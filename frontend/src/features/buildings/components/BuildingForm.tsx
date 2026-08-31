@@ -11,6 +11,7 @@ import {
 } from '../constants/buildingEnums';
 import { getBuildingTranslation } from '../constants/translations';
 import { toBuildingForm } from '../utils/buildingMappers';
+import { buildingsApi } from '../api/buildings.api';
 import { useTranslation } from '@/shared/i18n';
 import { MapPicker } from '@/shared/components/ui/MapPicker';
 import { 
@@ -61,6 +62,14 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
       },
     },
   });
+
+  React.useEffect(() => {
+    if (initialData) return;
+    buildingsApi.getNextCode().then(({ value }) => {
+      if (!form.getFieldState('internalCode').isDirty && !form.getValues('internalCode'))
+        form.setValue('internalCode', value);
+    }).catch(() => undefined);
+  }, []);
 
   const watchLat = form.watch('gpsLatitude');
   const watchLng = form.watch('gpsLongitude');
@@ -120,6 +129,7 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                       {...field} 
                     />
                   </FormControl>
+                  {!initialData && <p className="text-xs text-muted-foreground">{language === 'ar' ? 'تم توليد الرقم تلقائيًا ويمكن تعديله.' : 'Generated automatically and can be edited.'}</p>}
                   <FormMessage />
                 </FormItem>
               )}

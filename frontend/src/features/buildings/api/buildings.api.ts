@@ -10,6 +10,7 @@ import { toCreateBuildingRequest, toUpdateBuildingRequest } from '../utils/build
 const BASE_PATH = '/api/v1/buildings';
 
 export const buildingsApi = {
+  getNextCode: (): Promise<{ value: string }> => http.get(`${BASE_PATH}/next-code`),
   getBuildings: (): Promise<BuildingDto[]> => {
     return http.get<BuildingDto[]>(BASE_PATH);
   },

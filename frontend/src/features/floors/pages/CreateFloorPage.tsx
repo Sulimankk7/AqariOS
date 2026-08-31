@@ -42,7 +42,7 @@ export default function CreateFloorPage() {
       />
 
       <div className="mt-8 bg-card rounded-lg border shadow-sm p-6">
-        <FloorForm onSubmit={handleSubmit} isLoading={createMutation.isPending} />
+        <FloorForm buildingId={buildingId} onSubmit={handleSubmit} isLoading={createMutation.isPending} />
       </div>
     </div>
   );

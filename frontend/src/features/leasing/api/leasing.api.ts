@@ -15,6 +15,7 @@ const BASE_PATH = '/api/v1/leasing/contracts';
 const TENANTS_PATH = '/api/v1/leasing/tenants';
 
 export const leasingApi = {
+  getNextContractNumber: (): Promise<{ value: string }> => http.get(`${BASE_PATH}/next-number`),
   searchContracts: (searchTerm: string = '', pageSize: number = 50): Promise<LeaseContractDto[]> => {
     const params = new URLSearchParams();
     if (searchTerm) params.append('searchTerm', searchTerm);
@@ -76,4 +77,3 @@ export const leasingApi = {
     return http.get<TenantLookupDto[]>(`${TENANTS_PATH}${query}`);
   },
 };
-

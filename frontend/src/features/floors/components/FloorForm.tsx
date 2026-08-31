@@ -6,6 +6,7 @@ import { FloorDto } from '../types/floors.types';
 import { FloorType, FLOOR_TYPE_OPTIONS } from '../constants/floorEnums';
 import { getFloorTranslation } from '../constants/translations';
 import { useTranslation } from '@/shared/i18n';
+import { floorsApi } from '../api/floors.api';
 import { 
   Form, 
   FormControl, 
@@ -25,6 +26,7 @@ import {
 } from '@/app/components/ui/select';
 
 interface FloorFormProps {
+  buildingId?: string;
   initialData?: FloorDto;
   isEditMode?: boolean;
   onSubmit: (data: FloorFormValues) => void;
@@ -32,6 +34,7 @@ interface FloorFormProps {
 }
 
 export function FloorForm({ 
+  buildingId,
   initialData, 
   isEditMode = false, 
   onSubmit, 
@@ -54,6 +57,13 @@ export function FloorForm({
           floorType: FloorType.Standard,
         },
   });
+
+  React.useEffect(() => {
+    if (initialData || !buildingId) return;
+    floorsApi.getNextFloorNumber(buildingId).then(({ value }) => {
+      if (!form.getFieldState('floorNumber').isDirty) form.setValue('floorNumber', Number(value));
+    }).catch(() => undefined);
+  }, [buildingId]);
 
   return (
     <Form {...form}>
@@ -82,6 +92,7 @@ export function FloorForm({
                   onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}
                 />
               </FormControl>
+              {!isEditMode && <p className="text-xs text-muted-foreground">{language === 'ar' ? 'تم توليد الرقم تلقائيًا ويمكن تعديله.' : 'Generated automatically and can be edited.'}</p>}
               <FormMessage />
             </FormItem>
           )}

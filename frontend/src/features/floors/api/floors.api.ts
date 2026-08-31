@@ -3,6 +3,9 @@ import { FloorDto, CreateFloorRequest, UpdateFloorRequest } from '../types/floor
 import { FloorFormValues } from '../schemas/floors.schema';
 
 export const floorsApi = {
+  getNextFloorNumber(buildingId: string): Promise<{ value: string }> {
+    return http.get(`/api/v1/buildings/${buildingId}/floors/next-number`);
+  },
   /**
    * Lists all floors belonging to a specified building.
    * GET /api/v1/buildings/{buildingId}/floors
