@@ -16,8 +16,8 @@ import {
   ProvisionTenantAccountResponseDto,
   TenantProvisioningContactMethod,
 } from '../types/tenants.types';
-import { extractUserFriendlyError } from '@/shared/utils';
 import { useTranslation } from '@/shared/i18n';
+import { getTenantTranslation } from '../constants/translations';
 import {
   UserPlus,
   Copy,
@@ -47,8 +47,8 @@ export function ProvisionTenantAccountModal({
   open,
   onOpenChange,
 }: ProvisionTenantAccountModalProps) {
-  const { language } = useTranslation();
-  const isAr = language === 'ar';
+  const { language, formatDate } = useTranslation();
+  const t = (key: string) => getTenantTranslation(key, language);
 
   const [contactMethod, setContactMethod] = useState<TenantProvisioningContactMethod>(
     TenantProvisioningContactMethod.Phone
@@ -74,18 +74,16 @@ export function ProvisionTenantAccountModal({
     }
   }, [open, tenantPhone, tenantEmail]);
 
-  const getArabicErrorMessage = (err: any): string => {
+  const getProvisionErrorMessage = (err: any): string => {
     const detail: string = err?.response?.data?.detail ?? err?.message ?? '';
 
     if (detail.includes('EMAIL_BELONGS_TO_ANOTHER_TENANT'))
-      return 'هذا البريد الإلكتروني مستخدم بالفعل لدى مستأجر آخر.';
+      return t('portalEmailConflict');
 
     if (detail.includes('PHONE_BELONGS_TO_ANOTHER_TENANT'))
-      return 'رقم الهاتف هذا مستخدم بالفعل لدى مستأجر آخر.';
+      return t('portalPhoneConflict');
 
-    return isAr
-      ? 'فشل تفعيل حساب بوابة المستأجر.'
-      : 'Failed to enable tenant portal access.';
+    return t('portalEnableFailed');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,11 +93,7 @@ export function ProvisionTenantAccountModal({
     if (contactMethod === TenantProvisioningContactMethod.Phone) {
       const trimmedPhone = phone.trim();
       if (!trimmedPhone) {
-        setInputError(
-          isAr
-            ? 'لا يوجد رقم هاتف لهذا المستأجر. أضف رقم الهاتف أولاً.'
-            : 'Phone number is required for portal access provisioning.'
-        );
+        setInputError(t('portalPhoneRequired'));
         return;
       }
       setInputError(null);
@@ -113,25 +107,19 @@ export function ProvisionTenantAccountModal({
         },
         {
           onSuccess: (data) => setProvisionResult(data),
-          onError: (err: any) => setErrorMessage(getArabicErrorMessage(err)),
+          onError: (err: any) => setErrorMessage(getProvisionErrorMessage(err)),
         }
       );
     } else {
       const trimmedEmail = email.trim();
       if (!trimmedEmail) {
-        setInputError(
-          isAr
-            ? 'يرجى إدخال البريد الإلكتروني لإرسال رابط التفعيل عبره.'
-            : 'Email address is required to send the activation link.'
-        );
+        setInputError(t('portalEmailRequired'));
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(trimmedEmail)) {
-        setInputError(
-          isAr ? 'يرجى إدخال بريد إلكتروني صحيح.' : 'Please enter a valid email address.'
-        );
+        setInputError(t('portalEmailInvalid'));
         return;
       }
 
@@ -146,7 +134,7 @@ export function ProvisionTenantAccountModal({
         },
         {
           onSuccess: (data) => setProvisionResult(data),
-          onError: (err: any) => setErrorMessage(getArabicErrorMessage(err)),
+          onError: (err: any) => setErrorMessage(getProvisionErrorMessage(err)),
         }
       );
     }
@@ -166,14 +154,7 @@ export function ProvisionTenantAccountModal({
   const formatExpiry = (expiresAtStr?: string) => {
     if (!expiresAtStr) return '—';
     try {
-      const d = new Date(expiresAtStr);
-      return d.toLocaleString(isAr ? 'ar-JO' : 'en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      return formatDate(expiresAtStr, { dateStyle: 'medium', timeStyle: 'short' });
     } catch {
       return expiresAtStr;
     }
@@ -192,12 +173,10 @@ export function ProvisionTenantAccountModal({
             <DialogHeader className="text-right rtl:text-right">
               <DialogTitle className="text-xl font-bold flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-primary" />
-                {isAr ? 'تفعيل حساب بوابة المستأجر' : 'Enable Tenant Portal Access'}
+                {t('portalEnableTitle')}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground pt-1">
-                {isAr
-                  ? 'المستأجر موجود بالفعل. هذه العملية تجهز له إمكانية الدخول إلى بوابة المستأجر.'
-                  : 'The tenant record exists. This action enables portal access for the tenant.'}
+                {t('portalEnableDescription')}
               </DialogDescription>
             </DialogHeader>
 
@@ -205,9 +184,7 @@ export function ProvisionTenantAccountModal({
               <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2.5 leading-relaxed">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
-                  {isAr
-                    ? 'لا يوجد رقم هاتف أو بريد إلكتروني مسجل لهذا المستأجر. أدخل إحدى وسائل التواصل أدناه لإرسال رابط التفعيل.'
-                    : 'No phone number or email is recorded for this tenant. Enter contact info below to send activation link.'}
+                  {t('portalNoContact')}
                 </span>
               </div>
             )}
@@ -222,12 +199,10 @@ export function ProvisionTenantAccountModal({
             {/* DELIVERY METHOD SELECTOR — controls where the activation link is sent, NOT identity lookup */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold block text-right">
-                {isAr ? 'طريقة إرسال رابط التفعيل' : 'Activation Link Delivery'}
+                {t('portalDeliveryMethod')}
               </Label>
               <p className="text-xs text-muted-foreground text-right">
-                {isAr
-                  ? 'اختر القناة التي سيُرسَل إليها رابط التفعيل. لا تؤثر هذه الخيار على هوية المستأجر.'
-                  : 'Select where to deliver the activation link. This does not affect identity lookup.'}
+                {t('portalDeliveryDescription')}
               </p>
               <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/50 rounded-xl border border-border/80">
                 <button
@@ -243,7 +218,7 @@ export function ProvisionTenantAccountModal({
                   }`}
                 >
                   <Phone className="w-3.5 h-3.5" />
-                  <span>{isAr ? 'رقم الهاتف' : 'Phone / SMS'}</span>
+                  <span>{t('portalPhoneSms')}</span>
                 </button>
                 <button
                   type="button"
@@ -258,7 +233,7 @@ export function ProvisionTenantAccountModal({
                   }`}
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>{isAr ? 'البريد الإلكتروني' : 'Email'}</span>
+                  <span>{t('portalEmail')}</span>
                 </button>
               </div>
             </div>
@@ -267,7 +242,7 @@ export function ProvisionTenantAccountModal({
             {contactMethod === TenantProvisioningContactMethod.Phone ? (
               <div className="space-y-2">
                 <Label htmlFor="tenant-provision-phone" className="text-sm font-medium block text-right">
-                  {isAr ? 'رقم الهاتف (رسالة نصية SMS)' : 'Phone Number (SMS)'} <span className="text-destructive">*</span>
+                  {t('portalPhoneLabel')} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="tenant-provision-phone"
@@ -288,13 +263,13 @@ export function ProvisionTenantAccountModal({
               /* EMAIL MODE INPUT */
               <div className="space-y-2">
                 <Label htmlFor="tenant-provision-email" className="text-sm font-medium block text-right">
-                  {isAr ? 'البريد الإلكتروني' : 'Email Address'} <span className="text-destructive">*</span>
+                  {t('portalEmailLabel')} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="tenant-provision-email"
                   type="email"
                   dir="ltr"
-                  placeholder="tenant@example.com"
+                  placeholder={t('emailPlaceholder')}
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -314,16 +289,10 @@ export function ProvisionTenantAccountModal({
                 onClick={() => onOpenChange(false)}
                 disabled={provisionMutation.isPending}
               >
-                {isAr ? 'إلغاء' : 'Cancel'}
+                {t('cancel')}
               </Button>
               <Button type="submit" disabled={provisionMutation.isPending || isCurrentContactEmpty}>
-                {provisionMutation.isPending
-                  ? isAr
-                    ? 'جارٍ تفعيل البوابة...'
-                    : 'Enabling Portal Access...'
-                  : isAr
-                  ? 'تفعيل البوابة'
-                  : 'Enable Portal Access'}
+                {provisionMutation.isPending ? t('portalEnabling') : t('portalEnable')}
               </Button>
             </DialogFooter>
           </form>
@@ -336,54 +305,42 @@ export function ProvisionTenantAccountModal({
                   provisionResult.smsSent ? (
                     <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1 text-xs">
                       <Check className="w-3.5 h-3.5" />
-                      {isAr ? 'تم تفعيل البوابة وإرسال رسالة SMS' : 'Portal Enabled & SMS Sent'}
+                      {t('portalEnabledSmsSent')}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1 text-xs">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      {isAr ? 'تم تفعيل البوابة' : 'Portal Access Enabled'}
+                      {t('portalAccountLinked')}
                     </Badge>
                   )
                 ) : (
                   provisionResult.emailSent ? (
                     <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1 text-xs">
                       <Check className="w-3.5 h-3.5" />
-                      {isAr ? 'تم تفعيل البوابة وإرسال البريد' : 'Portal Enabled & Email Sent'}
+                      {t('portalEnabledEmailSent')}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1 text-xs">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      {isAr ? 'تم تفعيل البوابة' : 'Portal Access Enabled'}
+                      {t('portalAccountLinked')}
                     </Badge>
                   )
                 )}
               </div>
               <DialogTitle className="text-xl font-bold pt-2">
-                {isAr ? 'تم تفعيل حساب بوابة المستأجر' : 'Tenant Portal Access Enabled'}
+                {t('portalEnabledTitle')}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
                 {contactMethod === TenantProvisioningContactMethod.Phone
-                  ? provisionResult.smsSent
-                    ? isAr
-                      ? 'تم تفعيل حساب البوابة للمستأجر بنجاح وتم إرسال رابط التفعيل عبر رسالة نصية (SMS).'
-                      : 'Portal access enabled and activation link was sent via SMS.'
-                    : isAr
-                    ? 'تم تفعيل البوابة بنجاح. تعذّر إرسال الرسالة النصية (SMS) — يمكنك نسخ رابط التفعيل يدويًا ومشاركته مع المستأجر.'
-                    : 'Portal access enabled. SMS could not be sent. Copy the activation link manually.'
-                  : provisionResult.emailSent
-                  ? isAr
-                    ? 'تم ربط حساب البوابة الموجود بالمستأجر بنجاح وتم إرسال رابط التفعيل إلى البريد الإلكتروني.'
-                    : 'Portal access has been enabled and the activation link was sent by email.'
-                  : isAr
-                  ? 'تم تفعيل البوابة بنجاح. تعذّر إرسال البريد الإلكتروني — يمكنك نسخ رابط التفعيل يدويًا.'
-                  : 'Portal access enabled. Activation email could not be sent. Copy the activation link manually.'}
+                  ? (provisionResult.smsSent ? t('portalSmsSuccess') : t('portalSmsDeliveryFailed'))
+                  : (provisionResult.emailSent ? t('portalEmailSuccess') : t('portalEmailDeliveryFailed'))}
               </DialogDescription>
             </DialogHeader>
 
             {/* ACTIVATION LINK DISPLAY CARD */}
             <div className="space-y-3">
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block text-right">
-                {isAr ? 'رابط تفعيل الحساب' : 'Account Activation Link'}
+                {t('portalActivationLink')}
               </Label>
               <div className="p-3 bg-secondary/50 rounded-xl border border-border/80 space-y-2">
                 <div className="flex items-center gap-2">
@@ -399,10 +356,10 @@ export function ProvisionTenantAccountModal({
                 <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    {isAr ? `صالح حتى: ${formatExpiry(provisionResult.expiresAt)}` : `Valid until: ${formatExpiry(provisionResult.expiresAt)}`}
+                    {t('portalValidUntil').replace('{date}', formatExpiry(provisionResult.expiresAt))}
                   </span>
                   <Badge variant="secondary" className="text-[10px] font-medium">
-                    {isAr ? 'استخدام مرة واحدة (48 ساعة)' : 'Single use (48 hrs)'}
+                    {t('portalSingleUse')}
                   </Badge>
                 </div>
               </div>
@@ -416,12 +373,12 @@ export function ProvisionTenantAccountModal({
                 {copied ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-600" />
-                    {isAr ? 'تم نسخ الرابط!' : 'Link Copied!'}
+                    {t('portalLinkCopied')}
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4" />
-                    {isAr ? 'نسخ رابط التفعيل' : 'Copy Activation Link'}
+                    {t('portalCopyLink')}
                   </>
                 )}
               </Button>
@@ -430,15 +387,13 @@ export function ProvisionTenantAccountModal({
             <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs flex items-start gap-2 leading-relaxed">
               <Info className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                {isAr
-                  ? 'ملاحظة: يمكنك إرسال هذا الرابط إلى المستأجر عبر واتساب أو البريد الإلكتروني. الرابط ينتهي تلقائياً بعد 48 ساعة.'
-                  : 'Note: You can send this link to the tenant via WhatsApp or Email. Link expires automatically in 48 hours.'}
+                {t('portalShareNote')}
               </span>
             </div>
 
             <DialogFooter className="pt-2">
               <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
-                {isAr ? 'إغلاق' : 'Close'}
+                {t('close')}
               </Button>
             </DialogFooter>
           </div>

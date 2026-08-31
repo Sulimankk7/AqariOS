@@ -58,7 +58,7 @@ export function QuickActions() {
   ];
 
   return (
-    <section aria-label="Quick Actions" className="w-full space-y-3 pt-2">
+    <section aria-label={t("common.quickActions")} className="w-full space-y-3 pt-2">
       <h2 className="type-label-medium text-on-surface-variant uppercase">
         {t("dashboard.quickOperations")}
       </h2>

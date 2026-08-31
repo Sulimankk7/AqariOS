@@ -34,7 +34,6 @@ export const TRANSLATIONS = {
     forgotPassword: "Forgot password?",
     signInBtn: "Sign in to Workspace",
     orDivider: "or continue with",
-    googleSSO: "Sign in with Google SSO",
     noAccount: "Don't have an enterprise account?",
     signUpLink: "Create account",
     phoneOtpAlt: "Prefer passwordless? Sign in with Phone OTP",
@@ -87,14 +86,21 @@ export const TRANSLATIONS = {
     methodPhone: "SMS recovery",
     sendResetBtn: "Send Recovery Link",
     resetInstructionsSent: "Recovery instructions sent! Check your inbox or phone.",
+    resetRequestGeneric: "If an eligible account exists, recovery instructions have been sent.",
+    checkResetEmail: "Check your email for instructions to reset your password.",
+    resetCodeTitle: "Verify password reset code",
+    resetCodeSubtitle: "Enter the 6-digit password recovery code sent to your phone.",
+    resetCodeInvalidAccess: "Start from Forgot Password to request a new recovery code.",
+    resetCredentialMissing: "This password reset link or authorization is missing or invalid.",
+    passwordPolicy: "Use at least 8 characters with uppercase, lowercase, and a number.",
 
     // Reset Password
     resetTitle: "Set new password",
     resetSubtitle: "Create a strong password for your AqariOS administrator account",
     newPasswordLabel: "New password",
     newPasswordPlaceholder: "At least 8 characters",
-    saveNewPasswordBtn: "Update Password & Sign In",
-    passwordResetSuccess: "Password updated successfully. Redirecting to workspace...",
+    saveNewPasswordBtn: "Update Password",
+    passwordResetSuccess: "Password updated successfully. Please sign in.",
 
     // Form feedback
     signingIn: "Authenticating...",
@@ -102,6 +108,15 @@ export const TRANSLATIONS = {
     sendingCode: "Sending SMS code...",
     verifying: "Verifying code...",
     updating: "Updating password...",
+    loginSuccess: "Authentication successful. Welcome back!",
+    registrationSubmitted: "Your registration request was received and is awaiting review.",
+    otpResent: "Verification code resent successfully!",
+    verificationSuccess: "Verification successful. Welcome!",
+    googleUnavailable: "Google sign-in is not available yet.",
+    loginError: "Unable to sign in. Check your details and try again.",
+    registrationError: "Unable to submit the registration request. Please try again.",
+    otpError: "The verification code is invalid or expired. Please try again.",
+    togglePasswordVisibility: "Toggle password visibility",
     
     // Errors
     pendingApproval: "Your account is pending approval. You will be able to access the platform once your registration is approved by the system administrator.",
@@ -110,7 +125,7 @@ export const TRANSLATIONS = {
 
   ar: {
     platformSubtitle: "منصة إدارة العقارات المؤسسية",
-    copyright: "© ٢٠٢٦ عقاري أو إس. جميع الحقوق محفوظة.",
+    copyright: "© ٢٠٢٦ عقاري . جميع الحقوق محفوظة.",
     privacy: "سياسة الخصوصية",
     terms: "شروط الخدمة",
     security: "الأمان",
@@ -124,7 +139,7 @@ export const TRANSLATIONS = {
 
     // Login
     welcomeBack: "مرحباً بك مجدداً",
-    loginSubtitle: "سجّل الدخول إلى مساحة عمل عقاري أو إس المؤسسية",
+    loginSubtitle: "سجّل الدخول إلى مساحة عمل نظام عقاري ",
     passwordLoginTab: "كلمة المرور",
     otpLoginTab: "رمز الهاتف (OTP)",
     emailLabel: "البريد الإلكتروني أو رقم الهاتف",
@@ -135,14 +150,13 @@ export const TRANSLATIONS = {
     forgotPassword: "نسيت كلمة المرور؟",
     signInBtn: "تسجيل الدخول لمساحة العمل",
     orDivider: "أو المتابعة عبر",
-    googleSSO: "المتابعة باستخدام Google SSO",
     noAccount: "ليس لديك حساب مؤسسي؟",
     signUpLink: "أنشئ حساباً جديداً",
     phoneOtpAlt: "تفضل الدخول بدون كلمة مرور؟ استخدم رمز SMS",
 
     // Registration
     createAccountTitle: "تسجيل حساب شركة جديد",
-    createAccountSubtitle: "قم بإعداد مساحة عمل مؤسستك على عقاري أو إس",
+    createAccountSubtitle: "قم بإعداد مساحة عمل مؤسستك على عقاري ",
     fullNameLabel: "الاسم الكامل",
     fullNamePlaceholder: "سارة المنصور",
     companyNameLabel: "اسم الشركة",
@@ -186,14 +200,21 @@ export const TRANSLATIONS = {
     methodPhone: "رسالة SMS",
     sendResetBtn: "إرسال رابط الاستعادة",
     resetInstructionsSent: "تم إرسال تعليمات الاستعادة! تفقد بريدك أو هاتفك.",
+    resetRequestGeneric: "إذا كان الحساب مؤهلًا، فقد تم إرسال تعليمات استعادة كلمة المرور.",
+    checkResetEmail: "تحقق من بريدك الإلكتروني للاطلاع على تعليمات إعادة تعيين كلمة المرور.",
+    resetCodeTitle: "التحقق من رمز إعادة تعيين كلمة المرور",
+    resetCodeSubtitle: "أدخل رمز استعادة كلمة المرور المكون من 6 أرقام والمرسل إلى هاتفك.",
+    resetCodeInvalidAccess: "ابدأ من صفحة نسيت كلمة المرور لطلب رمز استعادة جديد.",
+    resetCredentialMissing: "رابط أو تفويض إعادة تعيين كلمة المرور مفقود أو غير صالح.",
+    passwordPolicy: "استخدم 8 أحرف على الأقل، تتضمن حرفًا كبيرًا وحرفًا صغيرًا ورقمًا.",
 
     // Reset Password
     resetTitle: "تعيين كلمة مرور جديدة",
     resetSubtitle: "أنشئ كلمة مرور قوية لحساب المسؤول الخاص بك",
     newPasswordLabel: "كلمة المرور الجديدة",
     newPasswordPlaceholder: "٨ أحرف على الأقل",
-    saveNewPasswordBtn: "حفظ كلمة المرور وتسجيل الدخول",
-    passwordResetSuccess: "تم تحديث كلمة المرور بنجاح. جاري التوجيه...",
+    saveNewPasswordBtn: "حفظ كلمة المرور",
+    passwordResetSuccess: "تم تحديث كلمة المرور بنجاح. يرجى تسجيل الدخول.",
 
     // Form feedback
     signingIn: "جاري المصادقة...",
@@ -201,6 +222,15 @@ export const TRANSLATIONS = {
     sendingCode: "جاري إرسال الرمز...",
     verifying: "جاري التحقق...",
     updating: "جاري التحديث...",
+    loginSuccess: "تم تسجيل الدخول بنجاح. أهلاً بعودتك!",
+    registrationSubmitted: "تم استلام طلب التسجيل وهو الآن بانتظار المراجعة.",
+    otpResent: "تمت إعادة إرسال رمز التحقق بنجاح!",
+    verificationSuccess: "تم التحقق بنجاح. أهلاً بك!",
+    googleUnavailable: "تسجيل الدخول باستخدام Google غير متاح حالياً.",
+    loginError: "تعذر تسجيل الدخول. تحقق من بياناتك وحاول مجدداً.",
+    registrationError: "تعذر إرسال طلب التسجيل. حاول مجدداً.",
+    otpError: "رمز التحقق غير صالح أو منتهي الصلاحية. حاول مجدداً.",
+    togglePasswordVisibility: "إظهار أو إخفاء كلمة المرور",
     
     // Errors
     pendingApproval: "حسابك قيد المراجعة ولم تتم الموافقة عليه بعد. ستتمكن من الدخول إلى المنصة بعد موافقة إدارة النظام.",

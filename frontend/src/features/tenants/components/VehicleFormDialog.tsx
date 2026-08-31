@@ -173,7 +173,7 @@ export function VehicleFormDialog({
             </Label>
             <Input
               id="vehicleMakeModel"
-              placeholder="Toyota Camry 2022"
+              placeholder={t('vehicleMakeModelPlaceholder')}
               aria-invalid={!!errors.makeModel}
               aria-describedby={errors.makeModel ? 'vehicleMakeModel-error' : undefined}
               disabled={isSubmitting}
@@ -193,7 +193,7 @@ export function VehicleFormDialog({
             </Label>
             <Input
               id="vehicleColor"
-              placeholder="White"
+              placeholder={t('vehicleColorPlaceholder')}
               aria-invalid={!!errors.color}
               aria-describedby={errors.color ? 'vehicleColor-error' : undefined}
               disabled={isSubmitting}

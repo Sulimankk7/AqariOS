@@ -3,6 +3,7 @@ import { RotateCcw } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { useBuildings } from '@/features/buildings/hooks/useBuildings';
 import { useTranslation } from '@/shared/i18n';
+import { DatePicker } from '@/shared/components/ui/DatePicker';
 import { ExpenseCategory, type ExpenseFilterParams } from '../types/financials.types';
 
 interface ExpenseFiltersProps {
@@ -48,8 +49,8 @@ export function ExpenseFilters({ filters, onChange }: ExpenseFiltersProps) {
           ))}
         </select>
 
-        <input type="date" dir="ltr" value={filters.dateFrom || ''} onChange={(event) => update({ dateFrom: event.target.value || null })} title={t('financials.expenseDateFrom')} className="w-full h-9 px-3 text-xs rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
-        <input type="date" dir="ltr" value={filters.dateTo || ''} onChange={(event) => update({ dateTo: event.target.value || null })} title={t('financials.expenseDateTo')} className="w-full h-9 px-3 text-xs rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+        <DatePicker value={filters.dateFrom} onValueChange={(dateFrom) => update({ dateFrom })} ariaLabel={t('financials.expenseDateFrom')} className="h-9 text-xs" />
+        <DatePicker value={filters.dateTo} onValueChange={(dateTo) => update({ dateTo })} ariaLabel={t('financials.expenseDateTo')} className="h-9 text-xs" />
       </div>
       {hasFilters && (
         <div className="flex justify-end">

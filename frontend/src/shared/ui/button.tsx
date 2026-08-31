@@ -41,7 +41,15 @@ const buttonVariants = cva(
   },
 );
 
-function Button({
+const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<"button"> &
+    VariantProps<typeof buttonVariants> & {
+      asChild?: boolean;
+      loading?: boolean;
+      loadingText?: React.ReactNode;
+    }
+>(function Button({
   className,
   variant,
   size,
@@ -51,16 +59,12 @@ function Button({
   children,
   disabled,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-    loading?: boolean;
-    loadingText?: React.ReactNode;
-  }) {
+}, ref) {
   const Comp = asChild ? Slot : "button";
 
   return (
     <Comp
+      ref={ref}
       data-slot="button"
       data-variant={variant ?? "default"}
       data-loading={loading || undefined}
@@ -73,6 +77,8 @@ function Button({
       {loading && loadingText ? loadingText : children}
     </Comp>
   );
-}
+});
+
+Button.displayName = "Button";
 
 export { Button, buttonVariants };

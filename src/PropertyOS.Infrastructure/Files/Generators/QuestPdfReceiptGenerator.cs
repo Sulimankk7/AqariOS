@@ -161,7 +161,7 @@ public class QuestPdfReceiptGenerator : IReceiptPdfGenerator
                 logoRow.AutoItem().Element(ComposeLogoMark);
                 logoRow.RelativeItem().Column(col =>
                 {
-                    col.Item().Text("عقاري نوت | AqariOS").FontSize(13).Bold().FontColor(PrimaryGreen);
+                    col.Item().Text("عقاري | AqariOS").FontSize(13).Bold().FontColor(PrimaryGreen);
                     col.Item().PaddingTop(1).Text("سند قبض مالي رسمي | Official Payment Receipt").FontSize(8.5f).FontColor(TextMuted);
                 });
             });
@@ -387,7 +387,7 @@ public class QuestPdfReceiptGenerator : IReceiptPdfGenerator
     {
         container.BorderTop(0.75f).BorderColor(BorderSubtle).PaddingTop(6).Row(row =>
         {
-            row.RelativeItem().Text("هذا المستند صادر إلكترونياً عن نظام عقاري نوت لإدارة العقارات.").FontSize(7.5f).FontColor(TextMuted);
+            row.RelativeItem().Text("هذا المستند صادر إلكترونياً عن نظام عقاري لإدارة العقارات.").FontSize(7.5f).FontColor(TextMuted);
             row.RelativeItem().AlignLeft().Text("الصفحة 1 من 2 (النسخة الرسمية العربية)").FontSize(7.5f).FontColor(TextMuted);
         });
     }
@@ -645,7 +645,7 @@ public class QuestPdfReceiptGenerator : IReceiptPdfGenerator
                 logoRow.AutoItem().Element(ComposeLogoMark);
                 logoRow.RelativeItem().Column(col =>
                 {
-                    col.Item().Text("عقاري نوت | AqariOS").FontSize(13).Bold().FontColor(PrimaryGreen);
+                    col.Item().Text("عقاري | AqariOS").FontSize(13).Bold().FontColor(PrimaryGreen);
                     col.Item().PaddingTop(1).Text("سند تسوية القسط النهائي | Final Installment Settlement Statement").FontSize(8.5f).FontColor(TextMuted);
                 });
             });

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { E164_PHONE_REGEX } from './tenants.schema';
+import { TENANT_PHONE_INPUT_REGEX } from './tenants.schema';
 
 export const emergencyContactSchema = z.object({
   name: z
@@ -14,7 +14,7 @@ export const emergencyContactSchema = z.object({
     .string()
     .min(1, { message: 'phoneRequired' })
     .max(20, { message: 'phoneMax20' })
-    .regex(E164_PHONE_REGEX, { message: 'invalidPhoneFormat' }),
+    .regex(TENANT_PHONE_INPUT_REGEX, { message: 'invalidPhoneFormat' }),
 });
 
 export type EmergencyContactFormData = z.infer<typeof emergencyContactSchema>;

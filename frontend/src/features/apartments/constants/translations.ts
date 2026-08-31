@@ -1,5 +1,8 @@
+import { translateLegacy } from '@/shared/i18n';
+
 export const dictionary = {
   en: {
+    unknown: 'Unknown',
     // Page & Section Headers
     apartments: 'Apartments',
     addApartment: 'Add Apartment',
@@ -30,6 +33,7 @@ export const dictionary = {
     occupancyStatusTitle: 'Occupancy Status',
     floorId: 'Floor',
     buildingId: 'Building',
+    selectBuildingPlaceholder: 'Select property building',
     
     // Form Placeholders
     unitNumberPlaceholder: 'e.g. APT-101',
@@ -99,6 +103,7 @@ export const dictionary = {
     },
   },
   ar: {
+    unknown: 'غير معروف',
     // Page & Section Headers
     apartments: 'الشقق والوحدات',
     addApartment: 'إضافة شقة',
@@ -129,6 +134,7 @@ export const dictionary = {
     occupancyStatusTitle: 'حالة الإشغال',
     floorId: 'الطابق',
     buildingId: 'العمارة',
+    selectBuildingPlaceholder: 'اختر المبنى العقاري',
     
     // Form Placeholders
     unitNumberPlaceholder: 'مثال: شقة 101',
@@ -199,16 +205,6 @@ export const dictionary = {
   }
 };
 
-export function getApartmentTranslation(key: string, lang: 'en' | 'ar' = 'en'): string {
-  const dict = dictionary[lang] || dictionary.en;
-  const parts = key.split('.');
-  let current: any = dict;
-  for (const part of parts) {
-    if (current && typeof current === 'object' && part in current) {
-      current = current[part];
-    } else {
-      return key;
-    }
-  }
-  return typeof current === 'string' ? current : key;
+export function getApartmentTranslation(key: string, lang: 'en' | 'ar' = 'ar'): string {
+  return translateLegacy('apartments', dictionary, lang, key);
 }

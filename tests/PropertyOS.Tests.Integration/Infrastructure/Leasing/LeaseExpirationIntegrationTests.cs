@@ -126,7 +126,7 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
     /// using platform-admin scope for the company and tenant scope for properties.
     /// </summary>
     private async Task<(Guid companyId, Guid buildingId, Guid apartmentId, Guid tenantId, Guid userId)>
-        SeedPropertyHierarchyAsync(Guid? overrideCompanyId = null)
+        SeedPropertyHierarchyAsync(string tenantPhone, Guid? overrideCompanyId = null)
     {
         var companyId = overrideCompanyId ?? Guid.NewGuid();
         var userId = Guid.NewGuid();
@@ -209,7 +209,7 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
                 companyId: companyId,
                 name: "John Doe",
                 nationalId: "NAT-" + Guid.NewGuid().ToString()[..8],
-                phone: "+962790000000",
+                phone: tenantPhone,
                 createdAt: DateTimeOffset.UtcNow,
                 createdBy: null);
             db.Tenants.Add(tenant);
@@ -262,8 +262,8 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
     public async Task Expiration_TenantIsolation_OnlyQueriesCompanyContracts()
     {
         // Arrange: two companies each with one Active lease
-        var (companyA, bldA, aptA, tenantA, userA) = await SeedPropertyHierarchyAsync();
-        var (companyB, bldB, aptB, tenantB, userB) = await SeedPropertyHierarchyAsync();
+        var (companyA, bldA, aptA, tenantA, userA) = await SeedPropertyHierarchyAsync("+962790000101");
+        var (companyB, bldB, aptB, tenantB, userB) = await SeedPropertyHierarchyAsync("+962790000102");
 
         Guid contractAId, contractBId;
 
@@ -348,7 +348,7 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
     public async Task Expiration_PostgresTrigger_ReconcilesApartmentOccupancyStatusToVacant()
     {
         // 1. Arrange & Seed
-        var (companyId, bldId, apartmentId, tenantId, userId) = await SeedPropertyHierarchyAsync();
+        var (companyId, bldId, apartmentId, tenantId, userId) = await SeedPropertyHierarchyAsync("+962790000201");
         Guid contractId;
 
         // 1. Seed Active lease → apartment trigger sets Occupied
@@ -438,15 +438,15 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
         // -------------------------------------------------------------------------
 
         // Company A — first hierarchy (also establishes companyA and userA)
-        var (companyA, bldA1, aptA1, tenantA1, userA) = await SeedPropertyHierarchyAsync();
+        var (companyA, bldA1, aptA1, tenantA1, userA) = await SeedPropertyHierarchyAsync("+962790000301");
 
         // Company A — second and third hierarchies reuse companyA's ID so they
         // land in the same tenant but in distinct buildings/apartments/tenants.
-        var (_, bldA2, aptA2, tenantA2, _) = await SeedPropertyHierarchyAsync(overrideCompanyId: companyA);
-        var (_, bldA3, aptA3, tenantA3, _) = await SeedPropertyHierarchyAsync(overrideCompanyId: companyA);
+        var (_, bldA2, aptA2, tenantA2, _) = await SeedPropertyHierarchyAsync("+962790000302", overrideCompanyId: companyA);
+        var (_, bldA3, aptA3, tenantA3, _) = await SeedPropertyHierarchyAsync("+962790000303", overrideCompanyId: companyA);
 
         // Company B — independent hierarchy
-        var (companyB, bldB, aptB, tenantB, userB) = await SeedPropertyHierarchyAsync();
+        var (companyB, bldB, aptB, tenantB, userB) = await SeedPropertyHierarchyAsync("+962790000304");
 
         // Confirm all three Company A apartments are distinct (defence-in-depth assertion)
         aptA1.Should().NotBe(aptA2);
@@ -661,8 +661,8 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
     public async Task SessionLeakage_CompanyAScope_DoesNotLeakToCompanyBScope()
     {
         // Arrange: Company A has 3 active expiring leases, Company B has 1
-        var (companyA, bldA, aptA, tenantA, userA) = await SeedPropertyHierarchyAsync();
-        var (companyB, bldB, aptB, tenantB, userB) = await SeedPropertyHierarchyAsync();
+        var (companyA, bldA, aptA, tenantA, userA) = await SeedPropertyHierarchyAsync("+962790000401");
+        var (companyB, bldB, aptB, tenantB, userB) = await SeedPropertyHierarchyAsync("+962790000402");
 
         var contractAId = await SeedEligibleActiveLeaseAsync(companyA, bldA, aptA, tenantA, userA, "LC-LEAK-A");
         var contractBId = await SeedEligibleActiveLeaseAsync(companyB, bldB, aptB, tenantB, userB, "LC-LEAK-B");
@@ -716,8 +716,8 @@ public class LeaseExpirationIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task CompanyRls_PlatformAdminSecurityVerification_EnforcesSelectOnlyAndScopeBoundaries()
     {
-        var (companyA, _, _, _, userA) = await SeedPropertyHierarchyAsync();
-        var (companyB, _, _, _, userB) = await SeedPropertyHierarchyAsync();
+        var (companyA, _, _, _, userA) = await SeedPropertyHierarchyAsync("+962790000501");
+        var (companyB, _, _, _, userB) = await SeedPropertyHierarchyAsync("+962790000502");
 
         // A. Normal company scope: can SELECT companyA, cannot SELECT companyB
         using (var dbA = CreateContext(companyA, userA))

@@ -202,7 +202,7 @@ export default function ActivateTenantPage() {
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-right">
         <h1 className="text-2xl font-semibold tracking-tight text-white mb-1">
-          {statusData?.tenantName ? `مرحباً بك، ${statusData.tenantName}` : 'مرحباً بك في عقاري نوت'}
+          {statusData?.tenantName ? `مرحباً بك، ${statusData.tenantName}` : 'مرحباً بك في عقاري'}
         </h1>
         <p className="text-[13.5px] text-gray-400">
           تفعيل حساب بوابة المستأجر — أنشئ كلمة المرور الخاصة بك للبدء باستخدام البوابة.

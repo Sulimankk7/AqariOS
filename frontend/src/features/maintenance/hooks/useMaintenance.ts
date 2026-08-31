@@ -53,30 +53,32 @@ export const useMaintenanceHistory = (id: string, enabled = true) => {
 };
 
 export const useCreateMaintenanceRequest = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateMaintenanceRequestRequest) => maintenanceApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.lists() });
-      toast.success('Maintenance request created successfully');
+      toast.success(t('maintenance.createSuccess'));
     },
     onError: () => {
-      toast.error('Failed to create maintenance request');
+      toast.error(t('maintenance.createFailed'));
     },
   });
 };
 
 export const useUpdateMaintenanceRequest = (id: string) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: UpdateMaintenanceRequestRequest) => maintenanceApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.lists() });
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.detail(id) });
-      toast.success('Maintenance request updated successfully');
+      toast.success(t('maintenance.updateSuccess'));
     },
     onError: () => {
-      toast.error('Failed to update maintenance request');
+      toast.error(t('maintenance.updateFailed'));
     },
   });
 };
@@ -114,15 +116,16 @@ export const useAddMaintenanceComment = (id: string) => {
 };
 
 export const useRemoveMaintenanceComment = (id: string) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (commentId: string) => maintenanceApi.removeComment(id, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.comments(id) });
-      toast.success('Comment removed');
+      toast.success(t('maintenance.commentRemoved'));
     },
     onError: () => {
-      toast.error('Failed to remove comment');
+      toast.error(t('maintenance.commentRemoveFailed'));
     },
   });
 };

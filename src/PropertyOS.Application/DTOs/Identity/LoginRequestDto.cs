@@ -15,4 +15,12 @@ public class LoginRequestDto
     /// User account password.
     /// </summary>
     public string Password { get; set; } = null!;
+
+    /// <summary>
+    /// When true, requests a persistent refresh session with the configured
+    /// remembered-session lifetime. False creates a browser-session cookie.
+    /// Null is retained only for internal/legacy callers that historically
+    /// received the normal persistent session.
+    /// </summary>
+    public bool? RememberMe { get; set; }
 }

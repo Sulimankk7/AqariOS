@@ -65,6 +65,7 @@ public class Module2SubscriptionsIntegrationTests : IAsyncLifetime
                 o.MapEnum<SubscriptionStatusEnum>("subscription_status_enum");
                 o.MapEnum<BillingCycleEnum>("billing_cycle_enum");
                 o.MapEnum<PlanChangeRequestStatus>("plan_change_request_status_enum");
+                o.MapEnum<SubscriptionPricingModel>("subscription_pricing_model_enum");
             })
             .AddInterceptors(new PropertyOS.Infrastructure.Persistence.Interceptors.TenantSessionInterceptor(tenantContext, userContext))
             .Options;
@@ -287,6 +288,69 @@ public class Module2SubscriptionsIntegrationTests : IAsyncLifetime
             count.Should().Be(0);
             await ctxNoTenant.Database.RollbackTransactionAsync();
         }
+    }
+
+    [Fact]
+    public async Task PaygUsagePeriods_AreIdempotentAndCompanyIsolated()
+    {
+        var companyA = Guid.NewGuid();
+        var companyB = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var subscriptionA = Guid.NewGuid();
+        var subscriptionB = Guid.NewGuid();
+
+        await using (var admin = CreateContext(null, isPlatformAdmin: true))
+        {
+            await admin.Database.BeginTransactionAsync();
+            await admin.Database.ExecuteSqlRawAsync("INSERT INTO companies (id, legal_name, display_name, primary_phone, company_type, country_code) VALUES ({0}, 'PAYG A', 'PAYG A', '+962790001001', 'individual_owner', 'JO'), ({1}, 'PAYG B', 'PAYG B', '+962790001002', 'individual_owner', 'JO')", companyA, companyB);
+            await admin.Database.ExecuteSqlRawAsync("INSERT INTO subscription_plans (id, code, name_en, name_ar, monthly_price, yearly_price, currency) VALUES ({0}, 'payg_rls_base', 'Base', 'Base', 10, 100, 'JOD')", planId);
+            await admin.Database.ExecuteSqlRawAsync("INSERT INTO company_subscriptions (id, company_id, plan_id, status, start_date, end_date, price_at_subscription) VALUES ({0}, {1}, {2}, 'active', '2026-01-01', '2027-01-01', 10), ({3}, {4}, {2}, 'active', '2026-01-01', '2027-01-01', 10)", subscriptionA, companyA, planId, subscriptionB, companyB);
+            await admin.Database.ExecuteSqlRawAsync("INSERT INTO payg_usage_periods (id, company_id, company_subscription_id, period_start, period_end, billing_cycle, monthly_equivalent_unit_price_snapshot, currency_snapshot, period_day_count, calculated_through, is_chargeable, is_finalized, created_at, updated_at) VALUES ({0}, {1}, {2}, '2026-08-01', '2026-09-01', 'monthly', 3, 'JOD', 31, '2026-08-01', true, false, now(), now()), ({3}, {4}, {5}, '2026-08-01', '2026-09-01', 'monthly', 3, 'JOD', 31, '2026-08-01', true, false, now(), now())", Guid.NewGuid(), companyA, subscriptionA, Guid.NewGuid(), companyB, subscriptionB);
+            await admin.Database.CommitTransactionAsync();
+        }
+
+        await using var companyContext = CreateContext(companyA);
+        await companyContext.Database.BeginTransactionAsync();
+        var visible = await companyContext.PaygUsagePeriods.AsNoTracking().ToListAsync();
+        visible.Should().ContainSingle().Which.CompanyId.Should().Be(companyA);
+
+        await companyContext.Database.ExecuteSqlRawAsync("SAVEPOINT before_duplicate_payg_period");
+        var duplicate = await Record.ExceptionAsync(() => companyContext.Database.ExecuteSqlRawAsync(
+            "INSERT INTO payg_usage_periods (id, company_id, company_subscription_id, period_start, period_end, billing_cycle, monthly_equivalent_unit_price_snapshot, currency_snapshot, period_day_count, calculated_through, is_chargeable, is_finalized, created_at, updated_at) VALUES ({0}, {1}, {2}, '2026-08-01', '2026-09-01', 'monthly', 3, 'JOD', 31, '2026-08-01', true, false, now(), now())",
+            Guid.NewGuid(), companyA, subscriptionA));
+        duplicate.Should().BeOfType<PostgresException>().Which.ConstraintName.Should().Be("uq_payg_usage_period_subscription_dates");
+        await companyContext.Database.ExecuteSqlRawAsync("ROLLBACK TO SAVEPOINT before_duplicate_payg_period");
+        await companyContext.Database.RollbackTransactionAsync();
+    }
+
+    [Fact]
+    public async Task FinalizedPaygUsagePeriod_IsImmutableAtDatabaseBoundary()
+    {
+        var companyId = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var subscriptionId = Guid.NewGuid();
+        var periodId = Guid.NewGuid();
+
+        await using var admin = CreateContext(null, isPlatformAdmin: true);
+        await admin.Database.BeginTransactionAsync();
+        await admin.Database.ExecuteSqlRawAsync(
+            "INSERT INTO companies (id, legal_name, display_name, primary_phone, company_type, country_code) VALUES ({0}, 'PAYG Final', 'PAYG Final', '+962790001003', 'individual_owner', 'JO')", companyId);
+        await admin.Database.ExecuteSqlRawAsync(
+            "INSERT INTO subscription_plans (id, code, name_en, name_ar, monthly_price, yearly_price, currency) VALUES ({0}, 'payg_final_base', 'Base', 'Base', 10, 100, 'JOD')", planId);
+        await admin.Database.ExecuteSqlRawAsync(
+            "INSERT INTO company_subscriptions (id, company_id, plan_id, status, start_date, end_date, price_at_subscription) VALUES ({0}, {1}, {2}, 'active', '2026-01-01', '2027-01-01', 10)", subscriptionId, companyId, planId);
+        await admin.Database.ExecuteSqlRawAsync(
+            "INSERT INTO payg_usage_periods (id, company_id, company_subscription_id, period_start, period_end, billing_cycle, monthly_equivalent_unit_price_snapshot, currency_snapshot, period_day_count, accumulated_lease_days, estimated_amount, projected_amount, calculated_through, is_chargeable, is_finalized, finalized_at, created_at, updated_at) VALUES ({0}, {1}, {2}, '2026-08-01', '2026-09-01', 'monthly', 3, 'JOD', 31, 31, 3, 3, '2026-09-01', true, true, now(), now(), now())",
+            periodId, companyId, subscriptionId);
+
+        await admin.Database.ExecuteSqlRawAsync("SAVEPOINT before_finalized_payg_update");
+        var update = await Record.ExceptionAsync(() => admin.Database.ExecuteSqlRawAsync(
+            "UPDATE payg_usage_periods SET estimated_amount = 4 WHERE id = {0}", periodId));
+
+        update.Should().BeOfType<PostgresException>().Which.ConstraintName
+            .Should().Be("chk_payg_usage_finalized_immutable");
+        await admin.Database.ExecuteSqlRawAsync("ROLLBACK TO SAVEPOINT before_finalized_payg_update");
+        await admin.Database.RollbackTransactionAsync();
     }
 
     [Fact]

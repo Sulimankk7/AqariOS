@@ -42,6 +42,13 @@ public sealed class SubscriptionController : ControllerBase
     public async Task<ActionResult<UserSubscriptionDto>> GetMySubscription(CancellationToken cancellationToken = default) =>
         Ok(await _sender.Send(new GetCurrentSubscriptionQuery(), cancellationToken));
 
+    [HttpGet("usage/current")]
+    [Authorize(Policy = SubscriptionsPermissions.OwnSubscriptionView)]
+    [ProducesResponseType(typeof(PaygUsageSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PaygUsageSummaryDto>> GetCurrentUsage(CancellationToken cancellationToken = default) =>
+        Ok(await _sender.Send(new GetCurrentPaygUsageQuery(), cancellationToken));
+
     [HttpGet("plan-change-requests")]
     [Authorize(Policy = SubscriptionsPermissions.OwnPlanChangeRequestsRead)]
     [ProducesResponseType(typeof(PlanChangeRequestPageDto), StatusCodes.Status200OK)]

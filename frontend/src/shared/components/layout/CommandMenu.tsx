@@ -343,7 +343,7 @@ export function CommandMenu() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Command palette"
+        aria-label={t("common.commandPalette")}
         className="w-full max-w-lg bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
@@ -358,11 +358,11 @@ export function CommandMenu() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full bg-transparent text-sm font-medium focus:outline-none placeholder:text-muted-foreground"
-            aria-label="Search commands"
+            aria-label={t("common.searchCommands")}
           />
           <button
             onClick={close}
-            aria-label="Close command palette"
+            aria-label={t("common.closeCommandPalette")}
             className="p-1 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -373,7 +373,7 @@ export function CommandMenu() {
         <div className="max-h-96 overflow-y-auto overscroll-contain p-2 space-y-1 text-sm" role="listbox">
           {filteredCommands.length === 0 && (
             <div className="py-8 text-center text-muted-foreground text-xs">
-              No results for "{query}"
+              {t("common.noSearchResults", { query })}
             </div>
           )}
 
@@ -422,9 +422,9 @@ export function CommandMenu() {
 
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground flex items-center gap-3">
-          <span><kbd className="font-mono">↑↓</kbd> navigate</span>
-          <span><kbd className="font-mono">↵</kbd> select</span>
-          <span><kbd className="font-mono">Esc</kbd> close</span>
+          <span><kbd className="font-mono">↑↓</kbd> {t("common.keyboardNavigate")}</span>
+          <span><kbd className="font-mono">↵</kbd> {t("common.keyboardSelect")}</span>
+          <span><kbd className="font-mono">Esc</kbd> {t("common.keyboardClose")}</span>
         </div>
       </div>
     </div>

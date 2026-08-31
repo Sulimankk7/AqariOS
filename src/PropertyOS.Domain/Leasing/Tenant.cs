@@ -65,7 +65,8 @@ public class Tenant : ISoftDeletable
         string? email = null,
         string? occupation = null,
         string? employer = null,
-        Guid? userId = null)
+        Guid? userId = null,
+        string? phoneCountryCode = "JO")
     {
         if (companyId == Guid.Empty)
             throw new ArgumentException("CompanyId is required.", nameof(companyId));
@@ -86,7 +87,7 @@ public class Tenant : ISoftDeletable
             CompanyId = companyId,
             Name = name.Trim(),
             NationalId = nationalId.Trim(),
-            Phone = phone.Trim(),
+            Phone = TenantPhoneNumber.Normalize(phone, phoneCountryCode),
             Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant(),
             Occupation = string.IsNullOrWhiteSpace(occupation) ? null : occupation.Trim(),
             Employer = string.IsNullOrWhiteSpace(employer) ? null : employer.Trim(),
@@ -110,7 +111,8 @@ public class Tenant : ISoftDeletable
         string? employer,
         DateTimeOffset updatedAt,
         Guid? updatedBy,
-        string? email = null)
+        string? email = null,
+        string? phoneCountryCode = "JO")
     {
         if (DeletedAt.HasValue)
             throw new InvalidOperationException("Cannot update a deleted tenant.");
@@ -123,7 +125,7 @@ public class Tenant : ISoftDeletable
 
         Name = name.Trim();
         NationalId = nationalId.Trim();
-        Phone = phone.Trim();
+        Phone = TenantPhoneNumber.Normalize(phone, phoneCountryCode);
         Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();
         Occupation = string.IsNullOrWhiteSpace(occupation) ? null : occupation.Trim();
         Employer = string.IsNullOrWhiteSpace(employer) ? null : employer.Trim();

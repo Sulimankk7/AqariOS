@@ -63,11 +63,12 @@ export interface RegisterResponseDto {
 export interface LoginRequestDto {
   emailOrPhone: string;
   password: string;
+  rememberMe: boolean;
 }
 
 export interface LoginResponseDto {
   accessToken: string;
-  refreshToken: string;
+  isPersistentSession: boolean;
   tokenType: string;
   expiresIn: number;
   user: UserProfileDto;
@@ -82,6 +83,36 @@ export interface OtpVerifyDto {
   phone: string;
   code: string;
   purpose?: number; // 0 = Login
+}
+
+export type PasswordResetDeliveryMethod = "Email" | "Phone";
+
+export interface PasswordResetRequestDto {
+  deliveryMethod: PasswordResetDeliveryMethod;
+  identifier: string;
+}
+
+export interface PasswordResetRequestResponseDto {
+  message: string;
+}
+
+export interface PasswordResetOtpVerifyDto {
+  phone: string;
+  code: string;
+}
+
+export interface PasswordResetOtpVerifyResponseDto {
+  resetAuthorization: string;
+  expiresInSeconds: number;
+}
+
+export interface PasswordResetCompleteDto {
+  resetCredential: string;
+  newPassword: string;
+}
+
+export interface PasswordResetCompleteResponseDto {
+  message: string;
 }
 
 // ── Application Core Auth State ───────────────────────────────────────────────

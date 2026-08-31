@@ -507,7 +507,7 @@ public class ProvisionTenantAccountCommandHandler
     /// <summary>
     /// Registers an activation-email dispatch as a post-commit action.
     /// Executes ONLY after the database transaction commits successfully.
-    /// A Brevo failure sets EmailSent = false but never rolls back the committed account.
+    /// An email-provider failure sets EmailSent = false but never rolls back the committed account.
     /// </summary>
     private void RegisterEmailPostCommitAction(
         ProvisionTenantAccountResponseDto dto,

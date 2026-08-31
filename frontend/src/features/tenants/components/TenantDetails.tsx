@@ -151,7 +151,7 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
       {/* Header Actions Card */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-6 rounded-lg border shadow-xs">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" aria-label="Back to Tenants" onClick={() => navigate('/tenants')}>
+          <Button variant="ghost" size="icon" aria-label={t('backToTenants')} onClick={() => navigate('/tenants')}>
             <BackIcon className="w-5 h-5" />
           </Button>
           <div>
@@ -236,23 +236,17 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
             <div className="space-y-1">
               <CardTitle className="text-lg flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-primary" />
-                {language === 'ar' ? 'حساب بوابة المستأجر' : 'Tenant Portal Account'}
+                {t('portalAccount')}
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
-                {tenant.userId
-                  ? language === 'ar'
-                    ? 'حساب بوابة المستأجر مرتبط ومفعل بهذا المستأجر.'
-                    : 'Tenant portal account is linked to this tenant record.'
-                  : language === 'ar'
-                  ? 'حساب بوابة المستأجر غير مفعل. يمكنك إنشاء حساب للمستأجر وإرسال رابط التفعيل إليه.'
-                  : 'Tenant portal account is not activated. You can create an account and send an activation link to the tenant.'}
+                {tenant.userId ? t('portalAccountLinkedDescription') : t('portalAccountUnlinkedDescription')}
               </CardDescription>
             </div>
             <div>
               {tenant.userId ? (
                 <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1.5 text-xs py-1 px-3">
                   <ShieldCheck className="w-4 h-4" />
-                  {language === 'ar' ? 'حساب مرتبط / مفعل' : 'Account Linked'}
+                  {t('portalAccountLinked')}
                 </Badge>
               ) : (
                 <Button
@@ -262,7 +256,7 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
                   className="gap-2 font-semibold"
                 >
                   <UserPlus className="w-4 h-4" />
-                  {language === 'ar' ? 'إنشاء حساب المستأجر' : 'Create Tenant Account'}
+                  {t('createPortalAccount')}
                 </Button>
               )}
             </div>
@@ -460,7 +454,7 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
             <FileText className="w-5 h-5 text-primary" />
             {t('leaseHistory')}
           </CardTitle>
-          <CardDescription>All lease contracts associated with this tenant.</CardDescription>
+          <CardDescription>{t('leaseHistoryDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           {errorLeases ? (

@@ -11,6 +11,9 @@ public sealed class CreatePlanRequest
     public string? DescriptionAr { get; init; }
     public decimal MonthlyPrice { get; init; }
     public decimal YearlyPrice { get; init; }
+    public SubscriptionPricingModel PricingModel { get; init; } = SubscriptionPricingModel.Fixed;
+    public decimal? PaygMonthlyUnitPrice { get; init; }
+    public decimal? PaygYearlyMonthlyEquivalentUnitPrice { get; init; }
     public string Currency { get; init; } = string.Empty;
     public int? MaxBuildings { get; init; }
     public int? MaxUsers { get; init; }

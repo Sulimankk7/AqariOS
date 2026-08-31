@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using PropertyOS.Domain.Companies;
 using PropertyOS.Domain.Identity.Entities;
+using PropertyOS.Domain.Audit.Entities;
 using PropertyOS.Domain.Subscriptions;
 
 namespace PropertyOS.Application.Common.Interfaces;
@@ -25,13 +26,20 @@ public interface IApplicationDbContext
     DbSet<LoginHistory> LoginHistory { get; }
     DbSet<UserSystemRole> UserSystemRoles { get; }
     DbSet<LandlordRegistration> LandlordRegistrations { get; }
+    DbSet<PasswordResetChallenge> PasswordResetChallenges => throw new NotSupportedException();
+    DbSet<AuditLog> AuditLogs => throw new NotSupportedException();
     DbSet<SubscriptionPlan> SubscriptionPlans { get; }
     DbSet<CompanySubscription> CompanySubscriptions { get; }
     DbSet<PlanChangeRequest> PlanChangeRequests { get; }
+    DbSet<PaygUsagePeriod> PaygUsagePeriods => throw new NotSupportedException();
+    DbSet<PaygLeaseUsage> PaygLeaseUsage => throw new NotSupportedException();
 
     DbSet<PropertyOS.Domain.Properties.Building> Buildings { get; }
+    DbSet<PropertyOS.Domain.Properties.Floor> Floors { get; }
     DbSet<PropertyOS.Domain.Properties.Apartment> Apartments { get; }
     DbSet<PropertyOS.Domain.Leasing.LeaseContract> LeaseContracts { get; }
+    DbSet<PropertyOS.Domain.Leasing.ContractStatusHistory> ContractStatusHistory => throw new NotSupportedException();
+    DbSet<PropertyOS.Domain.Leasing.ContractTermination> ContractTerminations => throw new NotSupportedException();
     DbSet<PropertyOS.Domain.Leasing.Tenant> Tenants { get; }
     DbSet<PropertyOS.Domain.Financials.RentPayment> RentPayments { get; }
     DbSet<PropertyOS.Domain.Financials.PaymentAllocation> PaymentAllocations { get; }
@@ -43,6 +51,7 @@ public interface IApplicationDbContext
 
 
     DatabaseFacade Database { get; }
+    bool SupportsAtomicOperations => false;
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

@@ -11,7 +11,7 @@ import {
 import type { NotificationDto } from "@/features/notifications/types/notifications.types";
 
 export function NotificationBell() {
-  const { t, language } = useTranslation();
+  const { t, formatDate } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,26 +48,12 @@ export function NotificationBell() {
 
     markAllAsRead.mutate(undefined, {
       onSuccess: () => {
-        toast.success(t("tenant.notifications.markAllSuccess", "All notifications marked as read"));
+        toast.success(t("tenant.notifications.markAllSuccess"));
       },
       onError: () => {
-        toast.error(t("tenant.notifications.actionFailed", "Action failed"));
+        toast.error(t("tenant.notifications.actionFailed"));
       },
     });
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString(language === "ar" ? "ar-JO" : "en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateStr;
-    }
   };
 
   return (
@@ -105,7 +91,7 @@ export function NotificationBell() {
               </span>
               {unreadCount > 0 && (
                 <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
-                  {unreadCount} {language === "ar" ? "جديد" : "New"}
+                  {t("tenant.notifications.unreadBadge", { count: unreadCount })}
                 </span>
               )}
             </div>
@@ -116,7 +102,7 @@ export function NotificationBell() {
                 type="button"
                 onClick={handleMarkAllAsRead}
                 disabled={markAllAsRead.isPending}
-                aria-label={t("tenant.notifications.markAllAsRead", "Mark all as read")}
+                aria-label={t("tenant.notifications.markAllAsRead")}
                 className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {markAllAsRead.isPending ? (
@@ -124,7 +110,7 @@ export function NotificationBell() {
                 ) : (
                   <CheckCheck className="w-3.5 h-3.5" />
                 )}
-                <span>{t("tenant.notifications.markAllAsRead", "Mark all as read")}</span>
+                <span>{t("tenant.notifications.markAllAsRead")}</span>
               </button>
             )}
           </div>
@@ -196,7 +182,7 @@ export function NotificationBell() {
                           </p>
                           <div className="flex items-center gap-1 shrink-0">
                             <span className="text-[10px] text-muted-foreground font-mono">
-                              {formatDate(n.createdAt)}
+                              {formatDate(n.createdAt, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                             </span>
                             {isExpanded ? (
                               <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
@@ -218,7 +204,7 @@ export function NotificationBell() {
                                 {t("tenant.notifications.readStatus")}
                               </span>
                               <span className="font-mono">
-                                {formatDate(n.createdAt)}
+                                {formatDate(n.createdAt, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                               </span>
                             </div>
                           </div>

@@ -34,6 +34,14 @@ public class ProvisionTenantAccountCommandHandlerTests
         public bool ShouldSucceed { get; set; } = true;
         public int SendCount { get; private set; }
 
+        public Task<bool> SendAsync(
+            string recipientEmail, string subject, string htmlBody, string? textBody = null,
+            CancellationToken cancellationToken = default)
+        {
+            SendCount++;
+            return Task.FromResult(ShouldSucceed);
+        }
+
         public Task<bool> SendTenantActivationEmailAsync(
             string recipientEmail, string tenantName, string activationToken,
             CancellationToken cancellationToken = default)
@@ -50,6 +58,16 @@ public class ProvisionTenantAccountCommandHandlerTests
         public string? LastRecipientPhone { get; private set; }
         public string? LastTenantName { get; private set; }
         public string? LastActivationToken { get; private set; }
+
+        public Task<bool> SendAsync(
+            string to,
+            string message,
+            CancellationToken cancellationToken = default)
+        {
+            SendCount++;
+            LastRecipientPhone = to;
+            return Task.FromResult(ShouldSucceed);
+        }
 
         public Task<bool> SendTenantActivationSmsAsync(
             string recipientPhone, string tenantName, string activationToken,
@@ -438,7 +456,7 @@ public class ProvisionTenantAccountCommandHandlerTests
 
     // Case 10 — Activation email is registered post-commit, not inline.
     [Fact]
-    public async Task PathB_EmailMode_BrevoFailsAfterCommit_AccountCommitted_EmailSentFalse()
+    public async Task PathB_EmailMode_EmailProviderFailsAfterCommit_AccountCommitted_EmailSentFalse()
     {
         using var db = CreateDb();
         var companyId = Guid.NewGuid();

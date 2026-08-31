@@ -1,5 +1,66 @@
 import { ApiError } from '@/shared/lib/http';
 import { FieldValues, UseFormSetError, Path } from 'react-hook-form';
+import { getRuntimeLanguage, translateCurrent } from '@/shared/i18n';
+
+const apiErrorCodeKeys: Record<string, string> = {
+  TenantNotFound: 'errors.codes.TenantNotFound',
+  InvalidLeaseStatus: 'errors.codes.InvalidLeaseStatus',
+  PaymentAlreadyProcessed: 'errors.codes.PaymentAlreadyProcessed',
+  CONCURRENCY_CONFLICT: 'errors.codes.CONCURRENCY_CONFLICT',
+  CURRENT_SUBSCRIPTION_ALREADY_EXISTS: 'errors.codes.CURRENT_SUBSCRIPTION_ALREADY_EXISTS',
+  PENDING_PLAN_CHANGE_ALREADY_EXISTS: 'errors.codes.PENDING_PLAN_CHANGE_ALREADY_EXISTS',
+  PLAN_CHANGE_INVALID_LIFECYCLE_TRANSITION: 'errors.codes.PLAN_CHANGE_INVALID_LIFECYCLE_TRANSITION',
+  PLAN_CODE_ALREADY_EXISTS: 'errors.codes.PLAN_CODE_ALREADY_EXISTS',
+  TENANT_PHONE_ALREADY_EXISTS: 'errors.codes.TENANT_PHONE_ALREADY_EXISTS',
+  OTP_ACCOUNT_NOT_FOUND: 'errors.codes.OTP_ACCOUNT_NOT_FOUND',
+  PASSWORD_RESET_TOKEN_INVALID: 'errors.codes.PASSWORD_RESET_TOKEN_INVALID',
+  PASSWORD_RESET_TOKEN_EXPIRED: 'errors.codes.PASSWORD_RESET_TOKEN_EXPIRED',
+  PASSWORD_RESET_TOKEN_USED: 'errors.codes.PASSWORD_RESET_TOKEN_USED',
+  PASSWORD_RESET_OTP_INVALID: 'errors.codes.PASSWORD_RESET_OTP_INVALID',
+  PASSWORD_RESET_OTP_EXPIRED: 'errors.codes.PASSWORD_RESET_OTP_EXPIRED',
+  PASSWORD_RESET_OTP_ATTEMPTS_EXCEEDED: 'errors.codes.PASSWORD_RESET_OTP_ATTEMPTS_EXCEEDED',
+  PASSWORD_RESET_AUTHORIZATION_EXPIRED: 'errors.codes.PASSWORD_RESET_AUTHORIZATION_EXPIRED',
+};
+
+const statusErrorKeys: Record<number, string> = {
+  400: 'errors.validation',
+  401: 'errors.sessionExpired',
+  403: 'errors.forbidden',
+  404: 'errors.notFound',
+  409: 'errors.conflict',
+  422: 'errors.validation',
+  429: 'errors.tooManyRequests',
+  500: 'errors.serverError',
+  502: 'errors.serviceUnavailable',
+  503: 'errors.serviceUnavailable',
+  504: 'errors.serviceUnavailable',
+};
+
+function backendTranslationKey(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (/^(errors|validation)\.[a-zA-Z0-9_.-]+$/.test(trimmed)) return trimmed;
+  return apiErrorCodeKeys[trimmed];
+}
+
+function safeFallback(fallbackMessage: string): string {
+  const fallback = fallbackMessage.trim();
+  const generic = translateCurrent('errors.generic');
+  const unavailableMessages = new Set([
+    translateCurrent('common.missingTranslation'),
+    translateCurrent('common.unknown'),
+  ]);
+
+  if (!fallback || unavailableMessages.has(fallback) || isRawTechnicalMessage(fallback)) {
+    return generic;
+  }
+
+  if (getRuntimeLanguage() === 'ar' && !/[\u0600-\u06ff]/.test(fallback)) {
+    return generic;
+  }
+
+  return fallback;
+}
 
 /**
  * Extracts a clean, human-readable error message from any error object.
@@ -12,66 +73,46 @@ import { FieldValues, UseFormSetError, Path } from 'react-hook-form';
  */
 export function extractUserFriendlyError(
   error: unknown,
-  fallbackMessage: string = 'An unexpected error occurred. Please try again.'
+  fallbackMessage: string = translateCurrent('errors.generic')
 ): string {
   // 1. Offline check
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && !navigator.onLine) {
-    return 'Network connection lost. Please check your internet connection and try again.';
+    return translateCurrent('errors.network');
   }
 
   // 2. ApiError (RFC 7807 ProblemDetails from http.ts)
   if (error instanceof ApiError) {
-    // Priority: Backend business message (detail or title)
-    if (error.detail && error.detail.trim().length > 0) {
-      return error.detail;
+    const normalizedMessage = error.message.toLowerCase();
+    if (normalizedMessage.includes('timeout') || normalizedMessage.includes('aborted')) {
+      return translateCurrent('errors.timeout');
     }
-    if (error.title && error.title.trim().length > 0 && error.title !== 'Bad Request' && error.title !== 'Server Error') {
-      return error.title;
+    if (normalizedMessage.includes('failed to fetch') || normalizedMessage.includes('network')) {
+      return translateCurrent('errors.network');
     }
-
-    // Status code fallbacks if no specific detail/title is present
-    switch (error.status) {
-      case 401:
-        return 'Your session has expired. Please sign in again.';
-      case 403:
-        return 'You do not have permission to perform this action.';
-      case 404:
-        return 'The requested resource could not be found.';
-      case 409:
-        return 'A conflict occurred. The resource may have been modified or is in an incompatible state.';
-      case 422:
-        return 'Validation failed. Please review the highlighted fields.';
-      case 429:
-        return 'Too many requests. Please wait a moment and try again.';
-      case 500:
-      case 502:
-      case 503:
-      case 504:
-        return 'A server error occurred. Please try again later or contact support if the issue persists.';
-      default:
-        break;
+    const codeKey = error.code ? apiErrorCodeKeys[error.code] : undefined;
+    if (codeKey) return translateCurrent(codeKey);
+    const detailKey = backendTranslationKey(error.detail);
+    if (detailKey) return translateCurrent(detailKey);
+    const titleKey = backendTranslationKey(error.title);
+    if (titleKey) return translateCurrent(titleKey);
+    if (error.status === 429 && error.retryAfterSeconds) {
+      return translateCurrent('errors.tooManyRequestsRetryAfter', { seconds: error.retryAfterSeconds });
     }
-
-    // Fallback to error message if present and safe
-    if (error.message && !isRawTechnicalMessage(error.message)) {
-      return error.message;
-    }
+    const statusKey = statusErrorKeys[error.status];
+    if (statusKey) return translateCurrent(statusKey);
   }
 
   // 3. Native Error object
   if (error instanceof Error) {
     if (error.name === 'AbortError' || error.message.toLowerCase().includes('timeout')) {
-      return 'The request timed out. Please try again.';
+      return translateCurrent('errors.timeout');
     }
     if (error.message.toLowerCase().includes('failed to fetch') || error.message.toLowerCase().includes('network error')) {
-      return 'Unable to communicate with the server. Please check your connection.';
-    }
-    if (!isRawTechnicalMessage(error.message)) {
-      return error.message;
+      return translateCurrent('errors.network');
     }
   }
 
-  return fallbackMessage;
+  return safeFallback(fallbackMessage);
 }
 
 /**
@@ -98,7 +139,7 @@ export function mapApiValidationErrors<TFieldValues extends FieldValues>(
 
     // Convert PascalCase backend keys (e.g., "ContractNumber", "StartDate") to camelCase ("contractNumber", "startDate")
     const camelKey = rawKey.charAt(0).toLowerCase() + rawKey.slice(1);
-    const messageStr = Array.isArray(messages) ? messages.join(' ') : String(messages);
+    const messageStr = localizeValidationMessages(messages);
 
     try {
       setError(camelKey as Path<TFieldValues>, {
@@ -114,10 +155,58 @@ export function mapApiValidationErrors<TFieldValues extends FieldValues>(
   return mappedAny;
 }
 
+function localizeValidationMessages(messages: string[] | string): string {
+  const values = Array.isArray(messages) ? messages : [String(messages)];
+  const keys = values.map((message) => {
+    const normalized = message.trim().toLowerCase();
+    if (normalized.includes('phone') && normalized.includes('e.164')) return 'validation.tenantPhoneE164';
+    if (normalized.includes('required')) return 'validation.required';
+    if (normalized.includes('email')) return 'validation.invalidEmail';
+    if (normalized.includes('phone')) return 'validation.invalidPhone';
+    if (normalized.includes('date')) return 'validation.invalidDate';
+    if (normalized.includes('amount') || normalized.includes('greater than zero')) return 'validation.invalidAmount';
+    if (normalized.includes('valid') || normalized.includes('select')) return 'validation.invalidSelection';
+    return 'validation.serverField';
+  });
+  return [...new Set(keys)].map((key) => translateCurrent(key)).join(' ');
+}
+
+export function localizeValidationMessage(message: unknown): string {
+  const value = String(message ?? '').trim();
+  if (!value) return '';
+  if (/^validation\.[a-zA-Z0-9_.-]+$/.test(value)) return translateCurrent(value);
+  const knownLocalizedMessages = [
+    'validation.required',
+    'validation.invalidEmail',
+    'validation.invalidPhone',
+    'validation.tenantPhoneE164',
+    'validation.invalidDate',
+    'validation.invalidAmount',
+    'validation.passwordMismatch',
+    'validation.passwordPolicy',
+    'validation.invalidSelection',
+    'validation.serverField',
+  ].map((key) => translateCurrent(key));
+  if (knownLocalizedMessages.includes(value)) return value;
+  const normalized = value.toLowerCase();
+  if (normalized.includes('phone') && normalized.includes('e.164')) return translateCurrent('validation.tenantPhoneE164');
+  if (normalized.includes('required')) return translateCurrent('validation.required');
+  if (normalized.includes('email')) return translateCurrent('validation.invalidEmail');
+  if (normalized.includes('phone')) return translateCurrent('validation.invalidPhone');
+  if (normalized.includes('password') && (normalized.includes('match') || normalized.includes('same'))) return translateCurrent('validation.passwordMismatch');
+  if (normalized.includes('password') && (normalized.includes('uppercase') || normalized.includes('lowercase') || normalized.includes('digit') || normalized.includes('numeric'))) return translateCurrent('validation.passwordPolicy');
+  if (normalized.includes('date')) return translateCurrent('validation.invalidDate');
+  if (normalized.includes('amount') || normalized.includes('greater than zero') || normalized.includes('negative')) return translateCurrent('validation.invalidAmount');
+  if (normalized.includes('select') || normalized.includes('valid') || normalized.includes('uuid')) return translateCurrent('validation.invalidSelection');
+  if (normalized.includes('at least')) return translateCurrent('validation.minLength', { min: value.match(/\d+/)?.[0] ?? '' });
+  if (normalized.includes('exceed') || normalized.includes('max') || normalized.includes('too long')) return translateCurrent('validation.maxLength', { max: value.match(/\d+/)?.[0] ?? '' });
+  return translateCurrent('validation.serverField');
+}
+
 /**
  * Checks if a string looks like a raw stack trace, exception class name, or technical dump.
  */
-function isRawTechnicalMessage(msg: string): boolean {
+export function isRawTechnicalMessage(msg: string): boolean {
   if (!msg) return true;
   const technicalIndicators = [
     'System.',

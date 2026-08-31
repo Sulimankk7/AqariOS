@@ -190,7 +190,9 @@ public sealed class CreatePlatformSubscriptionCommandHandler
         }
 
         var status = request.TrialEndDate.HasValue ? SubscriptionStatusEnum.Trialing : SubscriptionStatusEnum.Active;
-        var price = request.BillingCycle == BillingCycleEnum.Yearly ? plan.YearlyPrice : plan.MonthlyPrice;
+        var price = plan.PricingModel == SubscriptionPricingModel.Fixed
+            ? request.BillingCycle == BillingCycleEnum.Yearly ? plan.YearlyPrice : plan.MonthlyPrice
+            : 0m;
         var now = _clock.UtcNow;
         var subscription = new CompanySubscription
         {

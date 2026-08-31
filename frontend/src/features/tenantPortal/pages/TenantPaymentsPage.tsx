@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation } from "@/shared/i18n";
+import { getLocale, getRuntimeLanguage, useEntityLabel, useTranslation } from "@/shared/i18n";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
 import { useMyPayments } from "../hooks/useTenantPayments";
 import type { TenantPaymentDto } from "../types/tenantPortal.types";
@@ -8,6 +8,7 @@ import { paymentsApi } from "@/features/payments/api/payments.api";
 import { tenantPortalApi } from "../api/tenantPortal.api";
 import { filesApi } from "@/shared/services/files.api";
 import { toast } from "sonner";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
 import {
   CreditCard,
   Calendar,
@@ -34,19 +35,24 @@ function formatDate(dateStr?: string | null, locale = "en-US"): string {
   if (!dateStr) return "—";
   try {
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
+    if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString(locale === "ar" ? "ar-JO" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
   } catch {
-    return dateStr;
+    return "—";
   }
 }
 
 function formatCurrency(amount: number, currency = "JOD"): string {
-  return `${amount.toFixed(2)} ${currency}`;
+  return new Intl.NumberFormat(getLocale(getRuntimeLanguage()), {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 function normalizeDueDateStatus(status: unknown): string {
@@ -168,26 +174,6 @@ function normalizePaymentPurpose(purpose: unknown): string {
   }
 }
 
-function normalizePaymentMethod(method: unknown): string {
-  if (typeof method === "number") {
-    switch (method) {
-      case 0:
-        return "Cash";
-      case 1:
-        return "BankTransfer";
-      case 2:
-        return "Cheque";
-      case 3:
-        return "Efawateercom";
-      case 4:
-        return "CliQ";
-      default:
-        return String(method);
-    }
-  }
-  return String(method ?? "");
-}
-
 interface StatusBadgeConfig {
   label: string;
   className: string;
@@ -202,49 +188,49 @@ function getStatusBadge(
   switch (normalized) {
     case "paid":
       return {
-        label: t("tenant.payments.statusPaid", "Paid"),
+        label: t("tenant.payments.statusPaid"),
         className:
           "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
         icon: <CheckCircle2 className="w-3.5 h-3.5" />,
       };
     case "pending":
       return {
-        label: t("tenant.payments.statusPending", "Due"),
+        label: t("tenant.payments.statusPending"),
         className:
           "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
         icon: <Clock className="w-3.5 h-3.5" />,
       };
     case "pendingverification":
       return {
-        label: t("tenant.payments.statusPendingVerification", "Under Review"),
+        label: t("tenant.payments.statusPendingVerification"),
         className:
           "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/25",
         icon: <Clock className="w-3.5 h-3.5" />,
       };
     case "partiallypaid":
       return {
-        label: t("tenant.payments.statusPartiallyPaid", "Partially Paid"),
+        label: t("tenant.payments.statusPartiallyPaid"),
         className:
           "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/25",
         icon: <Wallet className="w-3.5 h-3.5" />,
       };
     case "late":
       return {
-        label: t("tenant.payments.statusLate", "Late"),
+        label: t("tenant.payments.statusLate"),
         className:
           "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/25",
         icon: <AlertCircle className="w-3.5 h-3.5" />,
       };
     case "overdueunpaid":
       return {
-        label: t("tenant.payments.statusOverdue", "Overdue & Unpaid"),
+        label: t("tenant.payments.statusOverdue"),
         className:
           "bg-destructive/10 text-destructive border-destructive/25",
         icon: <AlertCircle className="w-3.5 h-3.5" />,
       };
     case "cancelled":
       return {
-        label: t("tenant.payments.statusCancelled", "Cancelled"),
+        label: t("tenant.payments.statusCancelled"),
         className:
           "bg-secondary text-muted-foreground border-border",
         icon: <XCircle className="w-3.5 h-3.5" />,
@@ -252,7 +238,7 @@ function getStatusBadge(
     case "unknown":
     default:
       return {
-        label: t("tenant.payments.statusUnavailable", "Payment status unavailable"),
+        label: t("tenant.payments.statusUnavailable"),
         className: "bg-secondary text-muted-foreground border-border",
         icon: <AlertCircle className="w-3.5 h-3.5" />,
       };
@@ -268,15 +254,15 @@ function formatPurpose(purpose: unknown, t: (key: string, fallback?: string) => 
   const normalized = normalizePaymentPurpose(purpose);
   switch (normalized) {
     case "scheduledinstallment":
-      return t("tenant.payments.purposeScheduledInstallment", "Rent Installment");
+      return t("tenant.payments.purposeScheduledInstallment");
     case "unallocatedreceipt":
-      return t("tenant.payments.purposeUnallocatedReceipt", "Received Payment");
+      return t("tenant.payments.purposeUnallocatedReceipt");
     case "adjustmentcredit":
-      return t("tenant.payments.purposeAdjustmentCredit", "Credit Adjustment");
+      return t("tenant.payments.purposeAdjustmentCredit");
     case "adjustmentdebit":
-      return t("tenant.payments.purposeAdjustmentDebit", "Debit Adjustment");
+      return t("tenant.payments.purposeAdjustmentDebit");
     default:
-      return String(purpose ?? "");
+      return t("common.unknown");
   }
 }
 
@@ -290,6 +276,7 @@ interface PaymentCardProps {
 }
 
 function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCardProps) {
+  const entityLabel = useEntityLabel();
   const [expanded, setExpanded] = useState(false);
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
   const [isDownloadingSettlement, setIsDownloadingSettlement] = useState(false);
@@ -313,7 +300,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
         const fileRes = await filesApi.getFileDownloadUrl(receiptRes.fileId, false);
         window.open(fileRes.downloadUrl, '_blank');
       } else {
-        alert(t("tenant.payments.noReceiptPdf", "Receipt PDF is not available for download yet."));
+        alert(t("tenant.payments.noReceiptPdf"));
       }
     } catch (err) {
       console.error('Failed to download tenant receipt:', err);
@@ -357,7 +344,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
       }, 1000);
     } catch (err: any) {
       console.error("Failed to download settlement statement:", err);
-      toast.error(err?.message || t("tenant.payments.downloadSettlementError", "Failed to download settlement statement."));
+      toast.error(extractUserFriendlyError(err, t("tenant.payments.downloadSettlementError")));
     } finally {
       setIsDownloadingSettlement(false);
     }
@@ -399,7 +386,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
                 {payment.apartmentNumber && (
                   <span className="flex items-center gap-1">
                     <Home className="w-3 h-3 shrink-0 text-muted-foreground/70" />
-                    {t("tenant.payments.unit", "Unit")} {payment.apartmentNumber}
+                    {t("tenant.payments.unit")} {payment.apartmentNumber}
                   </span>
                 )}
               </div>
@@ -414,7 +401,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
               </p>
               {payment.amountPaid > 0 && payment.amountPaid < payment.amountDue && (
                 <p className="text-[11px] text-muted-foreground">
-                  {t("tenant.payments.remaining", "Remaining")}: {formatCurrency(amountRemaining, payment.currency)}
+                  {t("tenant.payments.remaining")}: {formatCurrency(amountRemaining, payment.currency)}
                 </p>
               )}
             </div>
@@ -431,7 +418,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
         {isPendingVerification && (
           <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs flex items-center gap-2 leading-relaxed">
             <Info className="w-4 h-4 shrink-0" />
-            <span>{t("tenant.payments.pendingVerificationNotice", "Payment verification submitted and pending property management review.")}</span>
+            <span>{t("tenant.payments.pendingVerificationNotice")}</span>
           </div>
         )}
 
@@ -441,18 +428,18 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-destructive font-bold">
                 <XCircle className="w-4 h-4 shrink-0" />
-                <span>{t("tenant.payments.submissionRejectedTitle", "تم رفض إثبات الدفع")}</span>
+                <span>{t("tenant.payments.submissionRejectedTitle")}</span>
               </div>
               {payment.latestSubmissionAmount && (
                 <span className="text-[11px] font-mono text-muted-foreground">
-                  {t("tenant.payments.submittedAmount", "المبلغ المقدم")}: {formatCurrency(payment.latestSubmissionAmount, payment.currency)}
+                  {t("tenant.payments.submittedAmount")}: {formatCurrency(payment.latestSubmissionAmount, payment.currency)}
                 </span>
               )}
             </div>
             {payment.latestSubmissionRejectionReason && (
               <div className="p-2.5 rounded-lg bg-background/60 border border-destructive/20 text-xs space-y-1">
                 <p className="text-[11px] text-muted-foreground font-semibold">
-                  {t("tenant.payments.rejectionReason", "سبب الرفض:")}
+                  {t("tenant.payments.rejectionReason")}
                 </p>
                 <p className="text-foreground leading-relaxed font-medium">
                   {payment.latestSubmissionRejectionReason}
@@ -468,7 +455,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Receipt className="w-3.5 h-3.5 text-primary" />
-                <span>{t("tenant.payments.paymentTransactions", "حركات الدفع")} ({payment.transactionReceipts!.length})</span>
+                <span>{t("tenant.payments.paymentTransactions")} ({payment.transactionReceipts!.length})</span>
               </span>
             </div>
             <div className="space-y-1.5">
@@ -500,7 +487,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
                     className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600/20 rounded-md text-[11px] font-medium transition-colors cursor-pointer shrink-0"
                   >
                     <Download className="w-3 h-3" />
-                    <span>{t("tenant.payments.viewTransactionReceipt", "عرض السند")}</span>
+                    <span>{t("tenant.payments.viewTransactionReceipt")}</span>
                   </button>
                 </div>
               ))}
@@ -523,7 +510,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
               className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-medium transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isDownloadingReceipt ? t("common.loading", "Loading...") : t("tenant.payments.downloadReceipt", "Download Receipt (سند قبض)")}</span>
+              <span>{isDownloadingReceipt ? t("common.loading") : t("tenant.payments.downloadReceipt")}</span>
             </button>
           </div>
         )}
@@ -535,10 +522,10 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
               <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
               <div>
                 <span className="font-bold text-primary">
-                  {t("tenant.payments.settlementStatement", "سند تسوية القسط")}
+                  {t("tenant.payments.settlementStatement")}
                 </span>
                 <p className="text-[11px] text-muted-foreground">
-                  {t("tenant.payments.settledInFull", "مدفوع بالكامل")} ({formatCurrency(payment.amountDue, payment.currency)})
+                  {t("tenant.payments.settledInFull")} ({formatCurrency(payment.amountDue, payment.currency)})
                 </p>
               </div>
             </div>
@@ -551,8 +538,8 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
               <Download className="w-3.5 h-3.5" />
               <span>
                 {isDownloadingSettlement
-                  ? t("common.loading", "Loading...")
-                  : t("tenant.payments.downloadSettlementStatement", "عرض سند التسوية النهائي")}
+                  ? t("common.loading")
+                  : t("tenant.payments.downloadSettlementStatement")}
               </span>
             </button>
           </div>
@@ -564,7 +551,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
             {payment.dueDate && (
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-primary/70" />
-                {t("tenant.payments.due", "Due Date")}: {formatDate(payment.dueDate, language)}
+                {t("tenant.payments.due")}: {formatDate(payment.dueDate, language)}
               </span>
             )}
             {payment.billingPeriodStart && payment.billingPeriodEnd && (
@@ -587,8 +574,8 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
               >
                 {isRejected ? <RotateCcw className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                 {isRejected
-                  ? t("tenant.payments.resubmitPaymentAction", "إعادة تقديم الدفعة")
-                  : t("tenant.payments.submitPaymentAction", "Submit Payment")}
+                  ? t("tenant.payments.resubmitPaymentAction")
+                  : t("tenant.payments.submitPaymentAction")}
               </button>
             )}
             <button
@@ -596,7 +583,7 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
               aria-expanded={expanded}
               className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer flex items-center gap-1"
             >
-              <span>{expanded ? t("tenant.payments.collapse", "Hide Details") : t("tenant.payments.expand", "View Details")}</span>
+              <span>{expanded ? t("tenant.payments.collapse") : t("tenant.payments.expand")}</span>
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           </div>
@@ -607,36 +594,36 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
       {expanded && (
         <div className="border-t border-border/60 bg-secondary/20 px-4 sm:px-5 py-4 space-y-3">
           <p className="text-xs font-bold text-foreground">
-            {t("tenant.payments.detailsTitle", "Payment Breakdown")}
+            {t("tenant.payments.detailsTitle")}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 text-[11.5px]">
             <div className="space-y-0.5">
-              <p className="text-muted-foreground">{t("tenant.payments.amountDue", "Amount Due")}</p>
+              <p className="text-muted-foreground">{t("tenant.payments.amountDue")}</p>
               <p className="font-bold text-foreground font-mono">{formatCurrency(payment.amountDue, payment.currency)}</p>
             </div>
             <div className="space-y-0.5">
-              <p className="text-muted-foreground">{t("tenant.payments.amountPaid", "Amount Paid")}</p>
+              <p className="text-muted-foreground">{t("tenant.payments.amountPaid")}</p>
               <p className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{formatCurrency(payment.amountPaid, payment.currency)}</p>
             </div>
             <div className="space-y-0.5">
-              <p className="text-muted-foreground">{t("tenant.payments.remaining", "Remaining Amount")}</p>
+              <p className="text-muted-foreground">{t("tenant.payments.remaining")}</p>
               <p className="font-bold text-foreground font-mono">{formatCurrency(amountRemaining, payment.currency)}</p>
             </div>
             {payment.paymentMethod !== null && payment.paymentMethod !== undefined && (
               <div className="space-y-0.5">
-                <p className="text-muted-foreground">{t("tenant.payments.paymentMethod", "Payment Method")}</p>
-                <p className="font-semibold text-foreground">{normalizePaymentMethod(payment.paymentMethod)}</p>
+                <p className="text-muted-foreground">{t("tenant.payments.paymentMethod")}</p>
+                <p className="font-semibold text-foreground">{entityLabel("paymentMethod", payment.paymentMethod)}</p>
               </div>
             )}
             {payment.receiptNumber && (
               <div className="space-y-0.5">
-                <p className="text-muted-foreground">{t("tenant.payments.receiptNumber", "Receipt Number")}</p>
+                <p className="text-muted-foreground">{t("tenant.payments.receiptNumber")}</p>
                 <p className="font-bold text-foreground font-mono">{payment.receiptNumber}</p>
               </div>
             )}
             {payment.notes && (
               <div className="col-span-2 sm:col-span-4 space-y-0.5 pt-1">
-                <p className="text-muted-foreground">{t("tenant.payments.notes", "Notes")}</p>
+                <p className="text-muted-foreground">{t("tenant.payments.notes")}</p>
                 <p className="text-foreground text-xs leading-relaxed">{payment.notes}</p>
               </div>
             )}
@@ -668,7 +655,7 @@ function SummaryBar({
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div className="p-4 rounded-xl bg-card border border-border shadow-2xs space-y-1">
         <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">
-          {t("tenant.payments.summaryTotal", "Total Invoiced")}
+          {t("tenant.payments.summaryTotal")}
         </p>
         <p className="text-lg font-bold text-foreground font-mono">
           {formatCurrency(totalDue, currency)}
@@ -676,7 +663,7 @@ function SummaryBar({
       </div>
       <div className="p-4 rounded-xl bg-card border border-border shadow-2xs space-y-1">
         <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">
-          {t("tenant.payments.summaryPaid", "Total Paid")}
+          {t("tenant.payments.summaryPaid")}
         </p>
         <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
           {formatCurrency(totalPaid, currency)}
@@ -684,10 +671,10 @@ function SummaryBar({
       </div>
       <div className="p-4 rounded-xl bg-card border border-border shadow-2xs space-y-1">
         <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">
-          {t("tenant.payments.summaryOverdue", "Overdue Payments")}
+          {t("tenant.payments.summaryOverdue")}
         </p>
         <p className={`text-lg font-bold font-mono ${overdueCount > 0 ? "text-destructive" : "text-foreground"}`}>
-          {overdueCount} {overdueCount === 1 ? t("tenant.payments.payment", "payment") : t("tenant.payments.payments", "payments")}
+          {overdueCount} {overdueCount === 1 ? t("tenant.payments.payment") : t("tenant.payments.payments")}
         </p>
       </div>
     </div>
@@ -733,8 +720,8 @@ export function TenantPaymentsPage() {
 
   return (
     <PageContainer
-      title={t("tenant.payments.title", "My Payments")}
-      description={t("tenant.payments.subtitle", "View your rent payment schedule and submit payment proofs for verification.")}
+      title={t("tenant.payments.title")}
+      description={t("tenant.payments.subtitle")}
     >
       <SubmitPaymentVerificationModal
         isOpen={isModalOpen}
@@ -745,7 +732,7 @@ export function TenantPaymentsPage() {
       <div className="max-w-4xl space-y-4">
         {/* Loading Skeleton */}
         {isLoading && (
-          <div className="space-y-4 animate-pulse" aria-busy="true" aria-label={t("common.loading", "Loading...")}>
+          <div className="space-y-4 animate-pulse" aria-busy="true" aria-label={t("common.loading")}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-20 bg-card rounded-xl border border-border" />
@@ -763,17 +750,17 @@ export function TenantPaymentsPage() {
             <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
             <div>
               <h3 className="text-base font-semibold text-foreground">
-                {t("tenant.payments.errorTitle", "Failed to load payments")}
+                {t("tenant.payments.errorTitle")}
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                {t("tenant.payments.errorDescription", "An error occurred while connecting to the server. Please try again.")}
+                {t("tenant.payments.errorDescription")}
               </p>
             </div>
             <button
               onClick={() => refetch()}
               className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-xs cursor-pointer inline-flex items-center gap-2"
             >
-              {t("tenant.payments.retry", "Retry")}
+              {t("tenant.payments.retry")}
             </button>
           </div>
         )}
@@ -792,10 +779,10 @@ export function TenantPaymentsPage() {
                 </div>
                 <div className="max-w-md mx-auto">
                   <h3 className="text-base font-bold text-foreground">
-                    {t("tenant.payments.emptyTitle", "No payment records found")}
+                    {t("tenant.payments.emptyTitle")}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {t("tenant.payments.emptyDescription", "Your rent payment schedule will appear here once your lease contract is activated by property management.")}
+                    {t("tenant.payments.emptyDescription")}
                   </p>
                 </div>
               </div>
@@ -804,10 +791,10 @@ export function TenantPaymentsPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">
                   <h2 className="text-sm font-bold text-foreground">
-                    {t("tenant.payments.listTitle", "Rent Payment Schedule")}
+                    {t("tenant.payments.listTitle")}
                   </h2>
                   <span className="text-xs text-muted-foreground font-mono">
-                    {sortedPayments.length} {sortedPayments.length === 1 ? t("tenant.payments.payment", "payment") : t("tenant.payments.payments", "payments")}
+                    {sortedPayments.length} {sortedPayments.length === 1 ? t("tenant.payments.payment") : t("tenant.payments.payments")}
                   </span>
                 </div>
 

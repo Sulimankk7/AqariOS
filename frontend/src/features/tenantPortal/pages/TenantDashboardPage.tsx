@@ -68,8 +68,8 @@ export function TenantDashboardPage() {
 
   return (
     <PageContainer
-      title={t("tenant.dashboard.title", "Tenant Portal")}
-      description={t("tenant.dashboard.subtitle", "Welcome to your AqariOS Tenant Self-Service Portal.")}
+      title={t("tenant.dashboard.title")}
+      description={t("tenant.dashboard.subtitle")}
     >
       <div className="max-w-4xl space-y-4">
         {/* Welcome Hero Card */}
@@ -77,7 +77,7 @@ export function TenantDashboardPage() {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-brand-green-600 dark:text-brand-green-400 font-semibold text-xs uppercase tracking-wider">
               <ShieldCheck className="w-4 h-4" />
-              <span>{t("tenant.dashboard.verifiedRole", "Authenticated Tenant Session")}</span>
+              <span>{t("tenant.dashboard.verifiedRole")}</span>
             </div>
             <h2 className="text-xl font-bold text-foreground">
               {isRtl
@@ -85,7 +85,7 @@ export function TenantDashboardPage() {
                 : `Welcome back, ${profile?.name || user?.name || ""}`}
             </h2>
             <p className="text-xs text-muted-foreground max-w-xl">
-              {t("tenant.dashboard.welcomeDesc", "Manage your tenant profile, notifications, active lease contract, and payment verification.")}
+              {t("tenant.dashboard.welcomeDesc")}
             </p>
           </div>
 
@@ -94,7 +94,7 @@ export function TenantDashboardPage() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium text-xs shadow-xs hover:bg-primary/90 transition-all cursor-pointer shrink-0"
           >
             <UserCircle className="w-4 h-4" />
-            <span>{t("tenant.dashboard.myProfileCard", "My Profile")}</span>
+            <span>{t("tenant.dashboard.myProfileCard")}</span>
             <ChevronIcon className="w-4 h-4" />
           </button>
         </div>
@@ -115,10 +115,10 @@ export function TenantDashboardPage() {
 
             <div>
               <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
-                {t("tenant.dashboard.myProfileCard", "My Profile")}
+                {t("tenant.dashboard.myProfileCard")}
               </h3>
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {t("tenant.dashboard.myProfileDesc", "View your personal information, employment, family members, and vehicles.")}
+                {t("tenant.dashboard.myProfileDesc")}
               </p>
             </div>
 
@@ -150,10 +150,10 @@ export function TenantDashboardPage() {
 
             <div>
               <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
-                {t("paymentVerification.modalTitle", "Submit Payment Proof")}
+                {t("paymentVerification.modalTitle")}
               </h3>
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {t("paymentVerification.modalSubtitle", "Upload your receipt and submit payment details for property management review.")}
+                {t("paymentVerification.modalSubtitle")}
               </p>
             </div>
 
@@ -178,10 +178,10 @@ export function TenantDashboardPage() {
 
             <div>
               <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
-                {t("tenant.dashboard.notificationsCard", "Notification Center")}
+                {t("tenant.dashboard.notificationsCard")}
               </h3>
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {t("tenant.dashboard.notificationsDesc", "Track all alerts and messages received from property management.")}
+                {t("tenant.dashboard.notificationsDesc")}
               </p>
             </div>
 
@@ -264,7 +264,7 @@ export function TenantDashboardPage() {
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-primary" />
               <h3 className="font-semibold text-sm">
-                {t("tenant.dashboard.recentNotificationsTitle", "Recent Notifications")}
+                {t("tenant.dashboard.recentNotificationsTitle")}
               </h3>
             </div>
           </div>
@@ -272,7 +272,7 @@ export function TenantDashboardPage() {
           {recentNotifications.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground text-xs bg-secondary/30 rounded-lg space-y-1">
               <Bell className="w-6 h-6 mx-auto opacity-30" />
-              <p>{t("tenant.dashboard.noNotificationsYet", "No notifications at this time.")}</p>
+              <p>{t("tenant.dashboard.noNotificationsYet")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -286,7 +286,7 @@ export function TenantDashboardPage() {
                     role="button"
                     tabIndex={0}
                     aria-expanded={isExpanded}
-                    aria-label={`${n.subject} - ${isUnread ? t("tenant.notifications.unreadStatus", "Unread") : t("tenant.notifications.readStatus", "Read")}`}
+                    aria-label={`${n.subject} - ${isUnread ? t("tenant.notifications.unreadStatus") : t("tenant.notifications.readStatus")}`}
                     onClick={() => handleNotificationClick(n)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -338,7 +338,7 @@ export function TenantDashboardPage() {
                             <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40">
                               <span className="flex items-center gap-1 font-medium text-primary">
                                 <Check className="w-3 h-3" aria-hidden="true" />
-                                {t("tenant.notifications.readStatus", "Read")}
+                                {t("tenant.notifications.readStatus")}
                               </span>
                               <span className="font-mono">
                                 {new Date(n.createdAt).toLocaleDateString(isRtl ? "ar-JO" : "en-US")}

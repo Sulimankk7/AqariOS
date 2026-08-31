@@ -20,6 +20,12 @@ import type {
   UserProfileDto,
   ActivateTenantAccountRequestDto,
   TenantActivationStatusDto,
+  PasswordResetRequestDto,
+  PasswordResetRequestResponseDto,
+  PasswordResetOtpVerifyDto,
+  PasswordResetOtpVerifyResponseDto,
+  PasswordResetCompleteDto,
+  PasswordResetCompleteResponseDto,
 } from "@/features/auth/types/auth.types";
 
 export const authApi = {
@@ -43,8 +49,8 @@ export const authApi = {
    * Requests an OTP verification challenge code.
    * POST /api/v1/auth/otp/request
    */
-  requestOtp(dto: OtpRequestDto): Promise<{ message: string; phone: string }> {
-    return http.post<{ message: string; phone: string }>("/api/v1/auth/otp/request", dto);
+  requestOtp(dto: OtpRequestDto): Promise<{ message: string }> {
+    return http.post<{ message: string }>("/api/v1/auth/otp/request", dto);
   },
 
   /**
@@ -55,12 +61,29 @@ export const authApi = {
     return http.post<LoginResponseDto>("/api/v1/auth/otp/verify", dto);
   },
 
+  requestPasswordReset(dto: PasswordResetRequestDto): Promise<PasswordResetRequestResponseDto> {
+    return http.post<PasswordResetRequestResponseDto>("/api/v1/auth/password-reset/request", dto, { skipAuth: true });
+  },
+
+  verifyPasswordResetOtp(dto: PasswordResetOtpVerifyDto): Promise<PasswordResetOtpVerifyResponseDto> {
+    return http.post<PasswordResetOtpVerifyResponseDto>("/api/v1/auth/password-reset/verify-otp", dto, { skipAuth: true });
+  },
+
+  completePasswordReset(dto: PasswordResetCompleteDto): Promise<PasswordResetCompleteResponseDto> {
+    return http.post<PasswordResetCompleteResponseDto>("/api/v1/auth/password-reset/complete", dto, { skipAuth: true });
+  },
+
   /**
    * Silent token refresh using HttpOnly cookie.
    * POST /api/v1/auth/refresh
    */
   refreshToken(): Promise<LoginResponseDto> {
     return http.post<LoginResponseDto>("/api/v1/auth/refresh", {});
+  },
+
+  /** Revokes the current server-side refresh session and clears its cookie. */
+  logout(): Promise<void> {
+    return http.post<void>("/api/v1/auth/logout", {});
   },
 
   /**

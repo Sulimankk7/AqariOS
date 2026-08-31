@@ -6,6 +6,7 @@ import {
   PaymentMethod,
   PaymentPurpose,
 } from '../types/financials.types';
+import { getLocale, getRuntimeLanguage } from '@/shared/i18n';
 
 type NumericEnum = Record<string, string | number>;
 
@@ -48,14 +49,13 @@ export const isReceivedPayment = (value: string | number | null | undefined) =>
   paymentPurposeValue(value) === PaymentPurpose.UnallocatedReceipt;
 
 /**
- * Financial Operations intentionally uses western digits in both UI languages.
- * These helpers affect presentation only; API values remain unchanged.
+ * Financial presentation follows the active application locale; API values remain unchanged.
  */
 export function formatFinancialNumber(
   value: number,
   options?: Intl.NumberFormatOptions,
 ): string {
-  return new Intl.NumberFormat('en-US', options).format(value);
+  return new Intl.NumberFormat(getLocale(getRuntimeLanguage()), options).format(value);
 }
 
 export function formatFinancialCurrency(
@@ -63,19 +63,19 @@ export function formatFinancialCurrency(
   currency = 'JOD',
   language: 'ar' | 'en' | string = 'ar',
 ): string {
-  const amount = formatFinancialNumber(value, {
+  return new Intl.NumberFormat(getLocale(language === 'en' ? 'en' : 'ar'), {
+    style: 'currency',
+    currency: currency.toUpperCase(),
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
-  const currencyLabel = currency.toUpperCase() === 'JOD' && language === 'ar' ? 'د.أ' : currency.toUpperCase();
-  return `${amount} ${currencyLabel}`;
+  }).format(value);
 }
 
 export function formatFinancialDate(value: Date | string | number | null | undefined): string {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(getLocale(getRuntimeLanguage()), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

@@ -47,6 +47,20 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
             .HasColumnType("numeric(12,3)")
             .IsRequired();
 
+        builder.Property(x => x.PricingModel)
+            .HasColumnName("pricing_model")
+            .HasColumnType("subscription_pricing_model_enum")
+            .HasDefaultValue(PropertyOS.Domain.Subscriptions.Enums.SubscriptionPricingModel.Fixed)
+            .IsRequired();
+
+        builder.Property(x => x.PaygMonthlyUnitPrice)
+            .HasColumnName("payg_monthly_unit_price")
+            .HasColumnType("numeric(12,3)");
+
+        builder.Property(x => x.PaygYearlyMonthlyEquivalentUnitPrice)
+            .HasColumnName("payg_yearly_monthly_equivalent_unit_price")
+            .HasColumnType("numeric(12,3)");
+
         builder.Property(x => x.Currency)
             .HasColumnName("currency")
             .HasColumnType("char(3)")
@@ -110,7 +124,8 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         builder.ToTable(t => 
         {
             t.HasCheckConstraint("chk_subscription_plans_trial_duration", "(supports_trial = true AND trial_duration_days > 0) OR (supports_trial = false AND trial_duration_days IS NULL)");
-            t.HasCheckConstraint("chk_subscription_plans_prices_positive", "monthly_price > 0 AND yearly_price > 0");
+            t.HasCheckConstraint("chk_subscription_plans_prices_positive", "(pricing_model = 'fixed' AND monthly_price > 0 AND yearly_price > 0) OR (pricing_model = 'pay_as_you_go' AND monthly_price = 0 AND yearly_price = 0)");
+            t.HasCheckConstraint("chk_subscription_plans_payg_prices", "(pricing_model = 'fixed' AND payg_monthly_unit_price IS NULL AND payg_yearly_monthly_equivalent_unit_price IS NULL) OR (pricing_model = 'pay_as_you_go' AND payg_monthly_unit_price IS NOT NULL AND payg_monthly_unit_price > 0 AND payg_yearly_monthly_equivalent_unit_price IS NOT NULL AND payg_yearly_monthly_equivalent_unit_price > 0)");
             t.HasCheckConstraint("chk_subscription_plans_quotas_positive", "(max_buildings IS NULL OR max_buildings > 0) AND (max_users IS NULL OR max_users > 0) AND (max_storage_mb IS NULL OR max_storage_mb > 0)");
             t.HasCheckConstraint("chk_subscription_plans_sort_order", "sort_order >= 0");
         });

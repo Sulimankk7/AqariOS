@@ -48,7 +48,8 @@ public sealed class PlansController : ControllerBase
             request.Code, request.NameEn, request.NameAr, request.DescriptionEn, request.DescriptionAr,
             request.MonthlyPrice, request.YearlyPrice, request.Currency, request.MaxBuildings,
             request.MaxUsers, request.MaxStorageMb, request.FeatureFlags, request.SupportsTrial,
-            request.TrialDurationDays, request.SortOrder), cancellationToken);
+            request.TrialDurationDays, request.SortOrder, request.PricingModel,
+            request.PaygMonthlyUnitPrice, request.PaygYearlyMonthlyEquivalentUnitPrice), cancellationToken);
         return CreatedAtAction(nameof(GetPlan), new { version = "1", planId = result.Id }, result);
     }
 

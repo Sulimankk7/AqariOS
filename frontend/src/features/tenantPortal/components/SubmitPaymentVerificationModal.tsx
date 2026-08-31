@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "@/shared/i18n";
+import { DatePicker } from "@/shared/components/ui/DatePicker";
 import { useSubmitPaymentVerification } from "../hooks/useTenantPayments";
 import { PaymentMethod } from "../types/tenantPortal.types";
 import type { TenantPaymentDto } from "../types/tenantPortal.types";
@@ -137,21 +138,19 @@ export function SubmitPaymentVerificationModal({
     if (!cleanPaymentId || !GUID_REGEX.test(cleanPaymentId)) {
       setUploadError(
         t(
-          "paymentVerification.paymentIdRequiredForUpload",
-          "Please select a valid payment from your payment schedule before uploading proof."
-        )
+          "paymentVerification.paymentIdRequiredForUpload")
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setUploadError(t("paymentVerification.fileTooLarge", "File size exceeds 15 MB limit."));
+      setUploadError(t("paymentVerification.fileTooLarge"));
       return;
     }
 
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      setUploadError(t("paymentVerification.fileInvalidType", "Invalid file type. Only PDF, PNG, and JPG images are allowed."));
+      setUploadError(t("paymentVerification.fileInvalidType"));
       return;
     }
 
@@ -188,7 +187,7 @@ export function SubmitPaymentVerificationModal({
       setUploadedFileName(confirmed.originalFilename);
       setUploadProgress(100);
     } catch (err: any) {
-      setUploadError(extractUserFriendlyError(err, t("paymentVerification.uploadFailed", "Failed to upload proof file.")));
+      setUploadError(extractUserFriendlyError(err, t("paymentVerification.uploadFailed")));
       setSelectedFile(null);
     } finally {
       setIsUploading(false);
@@ -203,9 +202,7 @@ export function SubmitPaymentVerificationModal({
     if (!cleanPaymentId || !GUID_REGEX.test(cleanPaymentId)) {
       setSubmitError(
         t(
-          "paymentVerification.invalidGuidError",
-          "Please select a valid payment from your payment schedule."
-        )
+          "paymentVerification.invalidGuidError")
       );
       return;
     }
@@ -214,7 +211,7 @@ export function SubmitPaymentVerificationModal({
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setSubmitError(
-        t("paymentVerification.invalidAmount", "Please enter a valid payment amount greater than zero.")
+        t("paymentVerification.invalidAmount")
       );
       return;
     }
@@ -232,32 +229,32 @@ export function SubmitPaymentVerificationModal({
     // Method-specific validation strictly matching backend validator rules
     if (paymentMethod === PaymentMethod.CliQ) {
       if (!referenceNumber.trim()) {
-        setSubmitError(t("paymentVerification.cliQRefRequired", "Please enter your CliQ alias or phone number."));
+        setSubmitError(t("paymentVerification.cliQRefRequired"));
         return;
       }
       if (!uploadedFileId) {
-        setSubmitError(t("paymentVerification.cliQProofRequired", "Please attach your CliQ transfer proof screenshot."));
+        setSubmitError(t("paymentVerification.cliQProofRequired"));
         return;
       }
     } else if (paymentMethod === PaymentMethod.Cheque) {
       if (!chequeNumber.trim()) {
-        setSubmitError(t("paymentVerification.chequeNumberRequired", "Please enter the cheque number (رقم الشيك)."));
+        setSubmitError(t("paymentVerification.chequeNumberRequired"));
         return;
       }
       if (!bankName.trim()) {
-        setSubmitError(t("paymentVerification.bankNameRequired", "Please enter the bank name (اسم البنك)."));
+        setSubmitError(t("paymentVerification.bankNameRequired"));
         return;
       }
       if (!chequeIssueDate) {
-        setSubmitError(t("paymentVerification.issueDateRequired", "Please select the cheque issue date (تاريخ إصدار الشيك)."));
+        setSubmitError(t("paymentVerification.issueDateRequired"));
         return;
       }
       if (!chequeDueDate) {
-        setSubmitError(t("paymentVerification.dueDateRequired", "Please select the cheque due date (تاريخ استحقاق الشيك)."));
+        setSubmitError(t("paymentVerification.dueDateRequired"));
         return;
       }
       if (new Date(chequeDueDate) < new Date(chequeIssueDate)) {
-        setSubmitError(t("paymentVerification.dueDateInvalid", "Cheque due date cannot be earlier than the issue date."));
+        setSubmitError(t("paymentVerification.dueDateInvalid"));
         return;
       }
     }
@@ -297,7 +294,7 @@ export function SubmitPaymentVerificationModal({
           setSubmitError(
             extractUserFriendlyError(
               err,
-              t("paymentVerification.submitFailed", "Failed to submit payment verification. Please check details and try again.")
+              t("paymentVerification.submitFailed")
             )
           );
         },
@@ -325,13 +322,13 @@ export function SubmitPaymentVerificationModal({
           <div className="flex items-center gap-2.5">
             <CreditCard className="w-5 h-5 text-brand-green-600 dark:text-brand-green-400 shrink-0" />
             <h3 id="modal-title" className="text-sm font-bold text-foreground">
-              {t("paymentVerification.modalTitle", "Submit Rent Payment Verification")}
+              {t("paymentVerification.modalTitle")}
             </h3>
           </div>
           <button
             onClick={handleReset}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X className="w-4 h-4" />
           </button>
@@ -347,16 +344,16 @@ export function SubmitPaymentVerificationModal({
               </div>
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-foreground">
-                  {t("paymentVerification.successTitle", "Payment Submitted for Verification")}
+                  {t("paymentVerification.successTitle")}
                 </h4>
                 <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                  {t("paymentVerification.successDescription", "Your payment details have been sent to property management for review.")}
+                  {t("paymentVerification.successDescription")}
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-secondary/50 border border-border/50 text-[11.5px] text-muted-foreground flex items-center gap-2.5 max-w-xs mx-auto text-start">
                 <Info className="w-4 h-4 text-brand-green-600 shrink-0" />
-                <span>{t("paymentVerification.submissionNote", "Note: Submissions are reviewed and verified by property management before receipts are generated.")}</span>
+                <span>{t("paymentVerification.submissionNote")}</span>
               </div>
 
               <div className="pt-2">
@@ -364,14 +361,14 @@ export function SubmitPaymentVerificationModal({
                   onClick={handleReset}
                   className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
                 >
-                  {t("common.done", "Done")}
+                  {t("common.done")}
                 </button>
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {t("paymentVerification.modalSubtitle", "Select your payment method and submit details for property management review.")}
+                {t("paymentVerification.modalSubtitle")}
               </p>
 
               {/* Selected Payment Human-Readable Summary Banner */}
@@ -380,10 +377,10 @@ export function SubmitPaymentVerificationModal({
                   <div className="flex items-center justify-between gap-3">
                     <div className="space-y-0.5 min-w-0">
                       <span className="text-[11px] text-muted-foreground block">
-                        {t("paymentVerification.selectedPaymentLabel", "Selected Rent Payment")}
+                        {t("paymentVerification.selectedPaymentLabel")}
                       </span>
                       <p className="font-bold text-foreground truncate">
-                        {selectedPayment.contractNumber ? `${selectedPayment.contractNumber}` : t("paymentVerification.installment", "Scheduled Installment")}
+                        {selectedPayment.contractNumber ? `${selectedPayment.contractNumber}` : t("paymentVerification.installment")}
                         {selectedPayment.dueDate && ` — ${new Date(selectedPayment.dueDate).toLocaleDateString(language)}`}
                       </p>
                     </div>
@@ -407,7 +404,7 @@ export function SubmitPaymentVerificationModal({
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40">
                     <div>
                       <span className="text-[10px] text-muted-foreground block">
-                        {t("paymentVerification.totalDue", "Total Installment Due / إجمالي القسط")}
+                        {t("paymentVerification.totalDue")}
                       </span>
                       <span className="font-medium text-foreground text-xs">
                         {selectedPayment.amountDue.toLocaleString()} {paymentCurrency}
@@ -415,7 +412,7 @@ export function SubmitPaymentVerificationModal({
                     </div>
                     <div className="text-right rtl:text-left">
                       <span className="text-[10px] text-muted-foreground block">
-                        {t("paymentVerification.remainingBalance", "المبلغ المستحق (Remaining Balance)")}
+                        {t("paymentVerification.remainingBalance")}
                       </span>
                       <span className="font-bold text-primary text-xs">
                         {remainingBalance.toLocaleString()} {paymentCurrency}
@@ -437,7 +434,7 @@ export function SubmitPaymentVerificationModal({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-foreground block">
-                    {t("paymentVerification.amountPaidLabel", "المبلغ المدفوع فعلياً (Actually Paid Amount) *")}
+                    {t("paymentVerification.amountPaidLabel")}
                   </label>
                   {remainingBalance > 0 && (
                     <button
@@ -445,7 +442,7 @@ export function SubmitPaymentVerificationModal({
                       onClick={() => setAmount(remainingBalance.toString())}
                       className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
                     >
-                      {t("paymentVerification.payFullBalance", "Pay Full Balance / دفع كامل المبلغ")}
+                      {t("paymentVerification.payFullBalance")}
                     </button>
                   )}
                 </div>
@@ -467,14 +464,14 @@ export function SubmitPaymentVerificationModal({
                   </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {t("paymentVerification.amountPaidHint", "أدخل المبلغ الذي قمت بتحويله أو دفعه فعلياً (يمكنك دفع كامل المبلغ المستحق أو دفعة جزئية).")}
+                  {t("paymentVerification.amountPaidHint")}
                 </p>
               </div>
 
               {/* 1. Payment Method Selector (Strictly 3 methods: Cash, CliQ, Cheque) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground block">
-                  {t("paymentVerification.paymentMethodLabel", "Payment Method")}
+                  {t("paymentVerification.paymentMethodLabel")}
                 </label>
                 <select
                   value={paymentMethod}
@@ -497,17 +494,17 @@ export function SubmitPaymentVerificationModal({
                 <div className="space-y-4 pt-1">
                   <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2.5 leading-relaxed">
                     <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{t("paymentVerification.cashNotice", "Cash payment declaration will be registered as 'Pending Verification' until cash is physically received and verified by property management.")}</span>
+                    <span>{t("paymentVerification.cashNotice")}</span>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-foreground block">
-                      {t("paymentVerification.cashNotesLabel", "Additional Notes (Optional)")}
+                      {t("paymentVerification.cashNotesLabel")}
                     </label>
                     <textarea
                       value={referenceNumber}
                       onChange={(e) => setReferenceNumber(e.target.value)}
-                      placeholder={t("paymentVerification.cashNotesPlaceholder", "Add any optional notes about this cash payment...")}
+                      placeholder={t("paymentVerification.cashNotesPlaceholder")}
                       rows={2}
                       className="w-full p-2.5 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                     />
@@ -520,19 +517,19 @@ export function SubmitPaymentVerificationModal({
                 <div className="space-y-4 pt-1">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-foreground block">
-                      {t("paymentVerification.cliQRefLabel", "CliQ Alias or Phone Number *")}
+                      {t("paymentVerification.cliQRefLabel")}
                     </label>
                     <input
                       type="text"
                       value={referenceNumber}
                       onChange={(e) => setReferenceNumber(e.target.value)}
-                      placeholder={t("paymentVerification.cliQRefPlaceholder", "e.g., CLQ-8823104 or 0791234567...")}
+                      placeholder={t("paymentVerification.cliQRefPlaceholder")}
                       className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono"
                       required
                     />
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                       <Info className="w-3 h-3 text-primary/70 shrink-0" />
-                      {t("paymentVerification.cliQRefHint", "Enter the CliQ alias or phone number associated with the account transferred from.")}
+                      {t("paymentVerification.cliQRefHint")}
                     </p>
                   </div>
 
@@ -540,10 +537,10 @@ export function SubmitPaymentVerificationModal({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold text-foreground block">
-                        {t("paymentVerification.cliQProofLabel", "CliQ Transfer Proof Screenshot *")}
+                        {t("paymentVerification.cliQProofLabel")}
                       </label>
                       <span className="text-[10px] font-semibold text-primary">
-                        {t("paymentVerification.proofRequiredBadge", "(Required)")}
+                        {t("paymentVerification.proofRequiredBadge")}
                       </span>
                     </div>
 
@@ -567,7 +564,7 @@ export function SubmitPaymentVerificationModal({
                           onClick={handleRemoveFile}
                           className="text-xs text-destructive hover:underline shrink-0"
                         >
-                          {t("paymentVerification.removeFile", "Remove")}
+                          {t("paymentVerification.removeFile")}
                         </button>
                       </div>
                     ) : (
@@ -591,7 +588,7 @@ export function SubmitPaymentVerificationModal({
                           <div className="space-y-2">
                             <Loader2 className="w-6 h-6 text-primary animate-spin mx-auto" />
                             <span className="text-xs text-muted-foreground block">
-                              {t("paymentVerification.uploadingFile", "Uploading file...")} ({uploadProgress}%)
+                              {t("paymentVerification.uploadingFile")} ({uploadProgress}%)
                             </span>
                             <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
                               <div
@@ -604,7 +601,7 @@ export function SubmitPaymentVerificationModal({
                           <div className="space-y-1">
                             <UploadCloud className="w-6 h-6 text-muted-foreground mx-auto" />
                             <span className="text-xs font-medium text-foreground block">
-                              {t("paymentVerification.uploadHint", "Click to upload proof file (max 15 MB)")}
+                              {t("paymentVerification.uploadHint")}
                             </span>
                             <span className="text-[10px] text-muted-foreground block">
                               PDF, PNG, JPG
@@ -623,13 +620,13 @@ export function SubmitPaymentVerificationModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground block">
-                        {t("paymentVerification.chequeNumberLabel", "رقم الشيك / Cheque Number *")}
+                        {t("paymentVerification.chequeNumberLabel")}
                       </label>
                       <input
                         type="text"
                         value={chequeNumber}
                         onChange={(e) => setChequeNumber(e.target.value)}
-                        placeholder="e.g. 104928"
+                        placeholder={t("paymentVerification.chequeNumberPlaceholder")}
                         className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono"
                         required
                       />
@@ -637,13 +634,13 @@ export function SubmitPaymentVerificationModal({
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground block">
-                        {t("paymentVerification.bankNameLabel", "اسم البنك / Bank Name *")}
+                        {t("paymentVerification.bankNameLabel")}
                       </label>
                       <input
                         type="text"
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
-                        placeholder="e.g. البنك العربي / Arab Bank"
+                        placeholder={t("paymentVerification.bankNamePlaceholder")}
                         className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         required
                       />
@@ -653,26 +650,24 @@ export function SubmitPaymentVerificationModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground block">
-                        {t("paymentVerification.chequeIssueDateLabel", "تاريخ إصدار الشيك / Issue Date *")}
+                        {t("paymentVerification.chequeIssueDateLabel")}
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         value={chequeIssueDate}
-                        onChange={(e) => setChequeIssueDate(e.target.value)}
-                        className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        onValueChange={(value) => setChequeIssueDate(value ?? "")}
+                        ariaLabel={t("paymentVerification.chequeIssueDateLabel")}
                         required
                       />
                     </div>
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground block">
-                        {t("paymentVerification.chequeDueDateLabel", "تاريخ استحقاق الشيك / Due Date *")}
+                        {t("paymentVerification.chequeDueDateLabel")}
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         value={chequeDueDate}
-                        onChange={(e) => setChequeDueDate(e.target.value)}
-                        className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        onValueChange={(value) => setChequeDueDate(value ?? "")}
+                        ariaLabel={t("paymentVerification.chequeDueDateLabel")}
                         required
                       />
                     </div>
@@ -682,10 +677,10 @@ export function SubmitPaymentVerificationModal({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold text-foreground block">
-                        {t("paymentVerification.chequeProofLabel", "Bank Cheque Photo (Optional)")}
+                        {t("paymentVerification.chequeProofLabel")}
                       </label>
                       <span className="text-[10px] text-muted-foreground">
-                        {t("paymentVerification.proofOptionalBadge", "(Optional)")}
+                        {t("paymentVerification.proofOptionalBadge")}
                       </span>
                     </div>
 
@@ -709,7 +704,7 @@ export function SubmitPaymentVerificationModal({
                           onClick={handleRemoveFile}
                           className="text-xs text-destructive hover:underline shrink-0"
                         >
-                          {t("paymentVerification.removeFile", "Remove")}
+                          {t("paymentVerification.removeFile")}
                         </button>
                       </div>
                     ) : (
@@ -733,7 +728,7 @@ export function SubmitPaymentVerificationModal({
                           <div className="space-y-2">
                             <Loader2 className="w-6 h-6 text-primary animate-spin mx-auto" />
                             <span className="text-xs text-muted-foreground block">
-                              {t("paymentVerification.uploadingFile", "Uploading file...")} ({uploadProgress}%)
+                              {t("paymentVerification.uploadingFile")} ({uploadProgress}%)
                             </span>
                             <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
                               <div
@@ -746,7 +741,7 @@ export function SubmitPaymentVerificationModal({
                           <div className="space-y-1">
                             <UploadCloud className="w-6 h-6 text-muted-foreground mx-auto" />
                             <span className="text-xs font-medium text-foreground block">
-                              {t("paymentVerification.uploadHint", "Click to upload proof file (max 15 MB)")}
+                              {t("paymentVerification.uploadHint")}
                             </span>
                             <span className="text-[10px] text-muted-foreground block">
                               PDF, PNG, JPG
@@ -767,7 +762,7 @@ export function SubmitPaymentVerificationModal({
                   disabled={submitMutation.isPending || isUploading}
                   className="px-4 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {t("paymentVerification.cancelButton", "Cancel")}
+                  {t("paymentVerification.cancelButton")}
                 </button>
 
                 <button
@@ -777,10 +772,10 @@ export function SubmitPaymentVerificationModal({
                 >
                   {submitMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {submitMutation.isPending
-                    ? t("paymentVerification.submittingButton", "Submitting...")
+                    ? t("paymentVerification.submittingButton")
                     : paymentMethod === PaymentMethod.Cash
-                    ? t("paymentVerification.submitCashButton", "Confirm Payment")
-                    : t("paymentVerification.submitButton", "Submit for Review")}
+                    ? t("paymentVerification.submitCashButton")
+                    : t("paymentVerification.submitButton")}
                 </button>
               </div>
             </form>

@@ -1,5 +1,8 @@
+import { translateLegacy } from '@/shared/i18n';
+
 export const leasingTranslations = {
   en: {
+    unknown: 'Unknown',
     pageTitle: 'Lease Contracts',
     pageDescription: 'Manage apartment lease contracts, renewals, terminations, and attached documents.',
     allContracts: 'All Contracts',
@@ -22,6 +25,7 @@ export const leasingTranslations = {
     startDate: 'Start Date',
     endDate: 'End Date',
     monthlyRent: 'Monthly Rent',
+    rentDefaultFromApartment: 'Default value from the selected apartment',
     securityDeposit: 'Security Deposit',
     paymentFrequency: 'Payment Frequency',
     paymentDueDay: 'Payment Due Day',
@@ -37,6 +41,12 @@ export const leasingTranslations = {
     terminate: 'Terminate Contract',
     attachDoc: 'Attach Document',
     searchPlaceholder: 'Search by contract number, tenant name, or unit number...',
+    contractNumberPlaceholder: 'e.g. LSE-2027-001',
+    datePlaceholder: 'YYYY-MM-DD',
+    zeroAmountPlaceholder: 'e.g. 0.00',
+    amountPlaceholder: 'e.g. 500.00',
+    smallAmountPlaceholder: 'e.g. 50.00',
+    installmentCountPlaceholder: 'e.g. 1',
     
     // Status labels
     statusDraft: 'Draft',
@@ -168,6 +178,7 @@ export const leasingTranslations = {
   },
 
   ar: {
+    unknown: 'غير معروف',
     pageTitle: 'عقود الإيجار',
     pageDescription: 'إدارة عقود الإيجار، التجديدات، إنهاء العقود، والمستندات المرفقة.',
     allContracts: 'جميع العقود',
@@ -190,6 +201,7 @@ export const leasingTranslations = {
     startDate: 'تاريخ البداية',
     endDate: 'تاريخ النهاية',
     monthlyRent: 'الإيجار الشهري',
+    rentDefaultFromApartment: 'القيمة الافتراضية من الشقة المحددة',
     securityDeposit: 'مبلغ التأمين',
     paymentFrequency: 'دورية الدفع',
     paymentDueDay: 'يوم الاستحقاق',
@@ -205,6 +217,12 @@ export const leasingTranslations = {
     terminate: 'إنهاء العقد',
     attachDoc: 'إرفاق مستند',
     searchPlaceholder: 'ابحث برقم العقد، اسم المستأجر، أو رقم الوحدة...',
+    contractNumberPlaceholder: 'مثال: LSE-2027-001',
+    datePlaceholder: 'سنة-شهر-يوم',
+    zeroAmountPlaceholder: 'مثال: 0.00',
+    amountPlaceholder: 'مثال: 500.00',
+    smallAmountPlaceholder: 'مثال: 50.00',
+    installmentCountPlaceholder: 'مثال: 1',
     
     // Status labels
     statusDraft: 'مسودة',
@@ -337,7 +355,6 @@ export const leasingTranslations = {
 };
 
 
-export function getLeasingTranslation(key: string, lang: 'en' | 'ar' = 'en'): string {
-  const dictionary = leasingTranslations[lang] || leasingTranslations.en;
-  return (dictionary as Record<string, string>)[key] || (leasingTranslations.en as Record<string, string>)[key] || key;
+export function getLeasingTranslation(key: string, lang: 'en' | 'ar' = 'ar'): string {
+  return translateLegacy('leasing', leasingTranslations, lang, key);
 }

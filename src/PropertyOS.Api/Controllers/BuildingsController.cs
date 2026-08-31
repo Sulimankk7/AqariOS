@@ -16,6 +16,7 @@ using PropertyOS.Application.Properties.Buildings.Queries.Common;
 using PropertyOS.Application.Properties.Buildings.Queries.GetBuildingById;
 using PropertyOS.Application.Properties.Buildings.Queries.ListBuildings;
 using PropertyOS.Application.Properties.Security;
+using PropertyOS.Application.Common.Numbering;
 
 namespace PropertyOS.Api.Controllers;
 
@@ -42,6 +43,11 @@ public class BuildingsController : ControllerBase
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    [HttpGet("next-code")]
+    [Authorize(Policy = PropertyPermissions.Create)]
+    public async Task<ActionResult<IdentifierSuggestionDto>> GetNextCode(CancellationToken cancellationToken = default) =>
+        Ok(await _mediator.Send(new GetNextIdentifierSuggestionQuery(IdentifierSuggestionKind.Building), cancellationToken));
 
     /// <summary>
     /// Creates a new building within the authenticated tenant's portfolio.

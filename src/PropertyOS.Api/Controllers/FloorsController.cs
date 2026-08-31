@@ -16,6 +16,7 @@ using PropertyOS.Application.Properties.Floors.Queries.Common;
 using PropertyOS.Application.Properties.Floors.Queries.GetFloorById;
 using PropertyOS.Application.Properties.Floors.Queries.ListFloors;
 using PropertyOS.Application.Properties.Security;
+using PropertyOS.Application.Common.Numbering;
 
 namespace PropertyOS.Api.Controllers;
 
@@ -41,6 +42,11 @@ public class FloorsController : ControllerBase
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    [HttpGet("api/v{version:apiVersion}/buildings/{buildingId:guid}/floors/next-number")]
+    [Authorize(Policy = PropertyPermissions.Create)]
+    public async Task<ActionResult<IdentifierSuggestionDto>> GetNextNumber([FromRoute] Guid buildingId, CancellationToken cancellationToken = default) =>
+        Ok(await _mediator.Send(new GetNextIdentifierSuggestionQuery(IdentifierSuggestionKind.Floor, BuildingId: buildingId), cancellationToken));
 
     /// <summary>
     /// Creates a new floor inside a building.

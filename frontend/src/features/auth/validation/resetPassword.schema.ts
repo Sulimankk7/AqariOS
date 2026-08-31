@@ -22,6 +22,8 @@ export function validateResetPasswordForm(
     errors.newPassword = "New password is required.";
   } else if (values.newPassword.length < 8) {
     errors.newPassword = "Password must be at least 8 characters.";
+  } else if (!/[A-Z]/.test(values.newPassword) || !/[a-z]/.test(values.newPassword) || !/[0-9]/.test(values.newPassword)) {
+    errors.newPassword = "Password must contain uppercase, lowercase, and numeric characters.";
   }
 
   if (!values.confirmPassword) {

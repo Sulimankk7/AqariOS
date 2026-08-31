@@ -20,8 +20,8 @@ export function toCreateBuildingRequest(formValues: BuildingFormValues): CreateB
     gpsLongitude: formValues.gpsLongitude,
     totalFloors: formValues.totalFloors,
     addressGovernorate: formValues.address.governorate,
-    addressCity: formValues.address.district || 'Amman',
-    addressNeighborhood: formValues.address.area || formValues.address.district || 'General',
+    addressCity: formValues.address.district,
+    addressNeighborhood: formValues.address.area,
     addressStreet: formValues.address.streetName || undefined,
     addressPostalCode: formValues.address.postalCode || undefined,
   };
@@ -41,8 +41,8 @@ export function toUpdateBuildingRequest(formValues: BuildingFormValues): UpdateB
     gpsLongitude: formValues.gpsLongitude,
     totalFloors: formValues.totalFloors,
     addressGovernorate: formValues.address.governorate,
-    addressCity: formValues.address.district || 'Amman',
-    addressNeighborhood: formValues.address.area || formValues.address.district || 'General',
+    addressCity: formValues.address.district,
+    addressNeighborhood: formValues.address.area,
     addressStreet: formValues.address.streetName || undefined,
     addressPostalCode: formValues.address.postalCode || undefined,
   };

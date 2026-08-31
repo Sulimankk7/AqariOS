@@ -16,6 +16,7 @@ using PropertyOS.Application.Properties.Apartments.Queries.Common;
 using PropertyOS.Application.Properties.Apartments.Queries.GetApartmentById;
 using PropertyOS.Application.Properties.Apartments.Queries.ListApartments;
 using PropertyOS.Application.Properties.Security;
+using PropertyOS.Application.Common.Numbering;
 
 namespace PropertyOS.Api.Controllers;
 
@@ -41,6 +42,11 @@ public class ApartmentsController : ControllerBase
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    [HttpGet("api/v{version:apiVersion}/floors/{floorId:guid}/apartments/next-number")]
+    [Authorize(Policy = PropertyPermissions.Create)]
+    public async Task<ActionResult<IdentifierSuggestionDto>> GetNextNumber([FromRoute] Guid floorId, CancellationToken cancellationToken = default) =>
+        Ok(await _mediator.Send(new GetNextIdentifierSuggestionQuery(IdentifierSuggestionKind.Apartment, FloorId: floorId), cancellationToken));
 
     /// <summary>
     /// Creates a new apartment/unit inside a floor.

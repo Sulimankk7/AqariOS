@@ -15,7 +15,7 @@ export function TenantLayout() {
           isOpenMobile={isOpenMobile}
           onCloseMobile={() => setIsOpenMobile(false)}
         />}
-        topbar={<Topbar onOpenMobileNav={() => setIsOpenMobile(true)} />}
+        topbar={<Topbar portal="tenant" onOpenMobileNav={() => setIsOpenMobile(true)} />}
       >
         <Outlet />
       </AppShell>

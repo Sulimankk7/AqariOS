@@ -1,6 +1,6 @@
 using System;
 using FluentValidation;
-using PropertyOS.Domain.Common.ValueObjects;
+using PropertyOS.Domain.Leasing;
 
 namespace PropertyOS.Application.Leasing.Commands.CreateTenant;
 
@@ -18,8 +18,9 @@ public class CreateTenantCommandValidator : AbstractValidator<CreateTenantComman
 
         RuleFor(v => v.Phone)
             .NotEmpty().WithMessage("Phone is required.")
-            .MaximumLength(20).WithMessage("Phone must not exceed 20 characters.")
-            .Must(BeAValidE164PhoneNumber).WithMessage("Phone must be a valid E.164 phone number (e.g. +962791234567).")
+            .MaximumLength(40).WithMessage("Formatted phone input must not exceed 40 characters.")
+            .Must((command, phone) => TenantPhoneNumber.TryNormalize(phone, command.PhoneCountryCode, out _))
+            .WithMessage("Phone must be valid E.164, or a local number with an explicitly selected country.")
             .When(v => !string.IsNullOrWhiteSpace(v.Phone), ApplyConditionTo.CurrentValidator);
 
         RuleFor(v => v.Email)
@@ -33,19 +34,6 @@ public class CreateTenantCommandValidator : AbstractValidator<CreateTenantComman
 
         RuleFor(v => v.Employer)
             .MaximumLength(100).WithMessage("Employer must not exceed 100 characters.");
-    }
-
-    private static bool BeAValidE164PhoneNumber(string phone)
-    {
-        try
-        {
-            _ = new PhoneNumber(phone);
-            return true;
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
     }
 
     private static bool BeAValidEmailAddress(string email)

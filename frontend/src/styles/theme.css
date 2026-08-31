@@ -508,6 +508,7 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-info-bg: var(--info-bg);
+  --color-scrim: var(--scrim);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);

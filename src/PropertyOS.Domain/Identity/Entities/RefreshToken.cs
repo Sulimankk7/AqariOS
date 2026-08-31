@@ -19,6 +19,8 @@ public class RefreshToken
     public string? UserAgent { get; set; }
     public DateTimeOffset IssuedAt { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
+    public bool IsPersistent { get; set; } = true;
+    public DateTimeOffset? AbsoluteSessionExpiresAt { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public RevokeReason? RevokedReason { get; set; }
 

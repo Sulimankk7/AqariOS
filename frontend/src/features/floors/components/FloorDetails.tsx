@@ -47,9 +47,9 @@ export function FloorDetails({ floor }: FloorDetailsProps) {
               </CardTitle>
               <CardDescription className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                 {/* Clickable Building Link */}
-                <div className="flex items-center gap-1.5" title={`Building: ${buildingName}`}>
+                <div className="flex items-center gap-1.5" title={`${t('building')}: ${buildingName}`}>
                   <Building2 className="h-3.5 w-3.5 text-primary" />
-                  <span>Building:</span>
+                  <span>{t('building')}:</span>
                   <Link 
                     to={`/buildings/${floor.buildingId}`} 
                     className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors cursor-pointer"
@@ -59,7 +59,7 @@ export function FloorDetails({ floor }: FloorDetailsProps) {
                 </div>
 
                 <div className="flex items-center gap-1.5 font-mono">
-                  <span>Floor #:</span>
+                  <span>{t('floorNumber')}:</span>
                   <span className="font-semibold text-foreground">#{floor.floorNumber}</span>
                 </div>
               </CardDescription>
@@ -71,7 +71,7 @@ export function FloorDetails({ floor }: FloorDetailsProps) {
               </Badge>
               <Badge variant="secondary" className="flex items-center gap-1">
                 <Home className="h-3 w-3" />
-                {apartmentCount} Units
+                {apartmentCount} {t('tableApartments')}
               </Badge>
               <Button 
                 variant="outline" 

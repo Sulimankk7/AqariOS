@@ -1,4 +1,5 @@
 using FluentValidation;
+using PropertyOS.Application.Identity;
 
 namespace PropertyOS.Application.DTOs.Identity.Validators;
 
@@ -13,13 +14,13 @@ public class OtpVerifyDtoValidator : AbstractValidator<OtpVerifyDto>
     public OtpVerifyDtoValidator()
     {
         RuleFor(x => x.Phone)
-            .NotEmpty()
-            .WithMessage("Phone number is required.");
+            .Must(phone => OtpPhoneNumber.TryNormalize(phone, out _))
+            .WithMessage("Phone number must be a valid international E.164 number.");
 
         RuleFor(x => x.Code)
             .NotEmpty()
-            .Length(6)
-            .WithMessage("OTP code must be exactly 6 digits.");
+            .Matches("^\\d{6}$")
+            .WithMessage("OTP code must be exactly 6 numeric digits.");
 
         RuleFor(x => x.Purpose)
             .IsInEnum()

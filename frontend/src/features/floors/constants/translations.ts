@@ -1,10 +1,14 @@
+import { translateLegacy } from '@/shared/i18n';
+
 export const dictionary = {
   en: {
+    unknown: 'Unknown',
     // Headers & Labels
     floors: 'Floors',
     addFloor: 'Add Floor',
     editFloor: 'Edit Floor',
     floorDetails: 'Floor Details',
+    building: 'Building',
     createPageDescription: 'Register a new floor under this property building.',
     editPageDescription: 'Update floor designation label and floor type.',
     backToBuilding: 'Back to Building',
@@ -65,11 +69,13 @@ export const dictionary = {
     },
   },
   ar: {
+    unknown: 'غير معروف',
     // Headers & Labels
     floors: 'الطوابق',
     addFloor: 'إضافة طابق',
     editFloor: 'تعديل الطابق',
     floorDetails: 'تفاصيل الطابق',
+    building: 'المبنى',
     createPageDescription: 'تسجيل طابق جديد تحت هذا المبنى العقاري.',
     editPageDescription: 'تحديث المسمى والتصنيف الخاص بالطابق.',
     backToBuilding: 'الرجوع إلى المبنى',
@@ -131,16 +137,6 @@ export const dictionary = {
   }
 };
 
-export function getFloorTranslation(key: string, lang: 'en' | 'ar' = 'en'): string {
-  const dict = dictionary[lang] || dictionary.en;
-  const parts = key.split('.');
-  let current: any = dict;
-  for (const part of parts) {
-    if (current && typeof current === 'object' && part in current) {
-      current = current[part];
-    } else {
-      return key;
-    }
-  }
-  return typeof current === 'string' ? current : key;
+export function getFloorTranslation(key: string, lang: 'en' | 'ar' = 'ar'): string {
+  return translateLegacy('floors', dictionary, lang, key);
 }

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "i18n:audit": "node scripts/audit-i18n.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

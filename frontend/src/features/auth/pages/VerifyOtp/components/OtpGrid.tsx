@@ -13,8 +13,9 @@ import { useOtpTimer } from "@/features/auth/hooks/useOtpTimer";
 import { ArchitecturalButton } from "@/features/auth/components/ArchitecturalButton";
 import { authApi } from "@/features/auth/api/auth.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { ApiError } from "@/shared/lib/http";
 import { ROUTES } from "@/config/routes";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
+import { ApiError } from "@/shared/lib/http";
 
 interface OtpGridProps {
   lang: "en" | "ar";
@@ -84,13 +85,15 @@ export function OtpGrid({ lang, onFeedbackMessage }: OtpGridProps) {
       await authApi.requestOtp({ phone: fullPhone, purpose: 0 });
       timer.start(60);
       if (onFeedbackMessage) {
-        onFeedbackMessage("Verification code resent successfully!");
+        onFeedbackMessage(t.otpResent);
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else if (err instanceof Error) {
-        setErrorMessage(err.message);
+      if (err instanceof ApiError && err.status === 429) {
+        const retryAfter = err.retryAfterSeconds ?? 60;
+        timer.start(retryAfter);
+        setErrorMessage(`Please wait ${retryAfter} seconds before requesting another code.`);
+      } else {
+        setErrorMessage(extractUserFriendlyError(err, t.otpError));
       }
     }
   };
@@ -113,14 +116,13 @@ export function OtpGrid({ lang, onFeedbackMessage }: OtpGridProps) {
       const verifiedUser = await login(response.accessToken, response.user);
 
       if (onFeedbackMessage) {
-        onFeedbackMessage("Verification successful. Welcome!");
+        onFeedbackMessage(t.verificationSuccess);
       }
 
       const targetPath = verifiedUser.roleCode === "TENANT" ? "/tenant/dashboard" : ROUTES.dashboard.root;
       navigate(targetPath, { replace: true });
     } catch (err: any) {
-      const errorMsg = err?.detail || err?.message || "Invalid OTP. Please try again.";
-      setErrorMessage(errorMsg);
+      setErrorMessage(extractUserFriendlyError(err, t.otpError));
     } finally {
       setIsLoading(false);
     }

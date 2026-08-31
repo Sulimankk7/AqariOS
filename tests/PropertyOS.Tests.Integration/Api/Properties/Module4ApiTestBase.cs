@@ -35,7 +35,9 @@ public abstract class Module4ApiTestBase : IAsyncLifetime, IClassFixture<WebAppl
             {
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ConnectionStrings:DefaultConnection"] = fixture.RawConnectionString
+                    ["ConnectionStrings:DefaultConnection"] = fixture.RawConnectionString,
+                    ["Jwt:Secret"] = "integration-test-only-jwt-secret-at-least-32-bytes",
+                    ["Otp:HashKey"] = "integration-test-only-otp-hmac-key-at-least-32-bytes"
                 });
             });
 
@@ -60,7 +62,11 @@ public abstract class Module4ApiTestBase : IAsyncLifetime, IClassFixture<WebAppl
         await Fixture.ResetDatabaseAsync();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public Task DisposeAsync()
+    {
+        Factory.Dispose();
+        return Task.CompletedTask;
+    }
 
     protected HttpClient CreateClientWithPermissions(Guid userId, Guid companyId, params string[] permissions)
     {

@@ -17,7 +17,7 @@ export function contractStatusToLabel(status: ContractStatus, t: (key: string) =
     case ContractStatus.Terminated: return t('statusTerminated');
     case ContractStatus.Cancelled: return t('statusCancelled');
     case ContractStatus.Superseded: return t('statusSuperseded');
-    default: return String(status);
+    default: return t('unknown');
   }
 }
 
@@ -42,7 +42,7 @@ export function contractDocumentTypeToLabel(type: ContractDocumentType, t: (key:
     case ContractDocumentType.Passport: return t('docPassport');
     case ContractDocumentType.IncomeProof: return t('docIncomeProof');
     case ContractDocumentType.Other: return t('docOther');
-    default: return String(type);
+    default: return t('unknown');
   }
 }
 
@@ -50,7 +50,7 @@ export function legalRegimeToLabel(regime: LegalRegime, t: (key: string) => stri
   switch (regime) {
     case LegalRegime.Standard: return t('legalStandard');
     case LegalRegime.OldRentLaw: return t('legalOldRentLaw');
-    default: return String(regime);
+    default: return t('unknown');
   }
 }
 
@@ -60,7 +60,7 @@ export function paymentFrequencyToLabel(frequency: PaymentFrequency, t: (key: st
     case PaymentFrequency.Quarterly: return t('freqQuarterly');
     case PaymentFrequency.SemiAnnual: return t('freqSemiAnnual');
     case PaymentFrequency.Annual: return t('freqAnnual');
-    default: return String(frequency);
+    default: return t('unknown');
   }
 }
 
@@ -68,7 +68,7 @@ export function tenantTypeToLabel(type: TenantType, t: (key: string) => string):
   switch (type) {
     case TenantType.Personal: return t('tenantPersonal');
     case TenantType.Corporate: return t('tenantCorporate');
-    default: return String(type);
+    default: return t('unknown');
   }
 }
 
@@ -80,6 +80,6 @@ export function terminationTypeToLabel(type: TerminationType, t: (key: string) =
     case TerminationType.TenantRequest: return t('termTenantRequest');
     case TerminationType.OwnerRequest: return t('termOwnerRequest');
     case TerminationType.LegalEviction: return t('termLegalEviction');
-    default: return String(type);
+    default: return t('unknown');
   }
 }

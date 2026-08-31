@@ -3,7 +3,7 @@ import { X, Building2, User, Mail, Phone, Calendar, Globe } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { ErrorState } from "@/shared/components/ui/Feedback";
-import { useTranslation } from "@/shared/i18n";
+import { useEntityLabel, useTranslation } from "@/shared/i18n";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useLandlordRegistration } from "../hooks/useLandlordRegistrations";
 import { getPlatformErrorMessage } from "../utils/platformAdminErrors";
@@ -24,6 +24,7 @@ export function LandlordRegistrationDrawer({
   onReject,
 }: Props) {
   const { t, formatDate, language } = useTranslation();
+  const entityLabel = useEntityLabel();
   const { user } = useAuth();
   const query = useLandlordRegistration(open ? registrationId : null);
 
@@ -48,13 +49,13 @@ export function LandlordRegistrationDrawer({
     if (!type) return "—";
     const lower = type.toLowerCase();
     if (lower.includes("individual") || type === "0") {
-      return language === "ar" ? "مالك فردي" : "Individual Owner";
+      return entityLabel("companyType", "IndividualOwner");
     }
     if (lower.includes("management") || type === "1") {
-      return language === "ar" ? "شركة إدارة عقارات" : "Property Management Company";
+      return entityLabel("companyType", "PropertyManagementCompany");
     }
     if (lower.includes("investment") || type === "2") {
-      return language === "ar" ? "شركة استثمارية" : "Investment Company";
+      return entityLabel("companyType", "InvestmentCompany");
     }
     return type;
   };

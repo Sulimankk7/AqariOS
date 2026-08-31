@@ -8,7 +8,6 @@
 import React, { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import { User, Building2, ChevronDown, Mail, Smartphone, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { GoogleLogo } from "@/shared/components/GoogleLogo";
 import { FieldLabel, inputClass } from "@/features/auth/components/FieldLabel";
 import { ArchitecturalButton } from "@/features/auth/components/ArchitecturalButton";
 import { TRANSLATIONS } from "@/features/auth/constants/translations";
@@ -19,6 +18,7 @@ import { CompanyType } from "@/features/auth/types/auth.types";
 import { isPasswordMismatch } from "@/features/auth/validation/resetPassword.schema";
 import { authApi } from "@/features/auth/api/auth.api";
 import { ROUTES } from "@/config/routes";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
 
 interface RegisterFormProps {
   lang: "en" | "ar";
@@ -62,7 +62,7 @@ export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
       const cleanedLocalPhone = phone.replace(/\s+/g, "").replace(/^0+/, "");
       const fullPhone = phone.trim() ? `${selectedCountry.dialCode}${cleanedLocalPhone}` : undefined;
 
-      const response = await authApi.register({
+      await authApi.register({
         fullName: fullName.trim(),
         companyName: companyName.trim(),
         displayName: displayName.trim() || undefined,
@@ -75,19 +75,18 @@ export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
       });
 
       if (onFeedbackMessage) {
-        onFeedbackMessage(lang === "ar" ? "تم استلام طلب التسجيل وهو الآن بانتظار المراجعة." : response.message);
+        onFeedbackMessage(t.registrationSubmitted);
       }
       navigate(ROUTES.auth.login, { replace: true });
     } catch (err: any) {
-      const errorMsg = err?.detail || err?.message || "An unexpected error occurred during registration.";
-      setErrorMessage(errorMsg);
+      setErrorMessage(extractUserFriendlyError(err, t.registrationError));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSSO = () => {
-    setErrorMessage("Google SSO is not connected in this phase.");
+    setErrorMessage(t.googleUnavailable);
   };
 
   return (
@@ -413,19 +412,7 @@ export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
           {t.createAccountBtn}
         </ArchitecturalButton>
 
-        {/* Google SSO Button */}
-        <button
-          type="button"
-          onClick={handleGoogleSSO}
-          className={`w-full h-10 font-medium text-[13.5px] rounded-lg transition-colors flex items-center justify-center gap-2.5 cursor-pointer border mt-1 ${
-            isDark
-              ? "bg-[#161B22]/60 hover:bg-[#161B22] text-gray-200 border-white/10 hover:border-white/20"
-              : "bg-white hover:bg-[#F9FAFB] text-[#374151] border-[#E5E7EB] hover:border-[#D1D5DB]"
-          }`}
-        >
-          <GoogleLogo />
-          <span>{t.googleSSO}</span>
-        </button>
+        
 
         <p
           className={`text-[13px] text-center pt-1 ${

@@ -5,3 +5,5 @@
 
 export * from "./I18nProvider";
 export * from "./formatters";
+export * from "./runtime";
+export * from "./entityLabels";

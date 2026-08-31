@@ -10,8 +10,13 @@ using PropertyOS.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Append appsettings.Local.json to allow local overrides while preserving framework defaults
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// Local secrets are development-only. Environment variables override file-based settings.
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+}
+
+builder.Configuration.AddEnvironmentVariables();
 
 // Configure Serilog
 builder.Host.UseSerilog((context, configuration) =>
@@ -353,6 +358,45 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit  = otpQueueLimit,
                 Window      = TimeSpan.FromSeconds(otpWindowSecs)
             }));
+
+    var otpVerifyPermitLimit = builder.Configuration.GetValue<int>("RateLimiting:OtpVerify:PermitLimit", 10);
+    var otpVerifyWindowSecs = builder.Configuration.GetValue<int>("RateLimiting:OtpVerify:WindowSeconds", 60);
+    options.AddPolicy("AuthOtpVerifyLimit", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = otpVerifyPermitLimit,
+                QueueLimit = 0,
+                Window = TimeSpan.FromSeconds(otpVerifyWindowSecs)
+            }));
+
+    var passwordResetRequestPermitLimit = builder.Configuration.GetValue<int>("RateLimiting:PasswordResetRequest:PermitLimit", 3);
+    var passwordResetRequestWindowSecs = builder.Configuration.GetValue<int>("RateLimiting:PasswordResetRequest:WindowSeconds", 60);
+    options.AddPolicy("AuthPasswordResetRequestLimit", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = passwordResetRequestPermitLimit,
+                QueueLimit = 0,
+                Window = TimeSpan.FromSeconds(passwordResetRequestWindowSecs)
+            }));
+
+    var passwordResetVerifyPermitLimit = builder.Configuration.GetValue<int>("RateLimiting:PasswordResetVerify:PermitLimit", 10);
+    var passwordResetVerifyWindowSecs = builder.Configuration.GetValue<int>("RateLimiting:PasswordResetVerify:WindowSeconds", 60);
+    options.AddPolicy("AuthPasswordResetVerifyLimit", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = passwordResetVerifyPermitLimit,
+                QueueLimit = 0,
+                Window = TimeSpan.FromSeconds(passwordResetVerifyWindowSecs)
+            }));
 });
 
 // Proxy trust: X-Forwarded-For is honored ONLY from proxies inside configured
@@ -394,19 +438,8 @@ using (var scope = app.Services.CreateScope())
 // Must run before anything that reads RemoteIpAddress (rate limiter partitions).
 app.UseForwardedHeaders();
 
-app.UseExceptionHandler();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
-
-app.UseHttpsRedirection();
-
-app.UseRouting();
-
+// Keep request logging outside exception handling so it observes the final status
+// produced by GlobalExceptionHandler (for example, 401 instead of an intermediate 500).
 app.UseSerilogRequestLogging(options =>
 {
     options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
@@ -431,6 +464,19 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
+app.UseExceptionHandler();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
+app.UseHttpsRedirection();
+
+app.UseRouting();
+
 app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
@@ -448,6 +494,12 @@ if (!string.IsNullOrEmpty(connectionString))
         "leasing-expire-lease-contracts",
         job => job.ExecuteSweepAsync(null, PropertyOS.Infrastructure.Leasing.Jobs.ExpireLeaseContractsJob.DefaultBatchSize, CancellationToken.None),
         "15 0 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
+
+    recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Subscriptions.Jobs.RefreshPaygUsageJob>(
+        "subscriptions-refresh-payg-usage",
+        job => job.ExecuteSweepAsync(null, CancellationToken.None),
+        "30 0 * * *",
         new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman") });
 
     recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Financials.Jobs.GenerateScheduledInstallmentsJob>(

@@ -9,6 +9,20 @@ namespace PropertyOS.Application.Common.Interfaces;
 public interface IEmailSender
 {
     /// <summary>
+    /// Sends a transactional email through the configured provider.
+    /// </summary>
+    /// <remarks>
+    /// Provider-specific errors are handled by the implementation and reported as a
+    /// false result. Message content and credentials must never be logged.
+    /// </remarks>
+    Task<bool> SendAsync(
+        string recipientEmail,
+        string subject,
+        string htmlBody,
+        string? textBody = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Sends an Arabic-first tenant portal activation email via transactional email gateway.
     /// </summary>
     /// <param name="recipientEmail">Destination email address.</param>

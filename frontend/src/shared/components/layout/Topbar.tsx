@@ -1,377 +1,156 @@
-/**
- * Topbar Component — Enterprise Shell Header.
- *
- * Designed for exceptional UX, visual clarity, and full RTL/LTR responsiveness.
- *
- * Contains:
- * - Mobile hamburger menu trigger
- * - Company/Organization Switcher (Sleek dropdown badge)
- * - Global Search trigger with Ctrl+K shortcut badge
- * - Quick Action Tools (Language Switcher, Theme Selector, Notification Bell)
- * - User Profile & Identity Menu
- */
-
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  Menu,
-  Search,
-  Sun,
-  Moon,
-  Monitor,
-  Globe,
-  Bell,
-  Building2,
-  ChevronDown,
-  LogOut,
-  UserCircle,
-  SlidersHorizontal,
-  Check,
-  Palette,
-  Sparkles,
-  ShieldCheck,
-} from "lucide-react";
-import { useTranslation } from "@/shared/i18n";
-import { useTheme } from "@/shared/theme";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Building2, Check, ChevronDown, Globe, LogOut, Menu, Monitor, Moon, Search, ShieldCheck, SlidersHorizontal, Sun, UserCircle } from "lucide-react";
 import { ROUTES } from "@/config/routes";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { useTenantProfile } from "@/features/tenantPortal/hooks/useTenantProfile";
+import { useTranslation } from "@/shared/i18n";
+import { useTheme } from "@/shared/theme";
+import { cn } from "@/shared/ui/utils";
+
+export type PortalContext = "company" | "tenant" | "platform";
 
 export interface TopbarProps {
   onOpenMobileNav: () => void;
+  portal?: PortalContext;
+  showSearch?: boolean;
+  showNotifications?: boolean;
 }
 
-export function Topbar({ onOpenMobileNav }: TopbarProps) {
+export function Topbar({ onOpenMobileNav, portal = "company", showSearch = portal === "company", showNotifications = true }: TopbarProps) {
   const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  const isTenant = user?.roleCode === "TENANT";
   const { data: tenantProfile } = useTenantProfile();
+  const headerRef = useRef<HTMLElement>(null);
+  const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Role-aware identity display: Tenants use authoritative Tenant profile; Landlords use authenticated User identity
+  const isTenant = portal === "tenant";
+  const isPlatform = portal === "platform";
   const displayName = isTenant && tenantProfile?.name ? tenantProfile.name : (user?.name ?? "");
   const displayEmail = isTenant && tenantProfile?.email ? tenantProfile.email : (user?.email ?? "");
-  const avatarInitial = displayName ? displayName[0].toUpperCase() : (user?.name ? user.name[0].toUpperCase() : "U");
+  const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
+  const companyInfo = portal === "company" && user ? {
+    name: user.companyName || t("common.organizationName", { name: user.name }),
+    code: "AQ-ORG",
+    avatar: (user.companyName || user.name || "A").slice(0, 1).toUpperCase(),
+  } : null;
 
-  const [showCompanyMenu, setShowCompanyMenu] = useState(false);
-  const [showThemeMenu, setShowThemeMenu] = useState(false);
-  const [showNotificationMenu, setShowNotificationMenu] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-
-  const headerRef = useRef<HTMLHeadingElement>(null);
-
-  // Close all dropdowns on click outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const closeMenus = (event: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
-        setShowCompanyMenu(false);
-        setShowThemeMenu(false);
-        setShowNotificationMenu(false);
-        setShowUserMenu(false);
+        setCompanyMenuOpen(false);
+        setThemeMenuOpen(false);
+        setUserMenuOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", closeMenus);
+    return () => document.removeEventListener("mousedown", closeMenus);
   }, []);
 
-  const toggleLanguage = () => {
-    setLanguage(language === "en" ? "ar" : "en");
+  const closeOtherMenus = (keep: "company" | "theme" | "user") => {
+    if (keep !== "company") setCompanyMenuOpen(false);
+    if (keep !== "theme") setThemeMenuOpen(false);
+    if (keep !== "user") setUserMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    setShowUserMenu(false);
-    logout();
-  };
+  const toggleLanguage = () => setLanguage(language === "ar" ? "en" : "ar");
+  const contextLabel = isPlatform ? t("platformAdmin.title") : isTenant ? t("tenant.portal") : companyInfo?.name;
+  const ContextIcon = isPlatform || isTenant ? ShieldCheck : Building2;
 
-  const handleNavigate = (path: string) => {
-    setShowUserMenu(false);
-    setShowCompanyMenu(false);
-    navigate(path);
-  };
-
-  // Company details derived from session (for Landlord)
-  const companyInfo = user && !isTenant
-    ? {
-        name: user.companyName || `${user.name}'s Organization`,
-        code: "AQ-ORG",
-        avatar: user.companyName ? user.companyName[0].toUpperCase() : user.name ? user.name[0].toUpperCase() : "A",
-      }
-    : null;
+  const themeOptions = [
+    { key: "light" as const, label: t("theme.light"), icon: Sun },
+    { key: "dark" as const, label: t("theme.dark"), icon: Moon },
+    { key: "system" as const, label: t("theme.system"), icon: Monitor },
+  ];
 
   return (
-    <header
-      ref={headerRef}
-      className="sticky top-0 z-30 flex h-16 w-full items-center justify-between gap-3 border-b border-border-strong bg-topbar/95 px-3 backdrop-blur-md sm:px-5"
-      role="banner"
-    >
-      {/* ── Start (Left in LTR / Right in RTL): Mobile Hamburger + Context Indicator ── */}
-      <div className="flex items-center gap-2">
-        {/* Mobile Hamburger */}
-        <button
-          onClick={onOpenMobileNav}
-          aria-label="Open navigation menu"
-          className="lg:hidden p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground cursor-pointer transition-colors"
-        >
-          <Menu className="w-5 h-5" />
+    <header ref={headerRef} role="banner" data-slot="topbar" data-portal={portal} className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between gap-2 border-b border-border-strong bg-topbar/95 px-2.5 shadow-e1 backdrop-blur-md sm:px-4 lg:px-5">
+      <div className="flex min-w-0 items-center gap-2">
+        <button type="button" onClick={onOpenMobileNav} aria-label={t("common.openNavigation")} className="grid size-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden">
+          <Menu className="size-5" />
         </button>
 
-        {/* Landlord: Company / Organization Switcher */}
-        {!isTenant && user && companyInfo && (
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowCompanyMenu((prev) => !prev);
-                setShowThemeMenu(false);
-                setShowNotificationMenu(false);
-                setShowUserMenu(false);
-              }}
-              aria-label="Switch organization"
-              aria-expanded={showCompanyMenu}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border/70 bg-secondary/60 hover:bg-secondary hover:border-border text-xs transition-all cursor-pointer group"
-              title={companyInfo.name}
-            >
-              <div className="w-5 h-5 rounded bg-primary/15 text-primary border border-primary/30 flex items-center justify-center text-[10px] font-bold shrink-0 group-hover:scale-105 transition-transform">
-                {companyInfo.avatar}
-              </div>
-              <span className="hidden md:inline-block font-medium text-foreground truncate max-w-[150px] text-xs">
-                {companyInfo.name}
-              </span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-200 ${
-                  showCompanyMenu ? "rotate-180" : ""
-                }`}
-              />
+        {companyInfo ? (
+          <div className="relative min-w-0">
+            <button type="button" onClick={() => { closeOtherMenus("company"); setCompanyMenuOpen((open) => !open); }} aria-label={t("common.switchOrganization")} aria-expanded={companyMenuOpen} className="flex h-10 max-w-[10rem] items-center gap-2 rounded-sm border border-border bg-surface-container-low px-2.5 text-start hover:bg-surface-container sm:max-w-[15rem]">
+              <span className="grid size-6 shrink-0 place-items-center rounded-xs bg-primary-container type-label-small text-on-primary-container">{companyInfo.avatar}</span>
+              <span className="hidden min-w-0 flex-1 truncate type-label-large text-foreground min-[390px]:block">{companyInfo.name}</span>
+              <ChevronDown className={cn("hidden size-3.5 shrink-0 text-muted-foreground transition-transform min-[390px]:block", companyMenuOpen && "rotate-180")} />
             </button>
-
-            {showCompanyMenu && (
-              <div
-                className="absolute start-0 top-full mt-1.5 w-60 rounded-xl border border-border bg-card shadow-xl p-1.5 text-xs z-50 animate-in fade-in-50 zoom-in-95 duration-100"
-                role="menu"
-              >
-                <div className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  {t("common.selectCompany")}
-                </div>
-                <button
-                  onClick={() => setShowCompanyMenu(false)}
-                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 text-start cursor-pointer"
-                  role="menuitem"
-                >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <Building2 className="w-4 h-4 text-primary shrink-0" />
-                    <div className="truncate">
-                      <p className="font-semibold text-foreground truncate">{companyInfo.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{companyInfo.code}</p>
-                    </div>
-                  </div>
-                  <Check className="w-4 h-4 text-primary shrink-0" />
+            {companyMenuOpen && (
+              <div role="menu" className="absolute start-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-1rem))] rounded-sm border border-border bg-popover p-2 text-popover-foreground shadow-e3">
+                <p className="px-2 py-1 type-label-small uppercase text-muted-foreground">{t("common.selectCompany")}</p>
+                <button type="button" role="menuitem" onClick={() => setCompanyMenuOpen(false)} className="mt-1 flex min-h-11 w-full items-center justify-between gap-3 rounded-sm bg-primary-container px-3 text-start text-on-primary-container">
+                  <span className="min-w-0"><strong className="block truncate type-label-large">{companyInfo.name}</strong><span className="block type-label-small opacity-75">{companyInfo.code}</span></span>
+                  <Check className="size-4 shrink-0" />
                 </button>
               </div>
             )}
           </div>
-        )}
-
-        {/* Tenant: Portal Identity Badge */}
-        {isTenant && (
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-border bg-secondary/50 text-foreground text-xs font-semibold select-none">
-            <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span className="truncate">{t("tenant.portal", "Tenant Portal")}</span>
+        ) : (
+          <div className="flex h-10 min-w-0 items-center gap-2 rounded-sm border border-border bg-surface-container-low px-2.5">
+            <ContextIcon className="size-4 shrink-0 text-primary" />
+            <span className="hidden max-w-44 truncate type-label-large text-foreground min-[375px]:block">{contextLabel}</span>
           </div>
         )}
       </div>
 
-      {/* ── Center: Global Command Search Trigger (Landlord Only) ── */}
-      {!isTenant && (
-        <div className="flex-1 max-w-xl mx-2 flex justify-center">
-          <button
-            onClick={() => {
-              window.dispatchEvent(
-                new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
-              );
-            }}
-            aria-label="Open command palette (Ctrl+K)"
-            className="w-full max-w-[480px] flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-border/80 bg-secondary/50 hover:bg-secondary hover:border-border text-muted-foreground text-xs transition-all cursor-pointer shadow-2xs group"
-          >
-            <Search className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-            <span className="truncate text-start flex-1 text-muted-foreground group-hover:text-foreground transition-colors">
-              {t("common.searchPlaceholder")}
-            </span>
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono rounded-full bg-card border border-border text-muted-foreground shadow-2xs">
-              Ctrl+K
-            </kbd>
+      {showSearch && (
+        <div className="mx-2 hidden min-w-0 max-w-xl flex-1 md:block">
+          <button type="button" onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }))} aria-label={`${t("common.openCommandPalette")} (Ctrl+K)`} className="mx-auto flex h-10 w-full max-w-[32rem] items-center gap-2.5 rounded-full border border-border bg-surface-container-low px-4 text-muted-foreground shadow-e0 hover:bg-surface-container hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Search className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-start type-body-small">{t("common.searchPlaceholder")}</span>
+            <kbd className="rounded-full border border-border bg-card px-2 py-0.5 type-label-small">Ctrl+K</kbd>
           </button>
         </div>
       )}
 
-      {/* ── End (Right in LTR / Left in RTL): Language, Theme, Notifications, User Profile ── */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        {/* Language Switcher */}
-        <button
-          onClick={toggleLanguage}
-          aria-label="Switch language"
-          title={language === "en" ? "التحويل إلى العربية" : "Switch to English"}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/60 hover:bg-secondary text-foreground text-xs font-medium transition-all cursor-pointer"
-        >
-          <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="font-medium text-xs">{language === "en" ? "العربية" : "EN"}</span>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button type="button" onClick={toggleLanguage} aria-label={t("common.switchLanguage")} title={language === "en" ? t("common.switchToArabic") : t("common.switchToEnglish")} className="hidden h-10 items-center gap-1.5 rounded-sm border border-border px-2.5 type-label-large text-foreground hover:bg-secondary sm:flex">
+          <Globe className="size-4 text-primary" /><span>{language === "en" ? "العربية" : "EN"}</span>
         </button>
 
-        {/* Theme Selector */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowThemeMenu((prev) => !prev);
-              setShowCompanyMenu(false);
-              setShowNotificationMenu(false);
-              setShowUserMenu(false);
-            }}
-            aria-label="Change theme"
-            aria-expanded={showThemeMenu}
-            className="w-9 h-9 flex items-center justify-center rounded-lg border border-border/60 hover:bg-secondary text-foreground transition-all cursor-pointer"
-            title="Appearance Theme"
-          >
-            {theme === "light" && <Sun className="w-4 h-4 text-amber-500" />}
-            {theme === "dark" && <Moon className="w-4 h-4 text-blue-400" />}
-            {theme === "system" && <Monitor className="w-4 h-4 text-muted-foreground" />}
+        <div className="relative hidden sm:block">
+          <button type="button" onClick={() => { closeOtherMenus("theme"); setThemeMenuOpen((open) => !open); }} aria-label={t("common.changeTheme")} aria-expanded={themeMenuOpen} className="grid size-10 place-items-center rounded-full border border-border text-foreground hover:bg-secondary">
+            {theme === "light" ? <Sun className="size-4" /> : theme === "dark" ? <Moon className="size-4" /> : <Monitor className="size-4" />}
           </button>
-
-          {showThemeMenu && (
-            <div
-              className="absolute end-0 top-full mt-1.5 w-36 rounded-xl border border-border bg-card shadow-xl p-1 space-y-0.5 text-xs z-50 animate-in fade-in-50 zoom-in-95 duration-100"
-              role="menu"
-            >
-              {[
-                { key: "light", label: t("theme.light"), icon: <Sun className="w-3.5 h-3.5 text-amber-500" /> },
-                { key: "dark", label: t("theme.dark"), icon: <Moon className="w-3.5 h-3.5 text-blue-400" /> },
-                { key: "system", label: t("theme.system"), icon: <Monitor className="w-3.5 h-3.5 text-muted-foreground" /> },
-              ].map(({ key, label, icon }) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    setTheme(key as "light" | "dark" | "system");
-                    setShowThemeMenu(false);
-                  }}
-                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-start transition-colors cursor-pointer ${
-                    theme === key ? "bg-secondary font-semibold text-foreground" : "hover:bg-secondary text-muted-foreground hover:text-foreground"
-                  }`}
-                  role="menuitem"
-                >
-                  {icon}
-                  <span>{label}</span>
-                  {theme === key && <Check className="w-3 h-3 ms-auto text-primary" />}
-                </button>
-              ))}
+          {themeMenuOpen && (
+            <div role="menu" className="absolute end-0 top-full z-50 mt-2 w-40 rounded-sm border border-border bg-popover p-1.5 shadow-e3">
+              {themeOptions.map(({ key, label, icon: Icon }) => <button key={key} type="button" role="menuitem" onClick={() => { setTheme(key); setThemeMenuOpen(false); }} className={cn("flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-start type-label-large hover:bg-secondary", theme === key && "bg-primary-container text-on-primary-container")}><Icon className="size-4" /><span className="flex-1">{label}</span>{theme === key && <Check className="size-3.5" />}</button>)}
             </div>
           )}
         </div>
 
-        {/* Notification Bell */}
-        <NotificationBell />
+        {showNotifications && <NotificationBell />}
 
-        {/* Separator */}
-        <div className="h-5 w-[1px] bg-border mx-1 hidden sm:block" />
-
-        {/* User Profile Menu */}
         {user && (
           <div className="relative">
-            <button
-              onClick={() => {
-                setShowUserMenu((prev) => !prev);
-                setShowCompanyMenu(false);
-                setShowThemeMenu(false);
-                setShowNotificationMenu(false);
-              }}
-              aria-label="User menu"
-              aria-expanded={showUserMenu}
-              className="flex items-center gap-2 p-1 rounded-full border border-border/80 hover:border-primary/40 hover:bg-secondary/60 text-xs transition-all cursor-pointer group"
-            >
-              {/* User Avatar */}
-              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                {avatarInitial}
-              </div>
-
-              {/* User Name (Smooth display on desktop) */}
-              <span className="hidden md:inline-block font-medium text-foreground text-xs pe-1 truncate max-w-[130px]">
-                {displayName}
-              </span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-muted-foreground me-1 shrink-0 transition-transform duration-200 ${
-                  showUserMenu ? "rotate-180" : ""
-                }`}
-              />
+            <button type="button" onClick={() => { closeOtherMenus("user"); setUserMenuOpen((open) => !open); }} aria-label={t("common.userMenu")} aria-expanded={userMenuOpen} className="flex h-10 items-center gap-2 rounded-full border border-border bg-surface-container-low p-1 pe-2 hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary type-label-large font-bold text-primary-foreground">{avatarInitial}</span>
+              <span className="hidden max-w-32 truncate type-label-large text-foreground xl:block">{displayName}</span>
+              <ChevronDown className={cn("hidden size-3.5 text-muted-foreground sm:block", userMenuOpen && "rotate-180")} />
             </button>
-
-            {showUserMenu && (
-              <div
-                className="absolute end-0 top-full mt-1.5 w-60 rounded-xl border border-border bg-card shadow-xl p-1.5 text-xs z-50 space-y-1 animate-in fade-in-50 zoom-in-95 duration-100"
-                role="menu"
-              >
-                {/* User identity header card */}
-                <div className="p-2.5 rounded-lg bg-secondary/50 border border-border/50 mb-1">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0">
-                      {avatarInitial}
-                    </div>
-                    <div className="truncate">
-                      <p className="font-semibold text-foreground truncate">{displayName}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{displayEmail}</p>
-                    </div>
-                  </div>
+            {userMenuOpen && (
+              <div role="menu" className="absolute end-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-1rem))] rounded-sm border border-border bg-popover p-2 shadow-e3">
+                <div className="mb-1 flex items-center gap-3 rounded-sm bg-surface-container-low p-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary font-bold text-primary-foreground">{avatarInitial}</span>
+                  <span className="min-w-0"><strong className="block truncate type-label-large text-foreground">{displayName}</strong><span className="block truncate type-body-small text-muted-foreground">{displayEmail}</span></span>
                 </div>
 
-                {/* Profile */}
-                <button
-                  onClick={() => handleNavigate(isTenant ? ROUTES.tenant.profile : ROUTES.profile.root)}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
-                  role="menuitem"
-                >
-                  <UserCircle className="w-4 h-4 text-muted-foreground" />
-                  <span>{isTenant ? (t("tenant.navigation.profile") || "My Profile") : (t("nav.profile") || "My Profile")}</span>
-                </button>
+                {!isPlatform && <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate(isTenant ? ROUTES.tenant.profile : ROUTES.profile.root); }} className="flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-start type-label-large hover:bg-secondary"><UserCircle className="size-4 text-muted-foreground" />{isTenant ? t("tenant.navigation.profile") : t("nav.profile")}</button>}
+                {portal === "company" && <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate(ROUTES.preferences.root); }} className="flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-start type-label-large hover:bg-secondary"><SlidersHorizontal className="size-4 text-muted-foreground" />{t("nav.preferences")}</button>}
 
-                {/* Preferences (Landlord only) */}
-                {!isTenant && (
-                  <button
-                    onClick={() => handleNavigate(ROUTES.preferences.root)}
-                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
-                    role="menuitem"
-                  >
-                    <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-                    <span>{t("nav.preferences") || "Preferences"}</span>
-                  </button>
-                )}
-
-                {/* Quick Language Toggle */}
-                <button
-                  onClick={() => {
-                    toggleLanguage();
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-start hover:bg-secondary text-foreground transition-colors cursor-pointer"
-                  role="menuitem"
-                >
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <span>{t("common.language") || "Language"}</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-primary">
-                    {language === "en" ? "العربية" : "English"}
-                  </span>
-                </button>
-
-                <div className="border-t border-border my-1" />
-
-                {/* Logout */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-start text-destructive hover:bg-destructive/10 transition-colors cursor-pointer font-medium"
-                  role="menuitem"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>{t("nav.logout") || "Sign out"}</span>
-                </button>
+                <button type="button" role="menuitem" onClick={toggleLanguage} className="flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-start type-label-large hover:bg-secondary"><Globe className="size-4 text-muted-foreground" /><span className="flex-1">{t("common.language")}</span><span className="text-primary">{language === "en" ? "العربية" : "English"}</span></button>
+                <div className="my-1 grid grid-cols-3 gap-1 border-y border-border py-2 sm:hidden">
+                  {themeOptions.map(({ key, label, icon: Icon }) => <button key={key} type="button" onClick={() => setTheme(key)} aria-label={label} className={cn("grid min-h-11 place-items-center rounded-sm text-muted-foreground hover:bg-secondary", theme === key && "bg-primary-container text-on-primary-container")}><Icon className="size-4" /></button>)}
+                </div>
+                <div className="my-1 border-t border-border" />
+                <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); logout(); }} className="flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-start type-label-large text-destructive hover:bg-destructive/10"><LogOut className="size-4" />{t("nav.logout")}</button>
               </div>
             )}
           </div>

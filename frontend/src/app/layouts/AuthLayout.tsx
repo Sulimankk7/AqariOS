@@ -18,10 +18,14 @@ import { AuthTopBar } from "@/features/auth/components/AuthTopBar";
 import { AuthFooter } from "@/features/auth/components/AuthFooter";
 import { ROUTES } from "@/config/routes";
 import { useTheme } from "@/shared/theme";
+import { useTranslation } from "@/shared/i18n";
 
 export function AuthLayout() {
   const location = useLocation();
   const { isAuthenticated, authStatus, user } = useAuth();
+  const { language: lang, setLanguage: setLang } = useTranslation();
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const { theme, setTheme } = useTheme();
 
   if (authStatus === "authenticated" && user?.roleCode) {
     if (user.roleCode === "TENANT") {
@@ -32,12 +36,7 @@ export function AuthLayout() {
     }
   }
 
-  // Bilingual system language state (en/ar)
-  const [lang, setLang] = useState<"en" | "ar">("en");
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-
   // Use the global ThemeProvider — no direct localStorage access
-  const { theme, setTheme } = useTheme();
   const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const toggleTheme = () => {

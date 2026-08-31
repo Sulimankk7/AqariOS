@@ -26,6 +26,8 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
         builder.Property(e => e.UserAgent).HasColumnName("user_agent").HasColumnType("text").IsRequired(false);
         builder.Property(e => e.IssuedAt).HasColumnName("issued_at").HasColumnType("timestamp with time zone").HasDefaultValueSql("now()").IsRequired();
         builder.Property(e => e.ExpiresAt).HasColumnName("expires_at").HasColumnType("timestamp with time zone").IsRequired();
+        builder.Property(e => e.IsPersistent).HasColumnName("is_persistent").HasColumnType("boolean").IsRequired();
+        builder.Property(e => e.AbsoluteSessionExpiresAt).HasColumnName("absolute_session_expires_at").HasColumnType("timestamp with time zone").IsRequired(false);
         builder.Property(e => e.RevokedAt).HasColumnName("revoked_at").HasColumnType("timestamp with time zone").IsRequired(false);
         builder.Property(e => e.RevokedReason).HasColumnName("revoked_reason").HasColumnType("revoke_reason_enum").IsRequired(false);
 

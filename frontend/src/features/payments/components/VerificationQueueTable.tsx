@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from '@/shared/i18n';
+import { useEntityLabel, useTranslation } from '@/shared/i18n';
 import { PaymentVerificationQueueItem } from '../types/payments.types';
 import { DataTable } from '@/shared/components/ui';
 import { CheckCircle2, XCircle, Clock } from 'lucide-react';
@@ -11,8 +11,9 @@ interface VerificationQueueTableProps {
 }
 
 export function VerificationQueueTable({ items, isLoading, onSelect }: VerificationQueueTableProps) {
-  const { t, language, direction } = useTranslation();
+  const { t, direction, formatCurrency, formatDate } = useTranslation();
   const isRtl = direction === 'rtl';
+  const label = useEntityLabel();
 
   const formatPaymentMethod = (method: any) => {
     if (method === null || method === undefined) return '-';
@@ -24,7 +25,7 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
         case 2: return t('financials.paymentMethodCheque');
         case 3: return t('financials.paymentMethodEfawateercom');
         case 4: return t('financials.paymentMethodCliq');
-        default: return String(method);
+        default: return label('paymentMethod', method);
       }
     }
     const lower = String(method).trim().toLowerCase().replace(/[^a-z]/g, '');
@@ -33,7 +34,7 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
     if (lower === 'cheque') return t('financials.paymentMethodCheque');
     if (lower === 'efawateercom') return t('financials.paymentMethodEfawateercom');
     if (lower === 'cliq' || lower === 'cli_q') return t('financials.paymentMethodCliq');
-    return String(method);
+    return label('paymentMethod', method);
   };
 
   return (
@@ -81,11 +82,11 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-bold text-foreground">
-                      {(item.submittedAmount ?? item.amountDue).toLocaleString()} {item.currency}
+                      {formatCurrency(item.submittedAmount ?? item.amountDue, { currency: item.currency })}
                     </div>
                     {item.submittedAmount !== undefined && item.submittedAmount !== item.amountDue && (
                       <div className="text-xs text-muted-foreground">
-                        {t('payments.totalInstallmentDue')}: {item.amountDue.toLocaleString()} {item.currency}
+                        {t('payments.totalInstallmentDue')}: {formatCurrency(item.amountDue, { currency: item.currency })}
                       </div>
                     )}
                   </td>
@@ -95,7 +96,7 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
-                    {new Date(item.submittedAt).toLocaleDateString(language)}
+                    {formatDate(item.submittedAt, { dateStyle: 'medium' })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
@@ -137,11 +138,11 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                   </div>
                   <div className="text-right rtl:text-left">
                     <div className="font-bold text-primary">
-                      {(item.submittedAmount ?? item.amountDue).toLocaleString()} {item.currency}
+                      {formatCurrency(item.submittedAmount ?? item.amountDue, { currency: item.currency })}
                     </div>
                     {item.submittedAmount !== undefined && item.submittedAmount !== item.amountDue && (
                       <div className="text-[10px] text-muted-foreground">
-                        {t('payments.totalInstallmentDue')}: {item.amountDue.toLocaleString()} {item.currency}
+                        {t('payments.totalInstallmentDue')}: {formatCurrency(item.amountDue, { currency: item.currency })}
                       </div>
                     )}
                   </div>
@@ -155,7 +156,7 @@ export function VerificationQueueTable({ items, isLoading, onSelect }: Verificat
                 <div className="flex items-center justify-between pt-2 border-t border-border/50">
                   <div className="text-xs text-muted-foreground flex items-center">
                     <Clock className="h-3 w-3 mr-1 rtl:ml-1 rtl:mr-0" />
-                    {new Date(item.submittedAt).toLocaleDateString(language)}
+                    {formatDate(item.submittedAt, { dateStyle: 'medium' })}
                   </div>
                   <button
                     onClick={() => onSelect(item)}

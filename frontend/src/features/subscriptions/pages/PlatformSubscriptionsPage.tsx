@@ -14,6 +14,7 @@ import { useCreatePlatformSubscription, usePlatformCompanies, usePlatformPlans, 
 import type { BillingCycle, CreateCompanySubscriptionRequest } from "../types/subscriptions.types";
 import { DetailsDrawer, DetailList, SubscriptionStatusBadge } from "../components/SubscriptionPrimitives";
 import { getSubscriptionError } from "../utils/subscriptionErrors";
+import { DatePicker } from "@/shared/components/ui/DatePicker";
 
 const formatDateInput = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const parseDateInput = (value: string) => { const [year, month, day] = value.split("-").map(Number); return new Date(year, month - 1, day); };
@@ -91,8 +92,8 @@ export function PlatformSubscriptionsPage() {
         <div className="rounded-md border border-border bg-muted/30 p-3 text-sm" aria-label={t("subscriptions.createSubscriptionForm.selectedPlan")}>
           <div className="flex justify-between font-medium mb-2"><span>{language === "ar" ? selectedPlan.nameAr : selectedPlan.nameEn}</span><span className="text-muted-foreground text-xs" dir="ltr">{selectedPlan.nameEn}</span></div>
           <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-muted-foreground">
-            <div><span className="block text-xs">{t("subscriptions.monthlyPrice")}</span><span className="text-foreground">{formatCurrency(selectedPlan.monthlyPrice, { currency: selectedPlan.currency })}</span></div>
-            <div><span className="block text-xs">{t("subscriptions.yearlyPrice")}</span><span className="text-foreground">{formatCurrency(selectedPlan.yearlyPrice, { currency: selectedPlan.currency })}</span></div>
+            <div><span className="block text-xs">{t(selectedPlan.pricingModel === "PayAsYouGo" ? "subscriptions.paygPlanForm.paygMonthlyRate" : "subscriptions.monthlyPrice")}</span><span className="text-foreground">{formatCurrency(selectedPlan.pricingModel === "PayAsYouGo" ? selectedPlan.paygMonthlyUnitPrice ?? 0 : selectedPlan.monthlyPrice, { currency: selectedPlan.currency })}</span></div>
+            <div><span className="block text-xs">{t(selectedPlan.pricingModel === "PayAsYouGo" ? "subscriptions.paygPlanForm.paygYearlyMonthlyRate" : "subscriptions.yearlyPrice")}</span><span className="text-foreground">{formatCurrency(selectedPlan.pricingModel === "PayAsYouGo" ? selectedPlan.paygYearlyMonthlyEquivalentUnitPrice ?? 0 : selectedPlan.yearlyPrice, { currency: selectedPlan.currency })}</span></div>
             <div><span className="block text-xs">{t("subscriptions.planForm.buildings")}</span><span className="text-foreground">{selectedPlan.maxBuildings ?? t("subscriptions.planForm.unlimited")}</span></div>
             <div><span className="block text-xs">{t("subscriptions.planForm.users")}</span><span className="text-foreground">{selectedPlan.maxUsers ?? t("subscriptions.planForm.unlimited")}</span></div>
             {selectedPlan.supportsTrial && <div className="col-span-2"><span className="block text-xs">{t("subscriptions.planForm.trial")}</span><span className="text-foreground">{selectedPlan.trialDurationDays} {t("subscriptions.planForm.days")}</span></div>}
@@ -105,7 +106,7 @@ export function PlatformSubscriptionsPage() {
           <Field label={t("subscriptions.billingCycle")}><div className="grid grid-cols-2 rounded-md border border-border p-1">{(["Monthly", "Yearly"] as BillingCycle[]).map((value) => <Button key={value} type="button" size="sm" variant={form.billingCycle === value ? "default" : "ghost"} onClick={() => setForm({ ...form, billingCycle: value })}>{t(`subscriptions.${value.toLowerCase()}`)}</Button>)}</div></Field>
           
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("subscriptions.startDate")}><Input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} /></Field>
+            <Field label={t("subscriptions.startDate")}><DatePicker value={form.startDate} onValueChange={(startDate) => setForm({ ...form, startDate: startDate ?? "" })} ariaLabel={t("subscriptions.startDate")} /></Field>
             <Field label={t("subscriptions.createSubscriptionForm.calculatedEnd")}><div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground">{form.endDate ? formatDate(form.endDate, { dateStyle: "medium" }) : "—"}</div></Field>
           </div>
 

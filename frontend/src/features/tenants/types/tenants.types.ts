@@ -50,6 +50,7 @@ export interface CreateTenantRequest {
   name: string;
   nationalId: string;
   phone: string;
+  phoneCountryCode?: string | null;
   email: string;
   occupation?: string | null;
   employer?: string | null;
@@ -59,6 +60,7 @@ export interface UpdateTenantRequest {
   name: string;
   nationalId: string;
   phone: string;
+  phoneCountryCode?: string | null;
   email?: string | null;
   occupation?: string | null;
   employer?: string | null;

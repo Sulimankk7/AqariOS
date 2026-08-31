@@ -6,16 +6,10 @@ import { BuildingFormValues } from '../schemas/buildings.schema';
 import { toast } from 'sonner';
 import { getBuildingTranslation } from '../constants/translations';
 import { isArchiveBlockedError } from '@/shared/lib/archiveBlocked';
+import { getRuntimeLanguage } from '@/shared/i18n';
+import { extractUserFriendlyError } from '@/shared/utils/errorHandling';
 
-function getCurrentLang(): 'en' | 'ar' {
-  try {
-    return (localStorage.getItem('aqari:language') as 'en' | 'ar') || 'en';
-  } catch {
-    return 'en';
-  }
-}
-
-const t = (key: string) => getBuildingTranslation(key, getCurrentLang());
+const t = (key: string) => getBuildingTranslation(key, getRuntimeLanguage());
 
 export const useBuildings = () => {
   return useQuery({
@@ -42,7 +36,7 @@ export const useCreateBuilding = () => {
       toast.success(t('createSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     }
   });
 };
@@ -59,7 +53,7 @@ export const useUpdateBuilding = () => {
       toast.success(t('updateSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     }
   });
 };
@@ -77,7 +71,7 @@ export const useDeleteBuilding = () => {
       if (isArchiveBlockedError(error)) {
         return;
       }
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     }
   });
 };

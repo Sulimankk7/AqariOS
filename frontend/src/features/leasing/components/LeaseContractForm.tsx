@@ -29,12 +29,15 @@ import { useTenantsLookup, useCreateLease, useUpdateDraftLease } from '../hooks/
 import { useBuildings } from '@/features/buildings/hooks/useBuildings';
 import { useApartments, useApartment } from '@/features/apartments/hooks/useApartments';
 import { getLeasingTranslation } from '../constants/translations';
+import { localizeValidationMessage } from '@/shared/utils/errorHandling';
 import {
   paymentFrequencyToLabel,
   legalRegimeToLabel,
   tenantTypeToLabel,
 } from '../constants/leasingEnums';
 import { useTranslation } from '@/shared/i18n';
+import { DatePicker } from '@/shared/components/ui/DatePicker';
+import { getApartmentRentDefault } from '../utils/leaseDefaults';
 
 interface LeaseContractFormProps {
   initialValues?: Partial<LeaseContractDto>;
@@ -58,6 +61,7 @@ export function LeaseContractForm({
   const { data: buildings, isLoading: isLoadingBuildings } = useBuildings();
 
   const [selectedBuildingId, setSelectedBuildingId] = React.useState<string>('');
+  const [rentDefaultSourceApartmentId, setRentDefaultSourceApartmentId] = React.useState<string | null>(null);
 
   // Fetch initial apartment details if editing an existing lease to determine buildingId
   const initialApartmentId = initialValues?.apartmentId;
@@ -147,6 +151,18 @@ export function LeaseContractForm({
   const selectedFrequency = watch('paymentFrequency');
   const selectedRegime = watch('legalRegime');
   const selectedTenantType = watch('tenantType');
+  const monthlyRentRegistration = register('monthlyRentAmount');
+
+  const handleApartmentChange = (apartmentId: string) => {
+    setValue('apartmentId', apartmentId, { shouldValidate: true });
+    const apartment = apartments?.find((candidate) => candidate.id === apartmentId);
+    const rentDefault = getApartmentRentDefault(apartment);
+    setValue('monthlyRentAmount', rentDefault ?? 0, {
+      shouldValidate: rentDefault !== undefined,
+      shouldDirty: false,
+    });
+    setRentDefaultSourceApartmentId(rentDefault === undefined ? null : apartmentId);
+  };
 
   const handleFormSubmit = (values: CreateLeaseContractFormValues) => {
     setRootError(null);
@@ -196,7 +212,7 @@ export function LeaseContractForm({
               <Label htmlFor="contractNumber">{t('contractNumber')} *</Label>
               <Input
                 id="contractNumber"
-                placeholder="e.g. LSE-2026-001"
+                placeholder={t('contractNumberPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.contractNumber}
                 aria-describedby={errors.contractNumber ? 'contractNumber-error' : undefined}
@@ -204,7 +220,7 @@ export function LeaseContractForm({
               />
               {errors.contractNumber && (
                 <p id="contractNumber-error" role="alert" className="text-xs text-destructive">
-                  {errors.contractNumber.message}
+                  {localizeValidationMessage(errors.contractNumber.message)}
                 </p>
               )}
             </div>
@@ -220,6 +236,8 @@ export function LeaseContractForm({
                   setSelectedBuildingId(val);
                   // Clear selected apartment when building changes to prevent stale selection
                   setValue('apartmentId', '', { shouldValidate: true });
+                  setValue('monthlyRentAmount', 0, { shouldValidate: false, shouldDirty: false });
+                  setRentDefaultSourceApartmentId(null);
                 }}
                 disabled={isLoadingBuildings}
               >
@@ -241,7 +259,7 @@ export function LeaseContractForm({
               <Label htmlFor="apartmentId">{t('apartment')} *</Label>
               <Select
                 value={selectedApartmentId}
-                onValueChange={(val) => setValue('apartmentId', val, { shouldValidate: true })}
+                onValueChange={handleApartmentChange}
                 disabled={isApartmentDisabled}
               >
                 <SelectTrigger
@@ -278,7 +296,7 @@ export function LeaseContractForm({
               {/* Form Validation Error */}
               {errors.apartmentId && (
                 <p id="apartmentId-error" role="alert" className="text-xs text-destructive">
-                  {errors.apartmentId.message}
+                  {localizeValidationMessage(errors.apartmentId.message)}
                 </p>
               )}
 
@@ -347,7 +365,7 @@ export function LeaseContractForm({
               </Select>
               {errors.tenantId && (
                 <p id="tenantId-error" role="alert" className="text-xs text-destructive">
-                  {errors.tenantId.message}
+                  {localizeValidationMessage(errors.tenantId.message)}
                 </p>
               )}
             </div>
@@ -356,36 +374,36 @@ export function LeaseContractForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="startDate">{t('startDate')} *</Label>
-              <Input
+              <DatePicker
                 id="startDate"
-                type="date"
-                placeholder="YYYY-MM-DD"
-                aria-required="true"
-                aria-invalid={!!errors.startDate}
-                aria-describedby={errors.startDate ? 'startDate-error' : undefined}
-                {...register('startDate')}
+                value={watch('startDate')}
+                onValueChange={(value) => setValue('startDate', value ?? '', { shouldValidate: true })}
+                ariaLabel={t('startDate')}
+                required
+                ariaInvalid={!!errors.startDate}
+                ariaDescribedBy={errors.startDate ? 'startDate-error' : undefined}
               />
               {errors.startDate && (
                 <p id="startDate-error" role="alert" className="text-xs text-destructive">
-                  {errors.startDate.message}
+                  {localizeValidationMessage(errors.startDate.message)}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="endDate">{t('endDate')} *</Label>
-              <Input
+              <DatePicker
                 id="endDate"
-                type="date"
-                placeholder="YYYY-MM-DD"
-                aria-required="true"
-                aria-invalid={!!errors.endDate}
-                aria-describedby={errors.endDate ? 'endDate-error' : undefined}
-                {...register('endDate')}
+                value={watch('endDate')}
+                onValueChange={(value) => setValue('endDate', value ?? '', { shouldValidate: true })}
+                ariaLabel={t('endDate')}
+                required
+                ariaInvalid={!!errors.endDate}
+                ariaDescribedBy={errors.endDate ? 'endDate-error' : undefined}
               />
               {errors.endDate && (
                 <p id="endDate-error" role="alert" className="text-xs text-destructive">
-                  {errors.endDate.message}
+                  {localizeValidationMessage(errors.endDate.message)}
                 </p>
               )}
             </div>
@@ -398,15 +416,22 @@ export function LeaseContractForm({
                 id="monthlyRentAmount"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 250.00"
+                placeholder={t('amountPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.monthlyRentAmount}
                 aria-describedby={errors.monthlyRentAmount ? 'monthlyRentAmount-error' : undefined}
-                {...register('monthlyRentAmount')}
+                {...monthlyRentRegistration}
+                onChange={(event) => {
+                  setRentDefaultSourceApartmentId(null);
+                  monthlyRentRegistration.onChange(event);
+                }}
               />
+              {rentDefaultSourceApartmentId === selectedApartmentId && (
+                <p className="text-xs text-muted-foreground">{t('rentDefaultFromApartment')}</p>
+              )}
               {errors.monthlyRentAmount && (
                 <p id="monthlyRentAmount-error" role="alert" className="text-xs text-destructive">
-                  {errors.monthlyRentAmount.message}
+                  {localizeValidationMessage(errors.monthlyRentAmount.message)}
                 </p>
               )}
             </div>
@@ -417,7 +442,7 @@ export function LeaseContractForm({
                 id="securityDepositAmount"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 500.00"
+                placeholder={t('amountPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.securityDepositAmount}
                 aria-describedby={errors.securityDepositAmount ? 'securityDepositAmount-error' : undefined}
@@ -425,7 +450,7 @@ export function LeaseContractForm({
               />
               {errors.securityDepositAmount && (
                 <p id="securityDepositAmount-error" role="alert" className="text-xs text-destructive">
-                  {errors.securityDepositAmount.message}
+                  {localizeValidationMessage(errors.securityDepositAmount.message)}
                 </p>
               )}
             </div>
@@ -459,13 +484,13 @@ export function LeaseContractForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentDueDay">{t('paymentDueDay')} (1-31) *</Label>
+              <Label htmlFor="paymentDueDay">{t('paymentDueDay')} (1-28) *</Label>
               <Input
                 id="paymentDueDay"
                 type="number"
                 min={1}
-                max={31}
-                placeholder="e.g. 1"
+                max={28}
+                placeholder={t('installmentCountPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.paymentDueDay}
                 aria-describedby={errors.paymentDueDay ? 'paymentDueDay-error' : undefined}
@@ -473,7 +498,7 @@ export function LeaseContractForm({
               />
               {errors.paymentDueDay && (
                 <p id="paymentDueDay-error" role="alert" className="text-xs text-destructive">
-                  {errors.paymentDueDay.message}
+                  {localizeValidationMessage(errors.paymentDueDay.message)}
                 </p>
               )}
             </div>

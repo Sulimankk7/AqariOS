@@ -70,6 +70,7 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum", null);
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum", null);
         dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>("plan_change_request_status_enum", null);
+        dataSourceBuilder.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionPricingModel>("subscription_pricing_model_enum", null);
 
         // Module 3 Enums
         dataSourceBuilder.MapEnum<AuditAction>("audit_action_enum", null);
@@ -153,6 +154,28 @@ public static class DependencyInjection
         services.AddScoped<PropertyOS.Application.Identity.IPasswordHasher, PropertyOS.Infrastructure.Identity.PasswordHasher>();
         services.AddScoped<PropertyOS.Application.Identity.IJwtTokenGenerator, PropertyOS.Infrastructure.Identity.JwtTokenGenerator>();
         services.AddScoped<PropertyOS.Application.Identity.IAuthService, PropertyOS.Infrastructure.Identity.AuthService>();
+        services.AddOptions<PropertyOS.Application.Identity.RefreshSessionOptions>()
+            .Bind(configuration.GetSection(PropertyOS.Application.Identity.RefreshSessionOptions.SectionName))
+            .Validate(options => options.NormalLifetimeDays > 0,
+                "RefreshSession:NormalLifetimeDays must be greater than zero.")
+            .Validate(options => options.RememberedLifetimeDays == 30,
+                "RefreshSession:RememberedLifetimeDays must be exactly 30 days.")
+            .ValidateOnStart();
+        services.Configure<PropertyOS.Application.Identity.OtpOptions>(
+            configuration.GetSection(PropertyOS.Application.Identity.OtpOptions.SectionName));
+        services.AddOptions<PropertyOS.Application.Identity.PasswordResetOptions>()
+            .Bind(configuration.GetSection(PropertyOS.Application.Identity.PasswordResetOptions.SectionName))
+            .Validate(options =>
+                    options.EmailTokenExpiryMinutes > 0 &&
+                    options.SmsOtpExpiryMinutes > 0 &&
+                    options.SmsAuthorizationExpiryMinutes > 0 &&
+                    options.ResendCooldownSeconds >= 0 &&
+                    options.MaxRequestsPerDestinationWindow > 0 &&
+                    options.DestinationWindowMinutes > 0 &&
+                    options.MaxOtpAttempts > 0 &&
+                    options.MinimumRequestDurationMilliseconds >= 0,
+                "PasswordReset configuration values must define positive lifetimes and limits.")
+            .ValidateOnStart();
         services.AddScoped<PropertyOS.Application.Common.Interfaces.IPermissionCatalogSeeder, PropertyOS.Infrastructure.Identity.PermissionCatalogSeeder>();
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<PropertyOsDbContext>());
 
@@ -166,17 +189,34 @@ public static class DependencyInjection
         services.AddScoped<ILeaseContractRepository, LeaseContractRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddTransient<PropertyOS.Infrastructure.Leasing.Jobs.ExpireLeaseContractsJob>();
+        services.AddTransient<PropertyOS.Infrastructure.Subscriptions.Jobs.RefreshPaygUsageJob>();
 
         // Module 11 — notification delivery dispatch pipeline
-        services.Configure<PropertyOS.Application.Notifications.Options.BrevoOptions>(
-            configuration.GetSection(PropertyOS.Application.Notifications.Options.BrevoOptions.SectionName));
-        services.Configure<PropertyOS.Application.Notifications.Options.TwilioOptions>(
-            configuration.GetSection(PropertyOS.Application.Notifications.Options.TwilioOptions.SectionName));
+        services.Configure<PropertyOS.Application.Notifications.Options.ResendOptions>(
+            configuration.GetSection(PropertyOS.Application.Notifications.Options.ResendOptions.SectionName));
+        services.Configure<PropertyOS.Application.Notifications.Options.InfobipOptions>(
+            configuration.GetSection(PropertyOS.Application.Notifications.Options.InfobipOptions.SectionName));
         services.Configure<PropertyOS.Application.Common.Options.FrontendOptions>(
             configuration.GetSection(PropertyOS.Application.Common.Options.FrontendOptions.SectionName));
 
-        services.AddHttpClient<PropertyOS.Application.Common.Interfaces.IEmailSender, PropertyOS.Infrastructure.Notifications.Services.BrevoEmailSender>();
-        services.AddHttpClient<PropertyOS.Application.Common.Interfaces.ISmsSender, PropertyOS.Infrastructure.Notifications.Services.TwilioSmsSender>();
+        services.AddHttpClient<PropertyOS.Application.Common.Interfaces.IEmailSender, PropertyOS.Infrastructure.Notifications.Services.ResendEmailSender>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.resend.com/");
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("AqariOS/1.0");
+        });
+        services.AddHttpClient<PropertyOS.Application.Common.Interfaces.ISmsSender, PropertyOS.Infrastructure.Notifications.Services.InfobipSmsSender>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<PropertyOS.Application.Notifications.Options.InfobipOptions>>().Value;
+            if (Uri.TryCreate(options.BaseUrl?.Trim(), UriKind.Absolute, out var baseUri) &&
+                string.Equals(baseUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                client.BaseAddress = new Uri(baseUri.ToString().TrimEnd('/') + "/");
+            }
+
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("AqariOS/1.0");
+        });
 
         services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.InAppChannelProvider>();
         services.AddScoped<PropertyOS.Application.Notifications.Services.INotificationChannelProvider, PropertyOS.Infrastructure.Notifications.Channels.NullEmailChannelProvider>();
@@ -366,6 +406,7 @@ public static class DependencyInjection
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>("subscription_status_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>("billing_cycle_enum");
                     npgsqlOptions.MapEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>("plan_change_request_status_enum");
+                    npgsqlOptions.MapEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionPricingModel>("subscription_pricing_model_enum");
 
                     // Module 3
                     npgsqlOptions.MapEnum<AuditAction>("audit_action_enum");

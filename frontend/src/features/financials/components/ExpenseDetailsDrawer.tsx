@@ -52,7 +52,7 @@ export function ExpenseDetailsDrawer({ expense, onClose }: { expense: ExpenseDto
               </div>
               <div className="rounded-lg border border-border divide-y divide-border text-xs">
                 <Row icon={FileText} label={t('financials.description')} value={record.description} />
-                <Row icon={Receipt} label={t('financials.expenseCategory')} value={category === null ? String(record.category) : t(`financials.expenseCategory${ExpenseCategory[category]}`)} />
+                <Row icon={Receipt} label={t('financials.expenseCategory')} value={category === null ? t('common.unknown') : t(`financials.expenseCategory${ExpenseCategory[category]}`)} />
                 <Row icon={Store} label={t('financials.vendor')} value={record.vendorName || '—'} />
                 <Row icon={Calendar} label={t('financials.expenseDate')} value={formatFinancialDate(record.expenseDate)} mono />
                 <Row icon={Receipt} label={t('financials.paymentMethod')} value={methodLabel} />

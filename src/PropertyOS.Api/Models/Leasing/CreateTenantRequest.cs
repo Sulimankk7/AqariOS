@@ -9,5 +9,6 @@ public record CreateTenantRequest(
     string Phone,
     string Email,
     string? Occupation = null,
-    string? Employer = null
+    string? Employer = null,
+    string? PhoneCountryCode = "JO"
 );

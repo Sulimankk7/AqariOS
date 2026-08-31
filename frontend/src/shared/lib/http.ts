@@ -14,6 +14,7 @@ import { apiConfig } from "@/config/api";
 import { storage, STORAGE_KEYS } from "@/shared/services/storage";
 import { logger } from "@/shared/services/logger";
 import { toast } from "sonner";
+import { translateCurrent } from "@/shared/i18n";
 
 // ── 401 Unauthorized & Refresh Token Pipeline State ─────────────────────────
 
@@ -44,12 +45,17 @@ const PUBLIC_AUTH_PATHS = [
   "/api/v1/auth/refresh",
   "/api/v1/auth/otp/request",
   "/api/v1/auth/otp/verify",
+  "/api/v1/auth/password-reset/request",
+  "/api/v1/auth/password-reset/verify-otp",
+  "/api/v1/auth/password-reset/complete",
 ];
 
 const PUBLIC_UI_ROUTES = [
   "/auth/login",
   "/auth/register",
   "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/password-reset/verify",
   "/auth/otp",
 ];
 
@@ -78,7 +84,7 @@ function triggerSessionInvalidation(): void {
   // Show only ONE friendly toast notification per session expiry
   if (!hasShownSessionExpiredToast) {
     hasShownSessionExpiredToast = true;
-    toast.error("Your session has expired. Please sign in again.");
+    toast.error(translateCurrent("errors.sessionExpired"));
   }
 
   if (unauthorizedHandler) {
@@ -110,8 +116,9 @@ export class ApiError extends Error {
   public readonly validationErrors?: Record<string, string[]>;
   public readonly rawPayload?: unknown;
   public readonly code?: string;
+  public readonly retryAfterSeconds?: number;
 
-  constructor(status: number, message: string, payload?: ProblemDetailsPayload) {
+  constructor(status: number, message: string, payload?: ProblemDetailsPayload, retryAfterSeconds?: number) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -120,6 +127,7 @@ export class ApiError extends Error {
     this.validationErrors = payload?.errors;
     this.rawPayload = payload;
     this.code = payload?.code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -217,7 +225,7 @@ export class HttpClient {
 
       const data = await res.json();
       if (data && data.accessToken) {
-        storage.set(STORAGE_KEYS.accessToken, data.accessToken);
+        storage.setAccessToken(data.accessToken, data.isPersistentSession === true);
         return data.accessToken;
       }
       return null;
@@ -325,7 +333,9 @@ export class HttpClient {
           (payload?.errors ? Object.values(payload.errors).flat().join(" ") : null) ??
           `HTTP ${response.status}: ${response.statusText}`;
 
-        const apiError = new ApiError(response.status, errorMessage, payload);
+        const retryAfter = Number.parseInt(response.headers.get("Retry-After") ?? "", 10);
+        const apiError = new ApiError(response.status, errorMessage, payload,
+          Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined);
         logger.error(`API Error [${response.status}] ${finalConfig.url}`, apiError);
         throw apiError;
       }

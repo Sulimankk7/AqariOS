@@ -18,7 +18,7 @@ public class BrevoOptions
     public string SenderEmail { get; set; } = "aqari.system@gmail.com";
 
     /// <summary>
-    /// Display name of the sender (default: عقاري نوت).
+    /// Display name of the sender (default: عقاري).
     /// </summary>
-    public string SenderName { get; set; } = "عقاري نوت";
+    public string SenderName { get; set; } = "عقاري";
 }

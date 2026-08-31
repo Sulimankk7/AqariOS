@@ -5,6 +5,7 @@ import { useTranslation } from '@/shared/i18n';
 import { DueDateStatus, type RentPaymentFilterParams } from '../types/financials.types';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
+import { DatePicker } from '@/shared/components/ui/DatePicker';
 
 interface RentPaymentFiltersProps {
   filters: RentPaymentFilterParams;
@@ -66,8 +67,7 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
     });
   };
 
-  const handleDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value || null;
+  const handleDateFromChange = (val: string | null) => {
     onFiltersChange({
       ...filters,
       dateFrom: val,
@@ -76,8 +76,7 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
     });
   };
 
-  const handleDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value || null;
+  const handleDateToChange = (val: string | null) => {
     onFiltersChange({
       ...filters,
       dateTo: val,
@@ -109,10 +108,10 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
   );
 
   const quickPresets = [
-    { id: 'all', label: t('financials.filterAll', 'الكل'), status: null },
-    { id: 'needsVerification', label: t('financials.filterNeedsVerification', 'بانتظار المراجعة'), status: DueDateStatus.PendingVerification },
-    { id: 'overdue', label: t('financials.filterOverdue', 'متأخر'), status: DueDateStatus.OverdueUnpaid },
-    { id: 'partiallyPaid', label: t('financials.filterPartiallyPaid', 'مدفوع جزئياً'), status: DueDateStatus.PartiallyPaid },
+    { id: 'all', label: t('financials.filterAll'), status: null },
+    { id: 'needsVerification', label: t('financials.filterNeedsVerification'), status: DueDateStatus.PendingVerification },
+    { id: 'overdue', label: t('financials.filterOverdue'), status: DueDateStatus.OverdueUnpaid },
+    { id: 'partiallyPaid', label: t('financials.filterPartiallyPaid'), status: DueDateStatus.PartiallyPaid },
   ];
 
   return (
@@ -120,7 +119,7 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
       {/* Quick Operational Presets */}
       <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
         <span className="text-xs font-semibold text-muted-foreground shrink-0 me-1">
-          {t('financials.quickFilters', 'تصفية سريعة:')}
+          {t('financials.quickFilters')}
         </span>
         {quickPresets.map((preset) => {
           const isActive = preset.status === null
@@ -198,23 +197,9 @@ export function RentPaymentFilters({ filters, onFiltersChange }: RentPaymentFilt
 
         {/* Date Range: From / To */}
         <div className="flex items-center gap-1.5">
-          <input
-            type="date"
-            dir="ltr"
-            value={filters.dateFrom || ''}
-            onChange={handleDateFromChange}
-            title={t('financials.dateFrom') || 'من تاريخ استحقاق'}
-            className="w-1/2 h-9 px-2 text-xs rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-          />
+          <DatePicker value={filters.dateFrom} onValueChange={handleDateFromChange} ariaLabel={t('financials.dateFrom')} className="h-9 w-1/2 text-xs" />
           <span className="text-xs text-muted-foreground">-</span>
-          <input
-            type="date"
-            dir="ltr"
-            value={filters.dateTo || ''}
-            onChange={handleDateToChange}
-            title={t('financials.dateTo') || 'إلى تاريخ استحقاق'}
-            className="w-1/2 h-9 px-2 text-xs rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-          />
+          <DatePicker value={filters.dateTo} onValueChange={handleDateToChange} ariaLabel={t('financials.dateTo')} className="h-9 w-1/2 text-xs" />
         </div>
       </div>
 

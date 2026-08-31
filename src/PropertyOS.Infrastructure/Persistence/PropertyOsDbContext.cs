@@ -28,6 +28,8 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
     {
     }
 
+    public bool SupportsAtomicOperations => Database.IsRelational();
+
     // ---------------------------------------------------------------------------
     // Module 1 — Core
     // ---------------------------------------------------------------------------
@@ -44,6 +46,8 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
 
     public DbSet<PropertyOS.Domain.Subscriptions.SubscriptionPlan> SubscriptionPlans => Set<PropertyOS.Domain.Subscriptions.SubscriptionPlan>();
     public DbSet<PropertyOS.Domain.Subscriptions.CompanySubscription> CompanySubscriptions => Set<PropertyOS.Domain.Subscriptions.CompanySubscription>();
+    public DbSet<PropertyOS.Domain.Subscriptions.PaygUsagePeriod> PaygUsagePeriods => Set<PropertyOS.Domain.Subscriptions.PaygUsagePeriod>();
+    public DbSet<PropertyOS.Domain.Subscriptions.PaygLeaseUsage> PaygLeaseUsage => Set<PropertyOS.Domain.Subscriptions.PaygLeaseUsage>();
     public DbSet<PropertyOS.Domain.Subscriptions.PlanChangeRequest> PlanChangeRequests => Set<PropertyOS.Domain.Subscriptions.PlanChangeRequest>();
 
     // ---------------------------------------------------------------------------
@@ -141,6 +145,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
     public DbSet<PropertyOS.Domain.Identity.Entities.UserSystemRole> UserSystemRoles => Set<PropertyOS.Domain.Identity.Entities.UserSystemRole>();
     public DbSet<PropertyOS.Domain.Identity.Entities.LandlordRegistration> LandlordRegistrations => Set<PropertyOS.Domain.Identity.Entities.LandlordRegistration>();
     public DbSet<PropertyOS.Domain.Identity.Entities.OtpChallenge> OtpChallenges => Set<PropertyOS.Domain.Identity.Entities.OtpChallenge>();
+    public DbSet<PropertyOS.Domain.Identity.Entities.PasswordResetChallenge> PasswordResetChallenges => Set<PropertyOS.Domain.Identity.Entities.PasswordResetChallenge>();
     public DbSet<PropertyOS.Domain.Audit.Entities.AuditLog> AuditLogs => Set<PropertyOS.Domain.Audit.Entities.AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -153,6 +158,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionStatusEnum>(name: "subscription_status_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.BillingCycleEnum>(name: "billing_cycle_enum");
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.PlanChangeRequestStatus>(name: "plan_change_request_status_enum");
+        modelBuilder.HasPostgresEnum<PropertyOS.Domain.Subscriptions.Enums.SubscriptionPricingModel>(name: "subscription_pricing_model_enum");
 
         // Module 3
         modelBuilder.HasPostgresEnum<PropertyOS.Domain.Identity.Enums.MfaType>(name: "mfa_type_enum");

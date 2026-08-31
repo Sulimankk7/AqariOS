@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from '@/shared/i18n';
+import { useEntityLabel, useTranslation } from '@/shared/i18n';
 import { PaymentVerificationQueueItem, PaymentSubmissionDto, RentPaymentReceiptDto } from '../types/payments.types';
 import { usePaymentDetails, useApproveSubmission, useRejectSubmission } from '../hooks/usePaymentVerifications';
 import { paymentsApi } from '../api/payments.api';
@@ -14,8 +14,9 @@ interface VerificationDetailsDrawerProps {
 }
 
 export function VerificationDetailsDrawer({ item, onClose }: VerificationDetailsDrawerProps) {
-  const { t, language, direction } = useTranslation();
+  const { t, direction, formatCurrency, formatDate } = useTranslation();
   const isRtl = direction === 'rtl';
+  const label = useEntityLabel();
   
   const { data: details, isLoading, isError } = usePaymentDetails(item?.rentPaymentId || null);
   const approveMutation = useApproveSubmission();
@@ -42,7 +43,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
         case 2: return t('financials.paymentMethodCheque');
         case 3: return t('financials.paymentMethodEfawateercom');
         case 4: return t('financials.paymentMethodCliq');
-        default: return String(method);
+        default: return label('paymentMethod', method);
       }
     }
     const lower = String(method).trim().toLowerCase().replace(/[^a-z]/g, '');
@@ -51,7 +52,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
     if (lower === 'cheque') return t('financials.paymentMethodCheque');
     if (lower === 'efawateercom') return t('financials.paymentMethodEfawateercom');
     if (lower === 'cliq' || lower === 'cli_q') return t('financials.paymentMethodCliq');
-    return String(method);
+    return label('paymentMethod', method);
   };
 
   const currentSubmission = details?.submissions.find(s => s.id === item?.paymentSubmissionId);
@@ -145,17 +146,17 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
                   <div className="flex justify-between items-center py-1 border-y border-border/40">
                     <span className="text-muted-foreground font-medium">{t('payments.submittedAmount')}</span>
                     <span className="font-bold text-lg text-primary">
-                      {(currentSubmission?.amount ?? item.submittedAmount ?? details.amountDue).toLocaleString()} {details.currency}
+                      {formatCurrency(currentSubmission?.amount ?? item.submittedAmount ?? details.amountDue, { currency: details.currency })}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{t('payments.totalInstallmentDue')}</span>
-                    <span>{details.amountDue.toLocaleString()} {details.currency}</span>
+                    <span>{formatCurrency(details.amountDue, { currency: details.currency })}</span>
                   </div>
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{t('payments.remainingBalance')}</span>
                     <span className="font-medium text-foreground">
-                      {Math.max(0, details.amountDue - details.amountPaid).toLocaleString()} {details.currency}
+                      {formatCurrency(Math.max(0, details.amountDue - details.amountPaid), { currency: details.currency })}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -168,7 +169,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('payments.submittedAt')}</span>
-                    <span className="font-medium">{new Date(item.submittedAt).toLocaleString(language)}</span>
+                    <span className="font-medium">{formatDate(item.submittedAt, { dateStyle: 'medium', timeStyle: 'short' })}</span>
                   </div>
                 </div>
               </section>
@@ -211,7 +212,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
                         </div>
                       </div>
                       <div className="text-right font-medium text-primary text-sm">
-                        {receipt.amount.toLocaleString()} {receipt.currency}
+                        {formatCurrency(receipt.amount, { currency: receipt.currency })}
                       </div>
                     </div>
                     {receiptPdfUrl && (
@@ -290,7 +291,7 @@ export function VerificationDetailsDrawer({ item, onClose }: VerificationDetails
                   {details.submissions.map((sub: PaymentSubmissionDto) => (
                     <div key={sub.id} className="p-3 border border-border rounded-lg bg-card text-sm space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{new Date(sub.submittedAt).toLocaleString(language)}</span>
+                        <span className="font-medium">{formatDate(sub.submittedAt, { dateStyle: 'medium', timeStyle: 'short' })}</span>
                         {sub.status === 'Pending' && <span className="text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded text-xs">{t('payments.statusPending')}</span>}
                         {sub.status === 'Approved' && <span className="text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded text-xs">{t('payments.statusApproved')}</span>}
                         {sub.status === 'Rejected' && <span className="text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded text-xs">{t('payments.statusRejected')}</span>}

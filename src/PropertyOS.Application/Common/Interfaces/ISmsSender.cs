@@ -9,7 +9,19 @@ namespace PropertyOS.Application.Common.Interfaces;
 public interface ISmsSender
 {
     /// <summary>
-    /// Sends an Arabic-first tenant portal activation SMS via Twilio Messaging Service.
+    /// Sends a transactional SMS through the configured provider.
+    /// </summary>
+    /// <param name="to">Destination phone number in international E.164 format.</param>
+    /// <param name="message">SMS text.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True when the provider accepts the SMS request; otherwise false.</returns>
+    Task<bool> SendAsync(
+        string to,
+        string message,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Legacy tenant-activation convenience operation retained for existing callers.
     /// </summary>
     /// <param name="recipientPhone">Destination E.164 phone number.</param>
     /// <param name="tenantName">Full name of the tenant.</param>

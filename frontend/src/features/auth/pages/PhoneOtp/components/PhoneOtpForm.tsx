@@ -13,7 +13,7 @@ import { ArchitecturalButton } from "@/features/auth/components/ArchitecturalBut
 import { TRANSLATIONS } from "@/features/auth/constants/translations";
 import { COUNTRY_CODES } from "@/features/auth/constants/countryCodes";
 import { authApi } from "@/features/auth/api/auth.api";
-import { ApiError } from "@/shared/lib/http";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
 import { ROUTES } from "@/config/routes";
 
 interface PhoneOtpFormProps {
@@ -51,13 +51,7 @@ export function PhoneOtpForm({ lang, onFeedbackMessage }: PhoneOtpFormProps) {
         state: { countryCode: selectedCountry.dialCode, phoneNumber },
       });
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else if (err instanceof Error) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage("An unexpected error occurred while requesting OTP.");
-      }
+      setErrorMessage(extractUserFriendlyError(err));
     } finally {
       setIsLoading(false);
     }

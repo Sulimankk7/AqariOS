@@ -7,6 +7,7 @@ using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.DTOs.Subscriptions;
 using PropertyOS.Application.Subscriptions.DTOs;
 using PropertyOS.Domain.Subscriptions;
+using PropertyOS.Domain.Subscriptions.Enums;
 
 namespace PropertyOS.Application.Subscriptions.UseCases;
 
@@ -125,7 +126,10 @@ public sealed record CreatePlanCommand(
     string FeatureFlags,
     bool SupportsTrial,
     short? TrialDurationDays,
-    short SortOrder) : ICommand<SubscriptionPlanDto>;
+    short SortOrder,
+    SubscriptionPricingModel PricingModel = SubscriptionPricingModel.Fixed,
+    decimal? PaygMonthlyUnitPrice = null,
+    decimal? PaygYearlyMonthlyEquivalentUnitPrice = null) : ICommand<SubscriptionPlanDto>;
 
 public sealed class CreatePlanCommandValidator : AbstractValidator<CreatePlanCommand>
 {
@@ -136,8 +140,17 @@ public sealed class CreatePlanCommandValidator : AbstractValidator<CreatePlanCom
         RuleFor(x => x.NameAr).NotEmpty().MaximumLength(100);
         RuleFor(x => x.DescriptionEn).MaximumLength(4000);
         RuleFor(x => x.DescriptionAr).MaximumLength(4000);
-        RuleFor(x => x.MonthlyPrice).GreaterThan(0);
-        RuleFor(x => x.YearlyPrice).GreaterThan(0);
+        RuleFor(x => x.PricingModel).IsInEnum();
+        RuleFor(x => x.MonthlyPrice).GreaterThan(0).When(x => x.PricingModel == SubscriptionPricingModel.Fixed);
+        RuleFor(x => x.YearlyPrice).GreaterThan(0).When(x => x.PricingModel == SubscriptionPricingModel.Fixed);
+        RuleFor(x => x.MonthlyPrice).Equal(0).When(x => x.PricingModel == SubscriptionPricingModel.PayAsYouGo);
+        RuleFor(x => x.YearlyPrice).Equal(0).When(x => x.PricingModel == SubscriptionPricingModel.PayAsYouGo);
+        RuleFor(x => x.PaygMonthlyUnitPrice).NotNull().GreaterThan(0)
+            .When(x => x.PricingModel == SubscriptionPricingModel.PayAsYouGo);
+        RuleFor(x => x.PaygYearlyMonthlyEquivalentUnitPrice).NotNull().GreaterThan(0)
+            .When(x => x.PricingModel == SubscriptionPricingModel.PayAsYouGo);
+        RuleFor(x => x.PaygMonthlyUnitPrice).Null().When(x => x.PricingModel == SubscriptionPricingModel.Fixed);
+        RuleFor(x => x.PaygYearlyMonthlyEquivalentUnitPrice).Null().When(x => x.PricingModel == SubscriptionPricingModel.Fixed);
         RuleFor(x => x.Currency).NotEmpty().Matches("^[A-Z]{3}$")
             .WithMessage("Currency must be a three-letter uppercase ISO currency code.");
         RuleFor(x => x.MaxBuildings).GreaterThan(0).When(x => x.MaxBuildings.HasValue);
@@ -184,6 +197,9 @@ public sealed class CreatePlanCommandHandler : IRequestHandler<CreatePlanCommand
             DescriptionAr = Normalize(request.DescriptionAr),
             MonthlyPrice = request.MonthlyPrice,
             YearlyPrice = request.YearlyPrice,
+            PricingModel = request.PricingModel,
+            PaygMonthlyUnitPrice = request.PaygMonthlyUnitPrice,
+            PaygYearlyMonthlyEquivalentUnitPrice = request.PaygYearlyMonthlyEquivalentUnitPrice,
             Currency = request.Currency,
             MaxBuildings = request.MaxBuildings,
             MaxUsers = request.MaxUsers,
@@ -269,6 +285,8 @@ internal static class SubscriptionProjection
         Id = x.Id, Code = x.Code, NameEn = x.NameEn, NameAr = x.NameAr,
         DescriptionEn = x.DescriptionEn, DescriptionAr = x.DescriptionAr,
         MonthlyPrice = x.MonthlyPrice, YearlyPrice = x.YearlyPrice, Currency = x.Currency,
+        PricingModel = x.PricingModel, PaygMonthlyUnitPrice = x.PaygMonthlyUnitPrice,
+        PaygYearlyMonthlyEquivalentUnitPrice = x.PaygYearlyMonthlyEquivalentUnitPrice,
         MaxBuildings = x.MaxBuildings, MaxUsers = x.MaxUsers, MaxStorageMb = x.MaxStorageMb,
         FeatureFlags = x.FeatureFlags, SupportsTrial = x.SupportsTrial,
         TrialDurationDays = x.TrialDurationDays, IsActive = x.IsActive, SortOrder = x.SortOrder
@@ -279,6 +297,8 @@ internal static class SubscriptionProjection
         Id = x.Id, Code = x.Code, NameEn = x.NameEn, NameAr = x.NameAr,
         DescriptionEn = x.DescriptionEn, DescriptionAr = x.DescriptionAr,
         MonthlyPrice = x.MonthlyPrice, YearlyPrice = x.YearlyPrice, Currency = x.Currency,
+        PricingModel = x.PricingModel, PaygMonthlyUnitPrice = x.PaygMonthlyUnitPrice,
+        PaygYearlyMonthlyEquivalentUnitPrice = x.PaygYearlyMonthlyEquivalentUnitPrice,
         MaxBuildings = x.MaxBuildings, MaxUsers = x.MaxUsers, MaxStorageMb = x.MaxStorageMb,
         FeatureFlags = x.FeatureFlags, SupportsTrial = x.SupportsTrial,
         TrialDurationDays = x.TrialDurationDays, IsActive = x.IsActive, SortOrder = x.SortOrder

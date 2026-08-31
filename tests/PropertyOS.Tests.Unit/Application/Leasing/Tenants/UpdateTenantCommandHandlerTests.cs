@@ -90,4 +90,39 @@ public class UpdateTenantCommandHandlerTests
         Assert.Equal("School", tenant.Employer);
         Assert.Equal(userCtx.UserId, tenant.UpdatedBy);
     }
+
+    [Fact]
+    public async Task Handle_AnotherActiveTenantsPhone_ThrowsConflict()
+    {
+        var tenantCtx = new FakeTenantContext();
+        var repo = new FakeTenantRepository();
+        var tenant = MakeTenant(tenantCtx.CompanyId!.Value);
+        var other = Tenant.Create(
+            Guid.NewGuid(), "Other", "3333333333", "+962791234567", DateTimeOffset.UtcNow, null);
+        repo.Store.Add(tenant);
+        repo.Store.Add(other);
+        var handler = new UpdateTenantCommandHandler(repo, tenantCtx, new FakeCurrentUserContext());
+
+        await Assert.ThrowsAsync<ConflictException>(
+            () => handler.Handle(CommandFor(tenant.Id), CancellationToken.None));
+
+        Assert.Equal("Original Name", tenant.Name);
+    }
+
+    [Fact]
+    public async Task Handle_KeepingOwnCanonicalPhone_IsAllowed()
+    {
+        var tenantCtx = new FakeTenantContext();
+        var repo = new FakeTenantRepository();
+        var tenant = MakeTenant(tenantCtx.CompanyId!.Value);
+        repo.Store.Add(tenant);
+        var handler = new UpdateTenantCommandHandler(repo, tenantCtx, new FakeCurrentUserContext());
+        var command = new UpdateTenantCommand(
+            tenant.Id, "Updated", "1111111111", "+962 790 000 000");
+
+        await handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal("+962790000000", tenant.Phone);
+        Assert.Equal(tenant.Id, repo.LastExistsPhoneExcludeTenantId);
+    }
 }

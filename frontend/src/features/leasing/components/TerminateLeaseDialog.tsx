@@ -28,10 +28,12 @@ import {
 import { TerminationType } from '../types/leasing.types';
 import { useTerminateLease } from '../hooks/useLeasing';
 import { getLeasingTranslation } from '../constants/translations';
+import { localizeValidationMessage } from '@/shared/utils/errorHandling';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
 import { extractUserFriendlyError, mapApiValidationErrors } from '@/shared/utils';
 import { terminationTypeToLabel } from '../constants/leasingEnums';
 import { useTranslation } from '@/shared/i18n';
+import { DatePicker } from '@/shared/components/ui/DatePicker';
 
 interface TerminateLeaseDialogProps {
   contractId: string | null;
@@ -164,18 +166,18 @@ export function TerminateLeaseDialog({
 
           <div className="space-y-2">
             <Label htmlFor="terminationDate">{t('terminationDate')} *</Label>
-            <Input
+            <DatePicker
               id="terminationDate"
-              type="date"
-              placeholder="YYYY-MM-DD"
-              aria-required="true"
-              aria-invalid={!!errors.terminationDate}
-              aria-describedby={errors.terminationDate ? 'term-date-error' : undefined}
-              {...register('terminationDate')}
+              value={watch('terminationDate')}
+              onValueChange={(value) => setValue('terminationDate', value ?? '', { shouldValidate: true })}
+              ariaLabel={t('terminationDate')}
+              required
+              ariaInvalid={!!errors.terminationDate}
+              ariaDescribedBy={errors.terminationDate ? 'term-date-error' : undefined}
             />
             {errors.terminationDate && (
               <p id="term-date-error" role="alert" className="text-xs text-destructive">
-                {errors.terminationDate.message}
+                {localizeValidationMessage(errors.terminationDate.message)}
               </p>
             )}
           </div>
@@ -187,7 +189,7 @@ export function TerminateLeaseDialog({
                 id="outstandingBalance"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 0.00"
+                placeholder={t('zeroAmountPlaceholder')}
                 {...register('outstandingBalance')}
               />
             </div>
@@ -198,7 +200,7 @@ export function TerminateLeaseDialog({
                 id="depositReturnedAmount"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 500.00"
+                placeholder={t('amountPlaceholder')}
                 {...register('depositReturnedAmount')}
               />
             </div>
@@ -209,7 +211,7 @@ export function TerminateLeaseDialog({
                 id="depositDeductionAmount"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 50.00"
+                placeholder={t('smallAmountPlaceholder')}
                 {...register('depositDeductionAmount')}
               />
             </div>

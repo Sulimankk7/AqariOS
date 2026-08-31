@@ -14,6 +14,8 @@ import { DashboardEmptyState } from "../components/DashboardEmptyState";
 import { DashboardSkeleton } from "../components/DashboardSkeleton";
 import { DashboardError } from "../components/DashboardError";
 import { PageContainer } from "@/shared/components/layout/PageContainer";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
+import { PaygUsageSection } from "../components/PaygUsageSection";
 
 export function DashboardPage() {
   const {
@@ -40,13 +42,15 @@ export function DashboardPage() {
       {/* Quick Operations Bar */}
       <QuickActions />
 
+      <PaygUsageSection />
+
       {/* Loading Skeleton View */}
       {isLoading && <DashboardSkeleton />}
 
       {/* Error State View */}
       {isError && (
         <DashboardError
-          message={error instanceof Error ? error.message : undefined}
+          message={extractUserFriendlyError(error)}
           onRetry={() => refetch()}
         />
       )}

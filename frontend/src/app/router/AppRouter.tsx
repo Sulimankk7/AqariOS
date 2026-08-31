@@ -25,6 +25,7 @@ import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { ModulePlaceholder } from "@/shared/components/layout/ModulePlaceholder";
 import { ROUTES } from "@/config/routes";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useTranslation } from "@/shared/i18n";
 
 import { TenantLayout } from "@/app/layouts/TenantLayout";
 import { TenantDashboardPage } from "@/features/tenantPortal/pages/TenantDashboardPage";
@@ -56,6 +57,7 @@ import PhoneOtpPage from "@/features/auth/pages/PhoneOtp";
 import VerifyOtpPage from "@/features/auth/pages/VerifyOtp";
 import ForgotPasswordPage from "@/features/auth/pages/ForgotPassword";
 import ResetPasswordPage from "@/features/auth/pages/ResetPassword";
+import PasswordResetVerifyPage from "@/features/auth/pages/PasswordResetVerify";
 import ActivateTenantPage from "@/features/auth/pages/ActivateTenant";
 
 // Real page implementations
@@ -126,6 +128,7 @@ function RootRedirect() {
 }
 
 export function AppRouter() {
+  const { t } = useTranslation();
   return (
     <BrowserRouter>
       <Routes>
@@ -140,6 +143,7 @@ export function AppRouter() {
           <Route path="verify" element={<VerifyOtpPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />
+          <Route path="password-reset/verify" element={<PasswordResetVerifyPage />} />
           <Route path="activate" element={<ActivateTenantPage />} />
         </Route>
 
@@ -179,8 +183,8 @@ export function AppRouter() {
               path={ROUTES.parking.root}
               element={
                 <ModulePlaceholder
-                  title="Parking"
-                  description="Track parking spaces, assignments, and availability."
+                  title={t("placeholders.parking.title")}
+                  description={t("placeholders.parking.description")}
                   icon={Car}
                 />
               }
@@ -221,8 +225,8 @@ export function AppRouter() {
               path={ROUTES.marketplace.root}
               element={
                 <ModulePlaceholder
-                  title="Marketplace"
-                  description="Discover integrations, add-ons, and third-party services."
+                  title={t("placeholders.marketplace.title")}
+                  description={t("placeholders.marketplace.description")}
                   icon={Store}
                 />
               }
@@ -231,8 +235,8 @@ export function AppRouter() {
               path={ROUTES.documents.root}
               element={
                 <ModulePlaceholder
-                  title="Documents"
-                  description="Central repository for contracts, reports, and e-signatures."
+                  title={t("placeholders.documents.title")}
+                  description={t("placeholders.documents.description")}
                   icon={FolderOpen}
                 />
               }
@@ -243,8 +247,8 @@ export function AppRouter() {
               path={ROUTES.notifications.root}
               element={
                 <ModulePlaceholder
-                  title="Notifications"
-                  description="View alerts, system messages, and activity updates."
+                  title={t("placeholders.notifications.title")}
+                  description={t("placeholders.notifications.description")}
                   icon={Bell}
                 />
               }
@@ -253,8 +257,8 @@ export function AppRouter() {
               path={ROUTES.settings.root}
               element={
                 <ModulePlaceholder
-                  title="Settings"
-                  description="Configure system preferences, users, and integrations."
+                  title={t("placeholders.settings.title")}
+                  description={t("placeholders.settings.description")}
                   icon={Settings}
                 />
               }
@@ -263,8 +267,8 @@ export function AppRouter() {
               path={ROUTES.profile.root}
               element={
                 <ModulePlaceholder
-                  title="Profile"
-                  description="Manage your personal information and account details."
+                  title={t("placeholders.profile.title")}
+                  description={t("placeholders.profile.description")}
                   icon={UserCircle}
                 />
               }
@@ -273,8 +277,8 @@ export function AppRouter() {
               path={ROUTES.preferences.root}
               element={
                 <ModulePlaceholder
-                  title="Preferences"
-                  description="Customize your workspace appearance, language, and notifications."
+                  title={t("placeholders.preferences.title")}
+                  description={t("placeholders.preferences.description")}
                   icon={SlidersHorizontal}
                 />
               }

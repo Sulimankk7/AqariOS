@@ -22,6 +22,7 @@ export const ROUTES = {
     forgotPassword: "/auth/forgot-password",
     /** /auth/reset-password */
     resetPassword: "/auth/reset-password",
+    passwordResetVerify: "/auth/password-reset/verify",
   },
 
   // ── Protected Application ──────────────────────────────────────────────────

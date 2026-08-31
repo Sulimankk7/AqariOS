@@ -14,7 +14,9 @@ import {
 import { TenantDto } from '../types/tenants.types';
 import { useCreateTenant, useUpdateTenant } from '../hooks/useTenants';
 import { getTenantTranslation } from '../constants/translations';
+import { localizeValidationMessage } from '@/shared/utils/errorHandling';
 import { useTranslation } from '@/shared/i18n';
+import { COUNTRY_CODES } from '@/features/auth/constants/countryCodes';
 
 interface TenantFormProps {
   initialValues?: Partial<TenantDto>;
@@ -52,6 +54,7 @@ export function TenantForm({
       name: initialValues?.name || '',
       nationalId: initialValues?.nationalId || '',
       phone: initialValues?.phone || '',
+      phoneCountryCode: 'JO',
       email: initialValues?.email || '',
       occupation: initialValues?.occupation || '',
       employer: initialValues?.employer || '',
@@ -65,6 +68,7 @@ export function TenantForm({
         name: initialValues.name || '',
         nationalId: initialValues.nationalId || '',
         phone: initialValues.phone || '',
+        phoneCountryCode: 'JO',
         email: initialValues.email || '',
         occupation: initialValues.occupation || '',
         employer: initialValues.employer || '',
@@ -119,7 +123,7 @@ export function TenantForm({
               <Label htmlFor="name">{t('name')} *</Label>
               <Input
                 id="name"
-                placeholder="e.g. Ahmad Al-Mansoor"
+                placeholder={t('namePlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? 'name-error' : undefined}
@@ -127,7 +131,7 @@ export function TenantForm({
               />
               {errors.name && (
                 <p id="name-error" role="alert" className="text-xs text-destructive">
-                  {errors.name.message}
+                  {localizeValidationMessage(errors.name.message)}
                 </p>
               )}
             </div>
@@ -136,7 +140,7 @@ export function TenantForm({
               <Label htmlFor="nationalId">{t('nationalId')} *</Label>
               <Input
                 id="nationalId"
-                placeholder="e.g. 9981029384"
+                placeholder={t('nationalIdPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.nationalId}
                 aria-describedby={errors.nationalId ? 'nationalId-error' : undefined}
@@ -144,7 +148,7 @@ export function TenantForm({
               />
               {errors.nationalId && (
                 <p id="nationalId-error" role="alert" className="text-xs text-destructive">
-                  {errors.nationalId.message}
+                  {localizeValidationMessage(errors.nationalId.message)}
                 </p>
               )}
             </div>
@@ -153,18 +157,36 @@ export function TenantForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="phone">{t('phone')} *</Label>
-              <Input
-                id="phone"
-                placeholder="e.g. +962 7 9123 4567"
-                dir="ltr"
-                aria-required="true"
-                aria-invalid={!!errors.phone}
-                aria-describedby={errors.phone ? 'phone-error' : undefined}
-                {...register('phone')}
-              />
+              <div className="flex gap-2" dir="ltr">
+                <select
+                  aria-label="Phone country"
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  {...register('phoneCountryCode')}
+                >
+                  <option value="">International</option>
+                  {COUNTRY_CODES.map((country) => (
+                    <option key={country.isoCode} value={country.isoCode}>
+                      {country.flag} {country.dialCode}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  id="phone"
+                  placeholder={t('phonePlaceholder')}
+                  aria-required="true"
+                  aria-invalid={!!errors.phone}
+                  aria-describedby={errors.phone ? 'phone-error' : undefined}
+                  {...register('phone')}
+                />
+              </div>
               {errors.phone && (
                 <p id="phone-error" role="alert" className="text-xs text-destructive">
-                  {errors.phone.message}
+                  {localizeValidationMessage(errors.phone.message)}
+                </p>
+              )}
+              {errors.phoneCountryCode && (
+                <p role="alert" className="text-xs text-destructive">
+                  {localizeValidationMessage(errors.phoneCountryCode.message)}
                 </p>
               )}
             </div>
@@ -183,7 +205,7 @@ export function TenantForm({
               />
               {errors.email && (
                 <p id="email-error" role="alert" className="text-xs text-destructive">
-                  {errors.email.message}
+                  {localizeValidationMessage(errors.email.message)}
                 </p>
               )}
             </div>
@@ -194,14 +216,14 @@ export function TenantForm({
               <Label htmlFor="occupation">{t('occupation')}</Label>
               <Input
                 id="occupation"
-                placeholder="e.g. Software Engineer"
+                placeholder={t('occupationPlaceholder')}
                 aria-invalid={!!errors.occupation}
                 aria-describedby={errors.occupation ? 'occupation-error' : undefined}
                 {...register('occupation')}
               />
               {errors.occupation && (
                 <p id="occupation-error" role="alert" className="text-xs text-destructive">
-                  {errors.occupation.message}
+                  {localizeValidationMessage(errors.occupation.message)}
                 </p>
               )}
             </div>
@@ -210,14 +232,14 @@ export function TenantForm({
               <Label htmlFor="employer">{t('employer')}</Label>
               <Input
                 id="employer"
-                placeholder="e.g. Amman Tech Ltd."
+                placeholder={t('employerPlaceholder')}
                 aria-invalid={!!errors.employer}
                 aria-describedby={errors.employer ? 'employer-error' : undefined}
                 {...register('employer')}
               />
               {errors.employer && (
                 <p id="employer-error" role="alert" className="text-xs text-destructive">
-                  {errors.employer.message}
+                  {localizeValidationMessage(errors.employer.message)}
                 </p>
               )}
             </div>

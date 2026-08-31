@@ -40,8 +40,8 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: UserProfile | null;
-  login: (accessToken: string, profileDto?: UserProfileDto) => Promise<UserProfile>;
-  logout: () => void;
+  login: (accessToken: string, profileDto?: UserProfileDto, isPersistentSession?: boolean) => Promise<UserProfile>;
+  logout: () => Promise<void>;
   invalidateSession: (returnUrl?: string) => void;
 }
 
@@ -96,6 +96,8 @@ const PUBLIC_UI_ROUTES = [
   "/auth/login",
   "/auth/register",
   "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/password-reset/verify",
   "/auth/otp",
 ];
 
@@ -107,12 +109,32 @@ function isPublicUiRoute(path: string): boolean {
 function purgeStorage(): void {
   try {
     localStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(CURRENT_COMPANY_KEY);
+    sessionStorage.removeItem(CURRENT_COMPANY_KEY);
     storage.remove(STORAGE_KEYS.accessToken);
-    storage.remove(STORAGE_KEYS.refreshToken);
+    storage.remove(STORAGE_KEYS.rememberMe);
   } catch {
     // Fail-safe
   }
+}
+
+function getStoredUser(): UserProfile | null {
+  const rawUser = sessionStorage.getItem(AUTH_USER_KEY) ?? localStorage.getItem(AUTH_USER_KEY);
+  if (!rawUser) return null;
+
+  try {
+    return JSON.parse(rawUser) as UserProfile;
+  } catch {
+    return null;
+  }
+}
+
+function setStoredUser(user: UserProfile, isPersistentSession: boolean): void {
+  localStorage.removeItem(AUTH_USER_KEY);
+  sessionStorage.removeItem(AUTH_USER_KEY);
+  const target = isPersistentSession ? localStorage : sessionStorage;
+  target.setItem(AUTH_USER_KEY, JSON.stringify(user));
 }
 
 // ── Sidebar state helpers ─────────────────────────────────────────────────────
@@ -166,12 +188,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = storage.get<string>(STORAGE_KEYS.accessToken);
 
       if (!token) {
-        purgeStorage();
-        if (isMounted) {
-          setUser(null);
-          setAuthStatus("unauthenticated");
+        try {
+          const refreshRes = await authApi.refreshToken();
+          storage.setAccessToken(refreshRes.accessToken, refreshRes.isPersistentSession);
+        } catch {
+          purgeStorage();
+          if (isMounted) {
+            setUser(null);
+            setAuthStatus("unauthenticated");
+          }
+          return;
         }
-        return;
       }
 
       try {
@@ -197,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         if (isMounted) {
-          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(verifiedUser));
+          setStoredUser(verifiedUser, storage.isPersistentSession());
           setUser(verifiedUser);
           setAuthStatus("authenticated");
         }
@@ -205,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (err?.status === 401) {
           try {
             const refreshRes = await authApi.refreshToken();
-            storage.set(STORAGE_KEYS.accessToken, refreshRes.accessToken);
+            storage.setAccessToken(refreshRes.accessToken, refreshRes.isPersistentSession);
             
             const profile = await authApi.getProfile();
             const { roleCode, companyId } = resolveUserRole(profile);
@@ -229,7 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
 
             if (isMounted) {
-              localStorage.setItem(AUTH_USER_KEY, JSON.stringify(verifiedUser));
+              setStoredUser(verifiedUser, refreshRes.isPersistentSession);
               setUser(verifiedUser);
               setAuthStatus("authenticated");
             }
@@ -241,20 +268,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } else {
-          const rawUser = localStorage.getItem(AUTH_USER_KEY);
-          if (rawUser) {
-            try {
-              const parsed: UserProfile = JSON.parse(rawUser);
-              if (parsed && (parsed.roleCode === "COMPANY_ADMIN" || parsed.roleCode === "TENANT" || parsed.roleCode === "SYSTEM_ADMIN")) {
-                if (isMounted) {
-                  setUser(parsed);
-                  setAuthStatus("authenticated");
-                }
-                return;
-              }
-            } catch {
-              // Ignore
+          const parsed = getStoredUser();
+          if (parsed && (parsed.roleCode === "COMPANY_ADMIN" || parsed.roleCode === "TENANT" || parsed.roleCode === "SYSTEM_ADMIN")) {
+            if (isMounted) {
+              setUser(parsed);
+              setAuthStatus("authenticated");
             }
+            return;
           }
           purgeStorage();
           if (isMounted) {
@@ -382,7 +402,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /**
    * Atomic Login Helper — Purges old state/cache, resolves canonical roleCode, and commits state.
    */
-  const login = useCallback(async (accessToken: string, profileDto?: UserProfileDto): Promise<UserProfile> => {
+  const login = useCallback(async (
+    accessToken: string,
+    profileDto?: UserProfileDto,
+    isPersistentSession = true,
+  ): Promise<UserProfile> => {
     // 1. Synchronously purge previous session and clear query cache
     try {
       queryClient.cancelQueries();
@@ -392,7 +416,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // 2. Persist token
-    storage.set(STORAGE_KEYS.accessToken, accessToken);
+    storage.setAccessToken(accessToken, isPersistentSession);
 
     // 3. Obtain profile if not supplied or roles missing
     let profile = profileDto;
@@ -420,16 +444,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // 5. Commit state atomically
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(verifiedUser));
+    setStoredUser(verifiedUser, isPersistentSession);
     resetUnauthorizedState();
     setUser(verifiedUser);
     setAuthStatus("authenticated");
-    broadcastAuthEvent("LOGIN", verifiedUser);
+    if (isPersistentSession) {
+      broadcastAuthEvent("LOGIN", verifiedUser);
+    }
 
     return verifiedUser;
   }, [queryClient, broadcastAuthEvent]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Local logout must still complete if the server is unavailable. A valid
+      // server session will expire naturally and is not exposed to JavaScript.
+    }
+
     try {
       queryClient.cancelQueries();
       queryClient.clear();

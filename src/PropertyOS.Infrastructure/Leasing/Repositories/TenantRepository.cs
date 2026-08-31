@@ -47,6 +47,21 @@ public class TenantRepository : ITenantRepository
         return query.AnyAsync(cancellationToken);
     }
 
+    public Task<bool> ExistsByPhoneAsync(
+        string phone,
+        Guid? excludeTenantId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Tenants
+            .AsNoTracking()
+            .Where(t => t.Phone == phone && t.DeletedAt == null);
+
+        if (excludeTenantId.HasValue)
+            query = query.Where(t => t.Id != excludeTenantId.Value);
+
+        return query.AnyAsync(cancellationToken);
+    }
+
     public Task<bool> HasNonTerminalLeaseContractAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return _dbContext.LeaseContracts.AnyAsync(

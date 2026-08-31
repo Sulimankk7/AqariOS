@@ -35,7 +35,7 @@ export const ReplaceDocumentDialog: React.FC<ReplaceDocumentDialogProps> = ({
   open,
   onOpenChange,
 }) => {
-  const { language } = useTranslation();
+  const { language, t: globalT } = useTranslation();
   const t = (key: string) => getLeasingTranslation(key, language);
   const replaceMutation = useReplaceContractDocument();
 
@@ -204,7 +204,7 @@ export const ReplaceDocumentDialog: React.FC<ReplaceDocumentDialogProps> = ({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    aria-label="Remove selected file"
+                    aria-label={globalT("common.removeSelectedFile")}
                     onClick={handleRemoveFile}
                     className="h-8 w-8 p-0"
                   >

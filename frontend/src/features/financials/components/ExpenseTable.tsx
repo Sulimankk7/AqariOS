@@ -23,7 +23,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
   const { t, language } = useTranslation();
   const categoryLabel = (value: ExpenseDto['category']) => {
     const category = expenseCategoryValue(value);
-    return category === null ? String(value) : t(`financials.expenseCategory${ExpenseCategory[category]}`);
+    return category === null ? t('common.unknown') : t(`financials.expenseCategory${ExpenseCategory[category]}`);
   };
   const methodLabel = (value: ExpenseDto['paymentMethod']) => {
     switch (expensePaymentMethodValue(value)) {
@@ -31,7 +31,7 @@ export function ExpenseTable(props: ExpenseTableProps) {
       case ExpensePaymentMethod.BankTransfer: return t('financials.paymentMethodBankTransfer');
       case ExpensePaymentMethod.Cheque: return t('financials.paymentMethodCheque');
       case ExpensePaymentMethod.Other: return t('financials.paymentMethodOther');
-      default: return String(value);
+      default: return t('common.unknown');
     }
   };
 

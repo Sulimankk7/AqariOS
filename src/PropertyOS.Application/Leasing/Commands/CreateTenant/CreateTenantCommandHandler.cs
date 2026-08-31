@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using MediatR;
 using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
-using PropertyOS.Domain.Common.ValueObjects;
 using PropertyOS.Domain.Leasing;
 
 namespace PropertyOS.Application.Leasing.Commands.CreateTenant;
@@ -30,7 +29,10 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, G
         var companyId = _tenantContext.CompanyId ?? throw new InvalidOperationException("Tenant context is required.");
 
         // 1. Normalize phone to E.164 (validator already guarantees parseability).
-        var phone = new PhoneNumber(request.Phone).Value;
+        var phone = TenantPhoneNumber.Normalize(request.Phone, request.PhoneCountryCode);
+
+        if (await _tenantRepository.ExistsByPhoneAsync(phone, excludeTenantId: null, cancellationToken))
+            throw new ConflictException("An active tenant with this phone number already exists.");
 
         // 2. Pre-check national-ID uniqueness within the company (friendly 409). The partial
         //    unique index uq_tenants_company_national_id remains the race-condition backstop.
@@ -49,7 +51,8 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, G
             email: request.Email,
             occupation: request.Occupation,
             employer: request.Employer,
-            userId: null
+            userId: null,
+            phoneCountryCode: null
         );
 
         await _tenantRepository.AddAsync(tenant, cancellationToken);

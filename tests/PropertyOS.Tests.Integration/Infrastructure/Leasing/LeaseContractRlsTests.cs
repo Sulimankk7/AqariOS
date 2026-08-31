@@ -116,7 +116,7 @@ public class LeaseContractRlsTests : IAsyncLifetime
                 VALUES (@aptA, (SELECT id FROM floors WHERE building_id = @buildA LIMIT 1), @buildA, @cA, '101A', 'vacant', 1, 1, 100, 100, now(), now()),
                        (@aptB, (SELECT id FROM floors WHERE building_id = @buildB LIMIT 1), @buildB, @cB, '101B', 'vacant', 1, 1, 100, 100, now(), now());
             INSERT INTO tenants (id, company_id, name, national_id, phone, created_at, updated_at) 
-                VALUES (@tenA, @cA, 'TA 1', '1234567890', '+962791234567', now(), now()), (@tenB, @cB, 'TB 1', '1234567890', '+962791234567', now(), now());
+                VALUES (@tenA, @cA, 'TA 1', '1234567890', '+962791234567', now(), now()), (@tenB, @cB, 'TB 1', '1234567890', '+962791234568', now(), now());
             
             INSERT INTO lease_contracts (id, company_id, building_id, apartment_id, tenant_id, contract_number, start_date, end_date, monthly_rent_amount, payment_frequency, payment_due_day, status, legal_regime, tenant_type, security_deposit_amount, created_at, updated_at)
                 VALUES (@contA, @cA, @buildA, @aptA, @tenA, 'LC-A', '2025-01-01', '2026-01-01', 100, 'monthly', 1, 'draft', 'standard', 'personal', 100, now(), now()),

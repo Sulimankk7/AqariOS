@@ -51,7 +51,7 @@ export function AppLayout() {
           isOpenMobile={isOpenMobile}
           onCloseMobile={() => setIsOpenMobile(false)}
           />}
-          topbar={<Topbar onOpenMobileNav={() => setIsOpenMobile(true)} />}
+          topbar={<Topbar portal="company" onOpenMobileNav={() => setIsOpenMobile(true)} />}
           beforeContent={<Breadcrumbs />}
         >
           <Outlet />

@@ -10,16 +10,10 @@ import { ApartmentFormValues } from '../schemas/apartments.schema';
 import { toast } from 'sonner';
 import { getApartmentTranslation } from '../constants/translations';
 import { isArchiveBlockedError } from '@/shared/lib/archiveBlocked';
+import { getRuntimeLanguage } from '@/shared/i18n';
+import { extractUserFriendlyError } from '@/shared/utils/errorHandling';
 
-function getCurrentLang(): 'en' | 'ar' {
-  try {
-    return (localStorage.getItem('aqari:language') as 'en' | 'ar') || 'en';
-  } catch {
-    return 'en';
-  }
-}
-
-const t = (key: string) => getApartmentTranslation(key, getCurrentLang());
+const t = (key: string) => getApartmentTranslation(key, getRuntimeLanguage());
 
 export const useApartments = (params?: ListApartmentsParams) => {
   return useQuery({
@@ -47,7 +41,7 @@ export const useCreateApartment = () => {
       toast.success(t('createSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     }
   });
 };
@@ -64,7 +58,7 @@ export const useUpdateApartment = () => {
       toast.success(t('updateSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     }
   });
 };
@@ -82,7 +76,7 @@ export const useDeleteApartment = () => {
       if (isArchiveBlockedError(error)) {
         return;
       }
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     }
   });
 };

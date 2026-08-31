@@ -23,6 +23,7 @@ using PropertyOS.Application.Leasing.Commands.DeleteContractDocument;
 using PropertyOS.Application.Leasing.Commands.ReplaceContractDocument;
 using PropertyOS.Application.Leasing.Queries.GetContractDocumentDownloadUrl;
 using PropertyOS.Application.Leasing.Security;
+using PropertyOS.Application.Common.Numbering;
 
 namespace PropertyOS.Api.Leasing;
 
@@ -46,6 +47,11 @@ public class LeaseContractsController : ControllerBase
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
     }
+
+    [HttpGet("api/v{version:apiVersion}/leasing/contracts/next-number")]
+    [Authorize(Policy = LeasingPermissions.Create)]
+    public async Task<ActionResult<IdentifierSuggestionDto>> GetNextNumber(CancellationToken cancellationToken = default) =>
+        Ok(await _mediator.Send(new GetNextIdentifierSuggestionQuery(IdentifierSuggestionKind.LeaseContract), cancellationToken));
 
     /// <summary>
     /// Creates a new draft lease contract.

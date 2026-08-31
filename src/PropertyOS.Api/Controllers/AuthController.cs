@@ -17,6 +17,7 @@ using PropertyOS.Api.Models.Identity;
 using PropertyOS.Application.Identity.Commands.ActivateTenantAccount;
 using PropertyOS.Application.Identity.Commands.Register;
 using PropertyOS.Application.Identity.Queries.ValidateTenantActivationToken;
+using PropertyOS.Application.Identity.Commands.PasswordReset;
 
 namespace PropertyOS.Api.Controllers;
 
@@ -112,9 +113,10 @@ public class AuthController : ControllerBase
     {
             var ipAddress = GetClientIpAddress();
             var userAgent = Request.Headers.UserAgent.ToString();
+            dto.RememberMe ??= false;
 
             var response = await _authService.LoginAsync(dto, ipAddress, userAgent, cancellationToken);
-            SetRefreshTokenCookie(response.RefreshToken);
+            SetRefreshTokenCookie(response);
 
             return Ok(response);
     }
@@ -154,13 +156,13 @@ public class AuthController : ControllerBase
         {
             var ipAddress = GetClientIpAddress();
             var response = await _authService.RefreshTokenAsync(token, ipAddress, cancellationToken);
-            SetRefreshTokenCookie(response.RefreshToken);
+            SetRefreshTokenCookie(response);
 
             return Ok(response);
         }
         catch (UnauthorizedAccessException ex)
         {
-            Response.Cookies.Delete("refreshToken");
+            DeleteRefreshTokenCookie();
             return Problem(
                 title: "Refresh Token Invalid",
                 detail: ex.Message,
@@ -195,7 +197,7 @@ public class AuthController : ControllerBase
             await _authService.RevokeTokenAsync(token, cancellationToken);
         }
 
-        Response.Cookies.Delete("refreshToken");
+        DeleteRefreshTokenCookie();
         return NoContent();
     }
 
@@ -226,7 +228,7 @@ public class AuthController : ControllerBase
         }
 
         await _authService.LogoutAllSessionsAsync(userId, cancellationToken);
-        Response.Cookies.Delete("refreshToken");
+        DeleteRefreshTokenCookie();
         return NoContent();
     }
 
@@ -241,20 +243,46 @@ public class AuthController : ControllerBase
     /// <returns>Success status message.</returns>
     /// <response code="200">OTP code dispatched successfully.</response>
     /// <response code="400">If request payload validation fails.</response>
+    /// <response code="404">If no active account is registered with the phone number.</response>
     /// <response code="500">If an internal server error occurs.</response>
     [HttpPost("otp/request")]
     [AllowAnonymous]
     [EnableRateLimiting("AuthOtpRequestLimit")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RequestOtp(
         [FromBody] OtpRequestDto dto,
         CancellationToken cancellationToken = default)
     {
-        var clientIp = GetClientIpAddress();
-        await _authService.RequestOtpAsync(dto, clientIp, cancellationToken);
-        return Ok(new { message = "OTP challenge generated successfully.", phone = dto.Phone });
+        try
+        {
+            await _authService.RequestOtpAsync(dto, GetClientIpAddress(), cancellationToken);
+            return Ok(new { message = "If the number is eligible, a verification code has been sent." });
+        }
+        catch (OtpRequestThrottledException ex)
+        {
+            Response.Headers.RetryAfter = ex.RetryAfterSeconds.ToString();
+            return Problem(title: "OTP request temporarily limited", detail: ex.Message,
+                statusCode: StatusCodes.Status429TooManyRequests);
+        }
+        catch (OtpDeliveryException)
+        {
+            return Problem(title: "Verification code could not be sent",
+                detail: "Please try again shortly.", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (NotFoundException ex)
+        {
+            var problemDetails = new ProblemDetails
+            {
+                Status = StatusCodes.Status404NotFound,
+                Title = "Account Not Found",
+                Detail = ex.Message
+            };
+            problemDetails.Extensions["code"] = "OTP_ACCOUNT_NOT_FOUND";
+            return NotFound(problemDetails);
+        }
     }
 
     /// <summary>
@@ -273,6 +301,7 @@ public class AuthController : ControllerBase
     /// <response code="500">If an internal server error occurs.</response>
     [HttpPost("otp/verify")]
     [AllowAnonymous]
+    [EnableRateLimiting("AuthOtpVerifyLimit")]
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -288,7 +317,7 @@ public class AuthController : ControllerBase
             var userAgent = Request.Headers.UserAgent.ToString();
 
             var response = await _authService.VerifyOtpAsync(dto, ipAddress, userAgent, cancellationToken);
-            SetRefreshTokenCookie(response.RefreshToken);
+            SetRefreshTokenCookie(response);
 
             return Ok(response);
         }
@@ -306,6 +335,59 @@ public class AuthController : ControllerBase
                 detail: ex.Message,
                 statusCode: StatusCodes.Status404NotFound);
         }
+    }
+
+    /// <summary>Requests email or SMS password-recovery delivery without revealing account existence.</summary>
+    [HttpPost("password-reset/request")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthPasswordResetRequestLimit")]
+    [ProducesResponseType(typeof(PasswordResetRequestResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<PasswordResetRequestResponseDto>> RequestPasswordReset(
+        [FromBody] PasswordResetRequestDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new RequestPasswordResetCommand(
+            dto.DeliveryMethod,
+            dto.Identifier,
+            GetClientIpAddress(),
+            Request.Headers.UserAgent.ToString());
+        return Ok(await _mediator.Send(command, cancellationToken));
+    }
+
+    /// <summary>Verifies a dedicated password-reset SMS code and returns a short-lived reset authorization.</summary>
+    [HttpPost("password-reset/verify-otp")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthPasswordResetVerifyLimit")]
+    [ProducesResponseType(typeof(PasswordResetOtpVerifyResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<PasswordResetOtpVerifyResponseDto>> VerifyPasswordResetOtp(
+        [FromBody] PasswordResetOtpVerifyDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new VerifyPasswordResetOtpCommand(dto.Phone, dto.Code, GetClientIpAddress());
+        return Ok(await _mediator.Send(command, cancellationToken));
+    }
+
+    /// <summary>Consumes an email token or SMS reset authorization and changes the User password.</summary>
+    [HttpPost("password-reset/complete")]
+    [AllowAnonymous]
+    [EnableRateLimiting("AuthPasswordResetVerifyLimit")]
+    [ProducesResponseType(typeof(PasswordResetCompleteResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<PasswordResetCompleteResponseDto>> CompletePasswordReset(
+        [FromBody] PasswordResetCompleteDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new CompletePasswordResetCommand(
+            dto.ResetCredential,
+            dto.NewPassword,
+            GetClientIpAddress(),
+            Request.Headers.UserAgent.ToString());
+        return Ok(await _mediator.Send(command, cancellationToken));
     }
 
     /// <summary>
@@ -393,7 +475,7 @@ public class AuthController : ControllerBase
             );
 
             var response = await _mediator.Send(command, cancellationToken);
-            SetRefreshTokenCookie(response.RefreshToken);
+            SetRefreshTokenCookie(response);
 
             return Ok(response);
         }
@@ -406,17 +488,33 @@ public class AuthController : ControllerBase
         }
     }
 
-    private void SetRefreshTokenCookie(string refreshToken)
+    private void SetRefreshTokenCookie(LoginResponseDto response)
     {
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
+            Path = "/"
         };
 
-        Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        if (response.IsPersistentSession)
+        {
+            cookieOptions.Expires = response.RefreshTokenExpiresAt;
+        }
+
+        Response.Cookies.Append("refreshToken", response.RefreshToken, cookieOptions);
+    }
+
+    private void DeleteRefreshTokenCookie()
+    {
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/"
+        });
     }
 
     private string? GetClientIpAddress()

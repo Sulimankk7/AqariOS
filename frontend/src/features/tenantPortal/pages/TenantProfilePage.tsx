@@ -32,8 +32,8 @@ export function TenantProfilePage() {
 
   return (
     <PageContainer
-      title={t("tenant.profile.title", "My Profile")}
-      description={t("tenant.profile.subtitle", "Your official profile recorded with property management")}
+      title={t("tenant.profile.title")}
+      description={t("tenant.profile.subtitle")}
     >
       <div className="max-w-4xl space-y-4">
         {/* Read-Only Status Banner */}
@@ -42,10 +42,10 @@ export function TenantProfilePage() {
             <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
             <div>
               <p className="text-xs font-semibold text-foreground">
-                {t("tenant.profile.readOnlyBadge", "Read-only official record")}
+                {t("tenant.profile.readOnlyBadge")}
               </p>
               <p className="text-[11.5px] text-muted-foreground">
-                {t("tenant.profile.readOnlyNote", "To update these details, please contact property management.")}
+                {t("tenant.profile.readOnlyNote")}
               </p>
             </div>
           </div>
@@ -61,14 +61,14 @@ export function TenantProfilePage() {
           <div className="p-8 rounded-xl border border-destructive/30 bg-destructive/10 text-center space-y-3">
             <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
             <p className="text-sm font-medium text-foreground">
-              {t("errors.generic", "An unexpected error occurred. Please try again.")}
+              {t("errors.generic")}
             </p>
             <button
               onClick={() => refetch()}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              {t("common.retry", "Retry")}
+              {t("common.retry")}
             </button>
           </div>
         ) : profile ? (
@@ -78,14 +78,14 @@ export function TenantProfilePage() {
               <div className="flex items-center gap-2 border-b border-border/70 pb-3">
                 <User className="w-4 h-4 text-primary" />
                 <h3 className="font-semibold text-sm">
-                  {t("tenant.profile.personalInformation", "Personal Information")}
+                  {t("tenant.profile.personalInformation")}
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                 <div className="space-y-1">
                   <span className="text-muted-foreground block">
-                    {t("tenant.profile.fullName", "Full Name")}
+                    {t("tenant.profile.fullName")}
                   </span>
                   <span className="font-semibold text-foreground text-sm block truncate">
                     {profile.name}
@@ -94,7 +94,7 @@ export function TenantProfilePage() {
 
                 <div className="space-y-1">
                   <span className="text-muted-foreground block">
-                    {t("tenant.profile.nationalId", "National ID / Iqama")}
+                    {t("tenant.profile.nationalId")}
                   </span>
                   <span className="font-medium text-foreground block font-mono">
                     {profile.nationalId || "—"}
@@ -103,7 +103,7 @@ export function TenantProfilePage() {
 
                 <div className="space-y-1">
                   <span className="text-muted-foreground block">
-                    {t("tenant.profile.phone", "Phone Number")}
+                    {t("tenant.profile.phone")}
                   </span>
                   <span className="font-medium text-foreground block font-mono" dir="ltr">
                     {profile.phone}
@@ -112,7 +112,7 @@ export function TenantProfilePage() {
 
                 <div className="space-y-1">
                   <span className="text-muted-foreground block">
-                    {t("tenant.profile.email", "Email")}
+                    {t("tenant.profile.email")}
                   </span>
                   <span className="font-medium text-foreground block truncate" dir="ltr">
                     {profile.email || "—"}
@@ -126,26 +126,26 @@ export function TenantProfilePage() {
               <div className="flex items-center gap-2 border-b border-border/70 pb-3">
                 <Briefcase className="w-4 h-4 text-primary" />
                 <h3 className="font-semibold text-sm">
-                  {t("tenant.profile.workInformation", "Employment Information")}
+                  {t("tenant.profile.workInformation")}
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="space-y-1">
                   <span className="text-muted-foreground block">
-                    {t("tenant.profile.occupation", "Occupation")}
+                    {t("tenant.profile.occupation")}
                   </span>
                   <span className="font-medium text-foreground block">
-                    {profile.occupation || (language === "ar" ? "غير محدد" : "Not specified")}
+                    {profile.occupation || t("common.notSpecified")}
                   </span>
                 </div>
 
                 <div className="space-y-1">
                   <span className="text-muted-foreground block">
-                    {t("tenant.profile.employer", "Employer / Company")}
+                    {t("tenant.profile.employer")}
                   </span>
                   <span className="font-medium text-foreground block">
-                    {profile.employer || (language === "ar" ? "غير محدد" : "Not specified")}
+                    {profile.employer || t("common.notSpecified")}
                   </span>
                 </div>
               </div>
@@ -157,7 +157,7 @@ export function TenantProfilePage() {
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-sm">
-                    {t("tenant.profile.familyMembers", "Family Members")}
+                    {t("tenant.profile.familyMembers")}
                   </h3>
                 </div>
                 <span className="text-[11px] font-medium bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
@@ -167,7 +167,7 @@ export function TenantProfilePage() {
 
               {profile.familyMembers.length === 0 ? (
                 <div className="py-6 text-center text-muted-foreground text-xs bg-secondary/30 rounded-lg">
-                  <p>{t("tenant.profile.noFamilyMembers", "No family members recorded")}</p>
+                  <p>{t("tenant.profile.noFamilyMembers")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -197,7 +197,7 @@ export function TenantProfilePage() {
                 <div className="flex items-center gap-2">
                   <PhoneCall className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-sm">
-                    {t("tenant.profile.emergencyContacts", "Emergency Contacts")}
+                    {t("tenant.profile.emergencyContacts")}
                   </h3>
                 </div>
                 <span className="text-[11px] font-medium bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
@@ -207,7 +207,7 @@ export function TenantProfilePage() {
 
               {profile.emergencyContacts.length === 0 ? (
                 <div className="py-6 text-center text-muted-foreground text-xs bg-secondary/30 rounded-lg">
-                  <p>{t("tenant.profile.noEmergencyContacts", "No emergency contacts recorded")}</p>
+                  <p>{t("tenant.profile.noEmergencyContacts")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -233,7 +233,7 @@ export function TenantProfilePage() {
                 <div className="flex items-center gap-2">
                   <Car className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-sm">
-                    {t("tenant.profile.vehicles", "Registered Vehicles")}
+                    {t("tenant.profile.vehicles")}
                   </h3>
                 </div>
                 <span className="text-[11px] font-medium bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
@@ -243,7 +243,7 @@ export function TenantProfilePage() {
 
               {profile.vehicles.length === 0 ? (
                 <div className="py-6 text-center text-muted-foreground text-xs bg-secondary/30 rounded-lg">
-                  <p>{t("tenant.profile.noVehicles", "No vehicles recorded")}</p>
+                  <p>{t("tenant.profile.noVehicles")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

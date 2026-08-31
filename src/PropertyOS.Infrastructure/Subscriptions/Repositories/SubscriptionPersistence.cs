@@ -34,6 +34,8 @@ internal sealed class SubscriptionPersistence : ISubscriptionPersistence
                 Id = x.Id, Code = x.Code, NameEn = x.NameEn, NameAr = x.NameAr,
                 DescriptionEn = x.DescriptionEn, DescriptionAr = x.DescriptionAr,
                 MonthlyPrice = x.MonthlyPrice, YearlyPrice = x.YearlyPrice, Currency = x.Currency,
+                PricingModel = x.PricingModel, PaygMonthlyUnitPrice = x.PaygMonthlyUnitPrice,
+                PaygYearlyMonthlyEquivalentUnitPrice = x.PaygYearlyMonthlyEquivalentUnitPrice,
                 MaxBuildings = x.MaxBuildings, MaxUsers = x.MaxUsers, MaxStorageMb = x.MaxStorageMb,
                 FeatureFlags = x.FeatureFlags, SupportsTrial = x.SupportsTrial,
                 TrialDurationDays = x.TrialDurationDays, IsActive = x.IsActive, SortOrder = x.SortOrder

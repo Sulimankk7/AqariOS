@@ -5,7 +5,10 @@ using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NSubstitute;
+using PropertyOS.Application.Common.Exceptions;
+using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.DTOs.Identity;
 using PropertyOS.Application.Identity;
 using PropertyOS.Domain.Identity.Entities;
@@ -26,11 +29,169 @@ public class OtpHardeningUnitTests
         return new PropertyOsDbContext(options);
     }
 
+    private static async Task AddEligibleUserAsync(PropertyOsDbContext dbContext, string phone = "+962791234567")
+    {
+        dbContext.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = "OTP User",
+            Phone = phone,
+            IsActive = true
+        });
+        await dbContext.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RequestOtpAsync_Should_Send_SixDigit_Code_Through_Abstraction()
+    {
+        using var dbContext = CreateDbContext();
+        await AddEligibleUserAsync(dbContext);
+        var smsSender = Substitute.For<ISmsSender>();
+        smsSender.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+        var authService = new AuthService(dbContext, Substitute.For<IPasswordHasher>(), Substitute.For<IJwtTokenGenerator>(),
+            smsSender: smsSender,
+            otpOptions: Options.Create(new OtpOptions { HashKey = "test-hmac-key", ResendCooldownSeconds = 0 }));
+
+        var code = await authService.RequestOtpAsync(new OtpRequestDto { Phone = "+962791234567", Purpose = OtpPurpose.Login });
+
+        code.Should().MatchRegex("^\\d{6}$");
+        await smsSender.Received(1).SendAsync("+962791234567", Arg.Is<string>(message => message.Contains(code)), Arg.Any<CancellationToken>());
+        (await dbContext.OtpChallenges.SingleAsync()).CodeHash.Should().NotBe(code);
+    }
+
+    [Fact]
+    public async Task RequestOtpAsync_UnregisteredPhone_DoesNotSendOrCreateChallenge()
+    {
+        using var dbContext = CreateDbContext();
+        var smsSender = Substitute.For<ISmsSender>();
+        var authService = new AuthService(
+            dbContext,
+            Substitute.For<IPasswordHasher>(),
+            Substitute.For<IJwtTokenGenerator>(),
+            smsSender: smsSender,
+            otpOptions: Options.Create(new OtpOptions { HashKey = "test-hmac-key" }));
+
+        Func<Task> act = () => authService.RequestOtpAsync(
+            new OtpRequestDto { Phone = "+962789425056", Purpose = OtpPurpose.Login });
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("No account is registered with this phone number.");
+        await smsSender.DidNotReceive().SendAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        (await dbContext.OtpChallenges.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RequestOtpAsync_SoftDeletedUser_DoesNotSendOrCreateChallenge()
+    {
+        using var dbContext = CreateDbContext();
+        dbContext.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Deleted OTP User",
+            Phone = "+962791234567",
+            IsActive = true,
+            DeletedAt = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+        var smsSender = Substitute.For<ISmsSender>();
+        var authService = new AuthService(
+            dbContext,
+            Substitute.For<IPasswordHasher>(),
+            Substitute.For<IJwtTokenGenerator>(),
+            smsSender: smsSender,
+            otpOptions: Options.Create(new OtpOptions { HashKey = "test-hmac-key" }));
+
+        Func<Task> act = () => authService.RequestOtpAsync(
+            new OtpRequestDto { Phone = "+962791234567", Purpose = OtpPurpose.Login });
+
+        await act.Should().ThrowAsync<NotFoundException>();
+        await smsSender.DidNotReceive().SendAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        (await dbContext.OtpChallenges.CountAsync()).Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("0791234567")]
+    [InlineData("079 123 4567")]
+    [InlineData("079-123-4567")]
+    [InlineData("+962791234567")]
+    [InlineData("+962 79 123 4567")]
+    public async Task RequestOtpAsync_EquivalentFormattedPhone_ResolvesRegisteredUser(string input)
+    {
+        using var dbContext = CreateDbContext();
+        await AddEligibleUserAsync(dbContext);
+        var smsSender = Substitute.For<ISmsSender>();
+        smsSender.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+        var authService = new AuthService(
+            dbContext,
+            Substitute.For<IPasswordHasher>(),
+            Substitute.For<IJwtTokenGenerator>(),
+            smsSender: smsSender,
+            otpOptions: Options.Create(new OtpOptions { HashKey = "test-hmac-key" }));
+
+        await authService.RequestOtpAsync(
+            new OtpRequestDto { Phone = input, Purpose = OtpPurpose.Login });
+
+        await smsSender.Received(1).SendAsync(
+            "+962791234567", Arg.Any<string>(), Arg.Any<CancellationToken>());
+        (await dbContext.OtpChallenges.SingleAsync()).Phone.Should().Be("+962791234567");
+    }
+
+    [Fact]
+    public async Task RequestOtpAsync_RegisteredUser_PreservesDestinationCooldown()
+    {
+        using var dbContext = CreateDbContext();
+        await AddEligibleUserAsync(dbContext);
+        var smsSender = Substitute.For<ISmsSender>();
+        smsSender.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+        var authService = new AuthService(
+            dbContext,
+            Substitute.For<IPasswordHasher>(),
+            Substitute.For<IJwtTokenGenerator>(),
+            smsSender: smsSender,
+            otpOptions: Options.Create(new OtpOptions { HashKey = "test-hmac-key", ResendCooldownSeconds = 60 }));
+        var request = new OtpRequestDto { Phone = "+962791234567", Purpose = OtpPurpose.Login };
+
+        await authService.RequestOtpAsync(request);
+        Func<Task> secondRequest = () => authService.RequestOtpAsync(request);
+
+        await secondRequest.Should().ThrowAsync<OtpRequestThrottledException>();
+        await smsSender.Received(1).SendAsync(
+            "+962791234567", Arg.Any<string>(), Arg.Any<CancellationToken>());
+        (await dbContext.OtpChallenges.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RequestOtpAsync_Should_Invalidate_Previous_Challenge_When_Replaced()
+    {
+        using var dbContext = CreateDbContext();
+        await AddEligibleUserAsync(dbContext);
+        var smsSender = Substitute.For<ISmsSender>();
+        smsSender.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        var authService = new AuthService(dbContext, Substitute.For<IPasswordHasher>(), Substitute.For<IJwtTokenGenerator>(),
+            smsSender: smsSender,
+            otpOptions: Options.Create(new OtpOptions { HashKey = "test-hmac-key", ResendCooldownSeconds = 0 }));
+        var request = new OtpRequestDto { Phone = "+962791234567", Purpose = OtpPurpose.Login };
+
+        await authService.RequestOtpAsync(request);
+        await authService.RequestOtpAsync(request);
+
+        var challenges = await dbContext.OtpChallenges.OrderBy(c => c.CreatedAt).ToListAsync();
+        challenges.Should().HaveCount(2);
+        challenges[0].ConsumedAt.Should().NotBeNull();
+        challenges[1].ConsumedAt.Should().BeNull();
+    }
+
     [Fact]
     public async Task RequestOtpAsync_Should_Create_Challenge_With_Client_IP()
     {
         // Arrange
         using var dbContext = CreateDbContext();
+        await AddEligibleUserAsync(dbContext);
         var jwtGeneratorMock = Substitute.For<IJwtTokenGenerator>();
         var passwordHasherMock = Substitute.For<IPasswordHasher>();
         var authService = new AuthService(dbContext, passwordHasherMock, jwtGeneratorMock);
@@ -59,6 +220,7 @@ public class OtpHardeningUnitTests
     {
         // Arrange
         using var dbContext = CreateDbContext();
+        await AddEligibleUserAsync(dbContext);
         var jwtGeneratorMock = Substitute.For<IJwtTokenGenerator>();
         var passwordHasherMock = Substitute.For<IPasswordHasher>();
         var authService = new AuthService(dbContext, passwordHasherMock, jwtGeneratorMock);
@@ -86,6 +248,7 @@ public class OtpHardeningUnitTests
     {
         // Arrange
         using var dbContext = CreateDbContext();
+        await AddEligibleUserAsync(dbContext);
         var jwtGeneratorMock = Substitute.For<IJwtTokenGenerator>();
         var passwordHasherMock = Substitute.For<IPasswordHasher>();
         var authService = new AuthService(dbContext, passwordHasherMock, jwtGeneratorMock);

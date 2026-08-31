@@ -99,6 +99,13 @@ internal sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .HasDatabaseName("idx_tenants_company_phone")
             .HasFilter("deleted_at IS NULL");
 
+        // Global active Tenant contact-phone uniqueness. The pre-migration data audit
+        // confirmed that active canonical values contain no invalid rows or collisions.
+        builder.HasIndex(t => t.Phone)
+            .HasDatabaseName("uq_tenants_phone_active")
+            .IsUnique()
+            .HasFilter("phone IS NOT NULL AND deleted_at IS NULL");
+
         builder.HasIndex(t => new { t.CompanyId, t.Email })
             .HasDatabaseName("idx_tenants_company_email")
             .HasFilter("deleted_at IS NULL");

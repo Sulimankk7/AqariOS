@@ -1,4 +1,5 @@
 export type BillingCycle = "Monthly" | "Yearly";
+export type SubscriptionPricingModel = "Fixed" | "PayAsYouGo";
 export type SubscriptionStatus = "Trialing" | "Active" | "PastDue" | "Suspended" | "Cancelled" | "Expired";
 export type PlanChangeRequestStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
 
@@ -11,6 +12,9 @@ export interface SubscriptionPlanDto {
   descriptionAr?: string | null;
   monthlyPrice: number;
   yearlyPrice: number;
+  pricingModel: SubscriptionPricingModel;
+  paygMonthlyUnitPrice?: number | null;
+  paygYearlyMonthlyEquivalentUnitPrice?: number | null;
   currency: string;
   maxBuildings?: number | null;
   maxUsers?: number | null;
@@ -62,6 +66,17 @@ export interface CreatePlanRequest {
   monthlyPrice: number; yearlyPrice: number; currency: string; maxBuildings?: number | null;
   maxUsers?: number | null; maxStorageMb?: number | null; featureFlags: string; supportsTrial: boolean;
   trialDurationDays?: number | null; sortOrder: number;
+  pricingModel: SubscriptionPricingModel; paygMonthlyUnitPrice?: number | null;
+  paygYearlyMonthlyEquivalentUnitPrice?: number | null;
+}
+export interface PaygUsageSummaryDto {
+  subscriptionId: string; planId: string; planNameEn: string; planNameAr: string;
+  pricingModel: SubscriptionPricingModel; subscriptionStatus: SubscriptionStatus; billingCycle: BillingCycle;
+  isPayAsYouGo: boolean; isEstimated: boolean; isFinalized: boolean; isChargeable: boolean;
+  currentActiveLeaseCount: number; accumulatedLeaseDays: number;
+  monthlyEquivalentUnitPrice: number; currency: string; estimatedAmount: number;
+  projectedPeriodAmount: number; billingPeriodStart: string; billingPeriodEnd: string;
+  calculatedThrough: string; periodDays: number; daysElapsed: number; daysRemaining: number;
 }
 export interface CreateCompanySubscriptionRequest {
   companyId: string; planId: string; billingCycle: BillingCycle; startDate: string; endDate: string; trialEndDate?: string | null;

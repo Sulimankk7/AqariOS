@@ -63,9 +63,10 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "plan_change_request_status_enum", new[] { "pending", "approved", "rejected", "cancelled" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "receipt_reset_policy_enum", new[] { "never", "yearly", "monthly" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "registration_approval_status_enum", new[] { "pending", "approved", "rejected" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "revoke_reason_enum", new[] { "rotated", "logout", "theft_detected", "admin_revoked", "expired" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "revoke_reason_enum", new[] { "rotated", "logout", "theft_detected", "admin_revoked", "expired", "password_reset" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "submission_status_enum", new[] { "pending", "approved", "rejected" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "subscription_status_enum", new[] { "trialing", "active", "past_due", "suspended", "cancelled", "expired" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "subscription_pricing_model_enum", new[] { "fixed", "pay_as_you_go" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tenant_type_enum", new[] { "personal", "corporate" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "termination_type_enum", new[] { "normal_expiration", "early_termination", "mutual_agreement", "tenant_request", "owner_request", "legal_eviction" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "utility_bill_status_enum", new[] { "unpaid", "paid", "unknown" });
@@ -2159,6 +2160,82 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.PasswordResetChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuid_generate_v7()");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CredentialHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("credential_hash");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<short>("FailedAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
+                        .HasColumnName("failed_attempts");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<short>("MaxAttempts")
+                        .HasColumnType("smallint")
+                        .HasColumnName("max_attempts");
+
+                    b.Property<IPAddress>("RequestedIp")
+                        .IsRequired()
+                        .HasColumnType("inet")
+                        .HasColumnName("requested_ip");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<IPAddress>("VerifiedIp")
+                        .HasColumnType("inet")
+                        .HasColumnName("verified_ip");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CredentialHash")
+                        .IsUnique()
+                        .HasDatabaseName("uq_password_reset_challenges_credential_hash");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("idx_password_reset_challenges_expires_at");
+
+                    b.HasIndex("UserId", "Kind", "CreatedAt")
+                        .HasDatabaseName("idx_password_reset_challenges_user_kind_created_at");
+
+                    b.ToTable("password_reset_challenges", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_password_reset_challenges_attempts", "failed_attempts >= 0 AND max_attempts > 0 AND failed_attempts <= max_attempts");
+
+                            t.HasCheckConstraint("chk_password_reset_challenges_expiry", "expires_at > created_at");
+                        });
+                });
+
             modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2217,6 +2294,10 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.RefreshToken", b =>
                 {
+                    b.Property<DateTimeOffset?>("AbsoluteSessionExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("absolute_session_expires_at");
+
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
@@ -2250,6 +2331,10 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("issued_at")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsPersistent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_persistent");
 
                     b.Property<Guid?>("ReplacedByTokenId")
                         .HasColumnType("uuid")
@@ -3172,6 +3257,9 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("idx_lease_contracts_company_status")
                         .HasFilter("deleted_at IS NULL");
 
+                    b.HasIndex("CompanyId", "StartDate", "EndDate")
+                        .HasDatabaseName("idx_lease_contracts_payg_period_overlap");
+
                     b.HasIndex("CompanyId", "TenantId");
 
                     b.HasIndex("TenantId", "StartDate")
@@ -3299,6 +3387,11 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId", "Phone")
                         .HasDatabaseName("idx_tenants_company_phone")
                         .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("Phone")
+                        .IsUnique()
+                        .HasDatabaseName("uq_tenants_phone_active")
+                        .HasFilter("phone IS NOT NULL AND deleted_at IS NULL");
 
                     b.HasIndex("CompanyId", "Email")
                         .HasDatabaseName("idx_tenants_company_email")
@@ -5679,6 +5772,67 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PropertyOS.Domain.Subscriptions.PaygUsagePeriod", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid").HasColumnName("id");
+                    b.Property<int>("AccumulatedLeaseDays").HasColumnType("integer").HasColumnName("accumulated_lease_days");
+                    b.Property<int>("ActiveLeaseCount").HasColumnType("integer").HasColumnName("active_lease_count");
+                    b.Property<int>("BillingCycle").HasColumnType("billing_cycle_enum").HasColumnName("billing_cycle");
+                    b.Property<DateOnly>("CalculatedThrough").HasColumnType("date").HasColumnName("calculated_through");
+                    b.Property<Guid>("CompanyId").HasColumnType("uuid").HasColumnName("company_id");
+                    b.Property<Guid>("CompanySubscriptionId").HasColumnType("uuid").HasColumnName("company_subscription_id");
+                    b.Property<DateTimeOffset>("CreatedAt").HasColumnType("timestamp with time zone").HasColumnName("created_at");
+                    b.Property<string>("CurrencySnapshot").IsRequired().HasColumnType("char(3)").HasColumnName("currency_snapshot");
+                    b.Property<decimal>("EstimatedAmount").HasColumnType("numeric(14,3)").HasColumnName("estimated_amount");
+                    b.Property<DateTimeOffset?>("FinalizedAt").HasColumnType("timestamp with time zone").HasColumnName("finalized_at");
+                    b.Property<bool>("IsChargeable").HasColumnType("boolean").HasColumnName("is_chargeable");
+                    b.Property<bool>("IsFinalized").HasColumnType("boolean").HasColumnName("is_finalized");
+                    b.Property<decimal>("MonthlyEquivalentUnitPriceSnapshot").HasColumnType("numeric(12,3)").HasColumnName("monthly_equivalent_unit_price_snapshot");
+                    b.Property<DateOnly>("PeriodEnd").HasColumnType("date").HasColumnName("period_end");
+                    b.Property<short>("PeriodDayCount").HasColumnType("smallint").HasColumnName("period_day_count");
+                    b.Property<DateOnly>("PeriodStart").HasColumnType("date").HasColumnName("period_start");
+                    b.Property<decimal>("ProjectedAmount").HasColumnType("numeric(14,3)").HasColumnName("projected_amount");
+                    b.Property<DateTimeOffset>("UpdatedAt").HasColumnType("timestamp with time zone").HasColumnName("updated_at");
+                    b.HasKey("Id");
+                    b.HasAlternateKey("CompanyId", "Id").HasName("uq_payg_usage_periods_company_id");
+                    b.HasIndex("CompanySubscriptionId", "PeriodStart", "PeriodEnd").IsUnique().HasDatabaseName("uq_payg_usage_period_subscription_dates");
+                    b.HasIndex("CompanyId", "PeriodStart").IsDescending(false, true).HasDatabaseName("idx_payg_usage_period_company_start");
+                    b.HasIndex("IsFinalized", "PeriodEnd").HasDatabaseName("idx_payg_usage_period_unfinalized_end").HasFilter("is_finalized = false");
+                    b.ToTable("payg_usage_periods", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_payg_usage_period_dates", "period_end > period_start AND calculated_through >= period_start AND calculated_through <= period_end");
+                            t.HasCheckConstraint("chk_payg_usage_period_finalized", "(is_finalized = false AND finalized_at IS NULL) OR (is_finalized = true AND finalized_at IS NOT NULL AND calculated_through = period_end)");
+                            t.HasCheckConstraint("chk_payg_usage_period_price", "monthly_equivalent_unit_price_snapshot > 0");
+                            t.HasCheckConstraint("chk_payg_usage_period_totals", "period_day_count > 0 AND active_lease_count >= 0 AND accumulated_lease_days >= 0 AND estimated_amount >= 0 AND projected_amount >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.Subscriptions.PaygLeaseUsage", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid").HasColumnName("id");
+                    b.Property<short>("BillableDays").HasColumnType("smallint").HasColumnName("billable_days");
+                    b.Property<decimal>("CalculatedAmount").HasColumnType("numeric(14,3)").HasColumnName("calculated_amount");
+                    b.Property<Guid>("CompanyId").HasColumnType("uuid").HasColumnName("company_id");
+                    b.Property<DateTimeOffset>("CreatedAt").HasColumnType("timestamp with time zone").HasColumnName("created_at");
+                    b.Property<Guid>("LeaseContractId").HasColumnType("uuid").HasColumnName("lease_contract_id");
+                    b.Property<Guid>("TenantId").HasColumnType("uuid").HasColumnName("tenant_id");
+                    b.Property<DateTimeOffset>("UpdatedAt").HasColumnType("timestamp with time zone").HasColumnName("updated_at");
+                    b.Property<DateOnly>("UsageEnd").HasColumnType("date").HasColumnName("usage_end");
+                    b.Property<Guid>("UsagePeriodId").HasColumnType("uuid").HasColumnName("usage_period_id");
+                    b.Property<DateOnly>("UsageStart").HasColumnType("date").HasColumnName("usage_start");
+                    b.HasKey("Id");
+                    b.HasIndex("LeaseContractId").HasDatabaseName("idx_payg_lease_usage_lease");
+                    b.HasIndex("UsagePeriodId", "LeaseContractId").IsUnique().HasDatabaseName("uq_payg_lease_usage_period_lease");
+                    b.HasIndex("CompanyId", "LeaseContractId");
+                    b.HasIndex("CompanyId", "TenantId");
+                    b.HasIndex("CompanyId", "UsagePeriodId").HasDatabaseName("idx_payg_lease_usage_company_period");
+                    b.ToTable("payg_lease_usage", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_payg_lease_usage_amount", "calculated_amount >= 0");
+                            t.HasCheckConstraint("chk_payg_lease_usage_dates", "usage_end > usage_start AND billable_days = usage_end - usage_start");
+                        });
+                });
+
             modelBuilder.Entity("PropertyOS.Domain.Subscriptions.PlanChangeRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5849,6 +6003,20 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(12,3)")
                         .HasColumnName("monthly_price");
 
+                    b.Property<decimal?>("PaygMonthlyUnitPrice")
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("payg_monthly_unit_price");
+
+                    b.Property<decimal?>("PaygYearlyMonthlyEquivalentUnitPrice")
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("payg_yearly_monthly_equivalent_unit_price");
+
+                    b.Property<int>("PricingModel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("subscription_pricing_model_enum")
+                        .HasDefaultValue(0)
+                        .HasColumnName("pricing_model");
+
                     b.Property<string>("NameAr")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -5905,7 +6073,9 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
 
                     b.ToTable("subscription_plans", null, t =>
                         {
-                            t.HasCheckConstraint("chk_subscription_plans_prices_positive", "monthly_price > 0 AND yearly_price > 0");
+                            t.HasCheckConstraint("chk_subscription_plans_payg_prices", "(pricing_model = 'fixed' AND payg_monthly_unit_price IS NULL AND payg_yearly_monthly_equivalent_unit_price IS NULL) OR (pricing_model = 'pay_as_you_go' AND payg_monthly_unit_price IS NOT NULL AND payg_monthly_unit_price > 0 AND payg_yearly_monthly_equivalent_unit_price IS NOT NULL AND payg_yearly_monthly_equivalent_unit_price > 0)");
+
+                            t.HasCheckConstraint("chk_subscription_plans_prices_positive", "(pricing_model = 'fixed' AND monthly_price > 0 AND yearly_price > 0) OR (pricing_model = 'pay_as_you_go' AND monthly_price = 0 AND yearly_price = 0)");
 
                             t.HasCheckConstraint("chk_subscription_plans_quotas_positive", "(max_buildings IS NULL OR max_buildings > 0) AND (max_users IS NULL OR max_users > 0) AND (max_storage_mb IS NULL OR max_storage_mb > 0)");
 
@@ -6410,6 +6580,60 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Company");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.Subscriptions.PaygUsagePeriod", b =>
+                {
+                    b.HasOne("PropertyOS.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Subscriptions.CompanySubscription", "CompanySubscription")
+                        .WithMany()
+                        .HasForeignKey("CompanySubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CompanySubscription");
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.Subscriptions.PaygLeaseUsage", b =>
+                {
+                    b.HasOne("PropertyOS.Domain.Leasing.LeaseContract", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "LeaseContractId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Leasing.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "TenantId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyOS.Domain.Subscriptions.PaygUsagePeriod", "UsagePeriod")
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "UsagePeriodId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UsagePeriod");
+                });
+
+            modelBuilder.Entity("PropertyOS.Domain.Identity.Entities.PasswordResetChallenge", b =>
+                {
+                    b.HasOne("PropertyOS.Domain.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

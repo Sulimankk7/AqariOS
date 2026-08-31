@@ -31,6 +31,6 @@ export function floorTypeToLabel(
 ): string {
   if (value === undefined || value === null) return '-';
   const option = FLOOR_TYPE_OPTIONS.find((opt) => opt.value === value);
-  if (!option) return String(value);
+  if (!option) return t ? t('unknown') : '-';
   return t ? t(option.labelKey) : option.labelKey;
 }

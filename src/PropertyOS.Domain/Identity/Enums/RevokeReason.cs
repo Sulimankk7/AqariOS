@@ -6,5 +6,6 @@ public enum RevokeReason
     Logout,
     TheftDetected,
     AdminRevoked,
-    Expired
+    Expired,
+    PasswordReset
 }

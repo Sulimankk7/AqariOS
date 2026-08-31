@@ -9,5 +9,6 @@ public record UpdateTenantRequest(
     string Phone,
     string? Email = null,
     string? Occupation = null,
-    string? Employer = null
+    string? Employer = null,
+    string? PhoneCountryCode = "JO"
 );

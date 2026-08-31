@@ -7,6 +7,7 @@ export const subscriptionKeys = {
   company: () => [...subscriptionKeys.all, "company"] as const,
   availablePlans: (page: number, pageSize: number) => [...subscriptionKeys.company(), "plans", page, pageSize] as const,
   mine: () => [...subscriptionKeys.company(), "current"] as const,
+  usage: () => [...subscriptionKeys.company(), "usage"] as const,
   myRequests: (page: number, pageSize: number) => [...subscriptionKeys.company(), "requests", page, pageSize] as const,
   platform: () => [...subscriptionKeys.all, "platform"] as const,
   platformPlans: (filters: object) => [...subscriptionKeys.platform(), "plans", filters] as const,
@@ -20,6 +21,7 @@ export const subscriptionKeys = {
 
 export const useAvailablePlans = (page: number, pageSize: number) => useQuery({ queryKey: subscriptionKeys.availablePlans(page, pageSize), queryFn: () => subscriptionsApi.getAvailablePlans(page, pageSize) });
 export const useMySubscription = () => useQuery({ queryKey: subscriptionKeys.mine(), queryFn: subscriptionsApi.getMySubscription, retry: (count, error: any) => error?.status === 404 ? false : count < 2 });
+export const useCurrentSubscriptionUsage = () => useQuery({ queryKey: subscriptionKeys.usage(), queryFn: subscriptionsApi.getCurrentUsage, retry: (count, error: any) => error?.status === 404 ? false : count < 2, staleTime: 60_000 });
 export const useMyPlanChangeRequests = (page: number, pageSize: number) => useQuery({ queryKey: subscriptionKeys.myRequests(page, pageSize), queryFn: () => subscriptionsApi.getMyRequests(page, pageSize) });
 
 export function useCreateMyPlanChangeRequest() { const client = useQueryClient(); return useMutation({ mutationFn: (request: CreatePlanChangeRequest) => subscriptionsApi.createMyRequest(request), onSuccess: () => client.invalidateQueries({ queryKey: subscriptionKeys.company() }) }); }

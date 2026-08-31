@@ -41,7 +41,7 @@ export function ownershipStatusToLabel(
 ): string {
   if (value === undefined || value === null) return '-';
   const option = OWNERSHIP_STATUS_OPTIONS.find((opt) => opt.value === value);
-  if (!option) return String(value);
+  if (!option) return t ? t('unknown') : '-';
   return t ? t(option.labelKey) : option.labelKey;
 }
 
@@ -51,6 +51,6 @@ export function occupancyStatusToLabel(
 ): string {
   if (value === undefined || value === null) return '-';
   const option = OCCUPANCY_STATUS_OPTIONS.find((opt) => opt.value === value);
-  if (!option) return String(value);
+  if (!option) return t ? t('unknown') : '-';
   return t ? t(option.labelKey) : option.labelKey;
 }

@@ -19,11 +19,14 @@ internal class FakeTenantRepository : ITenantRepository
     public List<Tenant> AddedTenants { get; } = new();
 
     public bool NationalIdExists { get; set; }
+    public bool? PhoneExistsOverride { get; set; }
     public bool HasNonTerminalLease { get; set; }
 
     public Guid? LastExistsCompanyId { get; private set; }
     public string? LastExistsNationalId { get; private set; }
     public Guid? LastExistsExcludeTenantId { get; private set; }
+    public string? LastExistsPhone { get; private set; }
+    public Guid? LastExistsPhoneExcludeTenantId { get; private set; }
     public Guid? LastNonTerminalLeaseTenantId { get; private set; }
     public Guid? LastSearchCompanyId { get; private set; }
     public string? LastSearchTerm { get; private set; }
@@ -50,6 +53,17 @@ internal class FakeTenantRepository : ITenantRepository
         LastExistsNationalId = nationalId;
         LastExistsExcludeTenantId = excludeTenantId;
         return Task.FromResult(NationalIdExists);
+    }
+
+    public Task<bool> ExistsByPhoneAsync(string phone, Guid? excludeTenantId = null, CancellationToken cancellationToken = default)
+    {
+        LastExistsPhone = phone;
+        LastExistsPhoneExcludeTenantId = excludeTenantId;
+        if (PhoneExistsOverride.HasValue)
+            return Task.FromResult(PhoneExistsOverride.Value);
+
+        return Task.FromResult(Store.Any(t =>
+            t.DeletedAt == null && t.Phone == phone && (!excludeTenantId.HasValue || t.Id != excludeTenantId.Value)));
     }
 
     public Task<bool> HasNonTerminalLeaseContractAsync(Guid tenantId, CancellationToken cancellationToken = default)

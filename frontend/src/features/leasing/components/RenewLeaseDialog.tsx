@@ -34,12 +34,14 @@ import { Alert, AlertDescription } from '@/app/components/ui/alert';
 import { extractUserFriendlyError, mapApiValidationErrors } from '@/shared/utils';
 import { useRenewLease } from '../hooks/useLeasing';
 import { getLeasingTranslation } from '../constants/translations';
+import { localizeValidationMessage } from '@/shared/utils/errorHandling';
 import {
   paymentFrequencyToLabel,
   legalRegimeToLabel,
   tenantTypeToLabel,
 } from '../constants/leasingEnums';
 import { useTranslation } from '@/shared/i18n';
+import { DatePicker } from '@/shared/components/ui/DatePicker';
 
 interface RenewLeaseDialogProps {
   contract: LeaseContractDto | null;
@@ -160,7 +162,7 @@ export function RenewLeaseDialog({
             <Label htmlFor="contractNumber">{t('newContractNumber')} *</Label>
             <Input
               id="contractNumber"
-              placeholder="e.g. LSE-2027-001"
+              placeholder={t('contractNumberPlaceholder')}
               aria-required="true"
               aria-invalid={!!errors.contractNumber}
               aria-describedby={errors.contractNumber ? 'renew-contractNumber-error' : undefined}
@@ -168,7 +170,7 @@ export function RenewLeaseDialog({
             />
             {errors.contractNumber && (
               <p id="renew-contractNumber-error" role="alert" className="text-xs text-destructive">
-                {errors.contractNumber.message}
+                {localizeValidationMessage(errors.contractNumber.message)}
               </p>
             )}
           </div>
@@ -176,36 +178,36 @@ export function RenewLeaseDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">{t('startDate')} *</Label>
-              <Input
+              <DatePicker
                 id="startDate"
-                type="date"
-                placeholder="YYYY-MM-DD"
-                aria-required="true"
-                aria-invalid={!!errors.startDate}
-                aria-describedby={errors.startDate ? 'renew-startDate-error' : undefined}
-                {...register('startDate')}
+                value={watch('startDate')}
+                onValueChange={(value) => setValue('startDate', value ?? '', { shouldValidate: true })}
+                ariaLabel={t('startDate')}
+                required
+                ariaInvalid={!!errors.startDate}
+                ariaDescribedBy={errors.startDate ? 'renew-startDate-error' : undefined}
               />
               {errors.startDate && (
                 <p id="renew-startDate-error" role="alert" className="text-xs text-destructive">
-                  {errors.startDate.message}
+                  {localizeValidationMessage(errors.startDate.message)}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="endDate">{t('endDate')} *</Label>
-              <Input
+              <DatePicker
                 id="endDate"
-                type="date"
-                placeholder="YYYY-MM-DD"
-                aria-required="true"
-                aria-invalid={!!errors.endDate}
-                aria-describedby={errors.endDate ? 'renew-endDate-error' : undefined}
-                {...register('endDate')}
+                value={watch('endDate')}
+                onValueChange={(value) => setValue('endDate', value ?? '', { shouldValidate: true })}
+                ariaLabel={t('endDate')}
+                required
+                ariaInvalid={!!errors.endDate}
+                ariaDescribedBy={errors.endDate ? 'renew-endDate-error' : undefined}
               />
               {errors.endDate && (
                 <p id="renew-endDate-error" role="alert" className="text-xs text-destructive">
-                  {errors.endDate.message}
+                  {localizeValidationMessage(errors.endDate.message)}
                 </p>
               )}
             </div>
@@ -218,7 +220,7 @@ export function RenewLeaseDialog({
                 id="monthlyRentAmount"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 250.00"
+                placeholder={t('amountPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.monthlyRentAmount}
                 aria-describedby={errors.monthlyRentAmount ? 'renew-monthlyRentAmount-error' : undefined}
@@ -226,7 +228,7 @@ export function RenewLeaseDialog({
               />
               {errors.monthlyRentAmount && (
                 <p id="renew-monthlyRentAmount-error" role="alert" className="text-xs text-destructive">
-                  {errors.monthlyRentAmount.message}
+                  {localizeValidationMessage(errors.monthlyRentAmount.message)}
                 </p>
               )}
             </div>
@@ -237,7 +239,7 @@ export function RenewLeaseDialog({
                 id="securityDepositAmount"
                 type="number"
                 step="0.01"
-                placeholder="e.g. 500.00"
+                placeholder={t('amountPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.securityDepositAmount}
                 aria-describedby={errors.securityDepositAmount ? 'renew-securityDepositAmount-error' : undefined}
@@ -245,7 +247,7 @@ export function RenewLeaseDialog({
               />
               {errors.securityDepositAmount && (
                 <p id="renew-securityDepositAmount-error" role="alert" className="text-xs text-destructive">
-                  {errors.securityDepositAmount.message}
+                  {localizeValidationMessage(errors.securityDepositAmount.message)}
                 </p>
               )}
             </div>
@@ -279,13 +281,13 @@ export function RenewLeaseDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentDueDay">{t('paymentDueDay')} (1-31) *</Label>
+              <Label htmlFor="paymentDueDay">{t('paymentDueDay')} (1-28) *</Label>
               <Input
                 id="paymentDueDay"
                 type="number"
                 min={1}
-                max={31}
-                placeholder="e.g. 1"
+                max={28}
+                placeholder={t('installmentCountPlaceholder')}
                 aria-required="true"
                 aria-invalid={!!errors.paymentDueDay}
                 aria-describedby={errors.paymentDueDay ? 'renew-paymentDueDay-error' : undefined}
@@ -293,7 +295,7 @@ export function RenewLeaseDialog({
               />
               {errors.paymentDueDay && (
                 <p id="renew-paymentDueDay-error" role="alert" className="text-xs text-destructive">
-                  {errors.paymentDueDay.message}
+                  {localizeValidationMessage(errors.paymentDueDay.message)}
                 </p>
               )}
             </div>

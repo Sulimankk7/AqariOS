@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -12,9 +14,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using PropertyOS.Application.DTOs.Identity;
+using PropertyOS.Application.Identity;
 using PropertyOS.Domain.Audit.Entities;
 using PropertyOS.Domain.Audit.Enums;
 using PropertyOS.Domain.Identity.Entities;
+using PropertyOS.Domain.Identity.Enums;
 using PropertyOS.Infrastructure.Persistence;
 using PropertyOS.Infrastructure.Persistence.Audit;
 using PropertyOS.Infrastructure.Persistence.Interceptors;
@@ -40,7 +45,9 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
             {
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ConnectionStrings:DefaultConnection"] = fixture.RawConnectionString
+                    ["ConnectionStrings:DefaultConnection"] = fixture.RawConnectionString,
+                    ["Jwt:Secret"] = "integration-test-only-jwt-secret-at-least-32-bytes",
+                    ["Otp:HashKey"] = "integration-test-only-otp-hmac-key-at-least-32-bytes"
                 });
             });
 
@@ -67,7 +74,11 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         await _fixture.ResetDatabaseAsync();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public Task DisposeAsync()
+    {
+        _factory.Dispose();
+        return Task.CompletedTask;
+    }
 
     // ============================================================
     // AUDIT STATE MACHINE TESTS (01-08)
@@ -490,8 +501,8 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         var familyId = Guid.NewGuid();
         var tokenHash = Guid.NewGuid().ToString();
         using var insertTokenCmd = new NpgsqlCommand(
-            "INSERT INTO refresh_tokens (user_id, token_hash, family_id, ip_address, issued_at, expires_at) " +
-            "VALUES (@uid, @thash, @fid, '127.0.0.1', now(), now() + interval '1 day')", ownerConn);
+            "INSERT INTO refresh_tokens (user_id, token_hash, family_id, ip_address, issued_at, expires_at, is_persistent) " +
+            "VALUES (@uid, @thash, @fid, '127.0.0.1', now(), now() + interval '1 day', true)", ownerConn);
         insertTokenCmd.Parameters.AddWithValue("uid", otherUserId);
         insertTokenCmd.Parameters.AddWithValue("thash", tokenHash);
         insertTokenCmd.Parameters.AddWithValue("fid", familyId);
@@ -638,7 +649,9 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
                     ["RateLimiting:Login:QueueLimit"] = "0",
                     ["RateLimiting:OtpRequest:PermitLimit"] = otpLimit.ToString(),
                     ["RateLimiting:OtpRequest:WindowSeconds"] = "60",
-                    ["RateLimiting:OtpRequest:QueueLimit"] = "0"
+                    ["RateLimiting:OtpRequest:QueueLimit"] = "0",
+                    ["Jwt:Secret"] = "integration-test-only-jwt-secret-at-least-32-bytes",
+                    ["Otp:HashKey"] = "integration-test-only-otp-hmac-key-at-least-32-bytes"
                 };
 
                 for (int i = 0; i < knownNetworks.Length; i++)
@@ -728,6 +741,170 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         var body = await blocked.Content.ReadAsStringAsync();
         Assert.Contains("Rate limit exceeded", body);
         Assert.Contains("RATE_LIMIT_EXCEEDED", body);
+    }
+
+    [Fact]
+    public async Task Test37_PasswordResetRequest_UnknownIdentifiers_ReturnIdenticalGenericSuccess()
+    {
+        using var client = _factory.CreateClient();
+        var emailResponse = await client.PostAsJsonAsync("/api/v1/auth/password-reset/request", new
+        {
+            deliveryMethod = "Email",
+            identifier = "unknown-password-reset@example.test"
+        });
+        var phoneResponse = await client.PostAsJsonAsync("/api/v1/auth/password-reset/request", new
+        {
+            deliveryMethod = "Phone",
+            identifier = "+962799999999"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, emailResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, phoneResponse.StatusCode);
+        var emailBody = await emailResponse.Content.ReadAsStringAsync();
+        var phoneBody = await phoneResponse.Content.ReadAsStringAsync();
+        Assert.Equal(emailBody, phoneBody);
+        Assert.Contains("If an eligible account exists", emailBody);
+    }
+
+    [Fact]
+    public async Task Test38_Login_UnknownIdentifier_RecordsFailedNotFound_AndReturns401()
+    {
+        var identifier = $"unknown-{Guid.NewGuid():N}@example.test";
+        using var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            emailOrPhone = identifier,
+            password = "WrongPassword123!"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("Invalid email/phone or password.", await ReadProblemDetailAsync(response));
+        Assert.Equal(LoginStatus.FailedNotFound, await GetLatestLoginStatusAsync(identifier));
+    }
+
+    [Fact]
+    public async Task Test39_Login_ExistingUserWithWrongPassword_RecordsFailedPassword_AndReturns401()
+    {
+        var email = $"wrong-password-{Guid.NewGuid():N}@example.test";
+        var user = await CreateLoginUserAsync(email, "CorrectPassword123!");
+        using var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            emailOrPhone = email,
+            password = "WrongPassword123!"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("Invalid email/phone or password.", await ReadProblemDetailAsync(response));
+        Assert.Equal(LoginStatus.FailedPassword, await GetLatestLoginStatusAsync(email));
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PropertyOsDbContext>();
+        Assert.Equal((short)1, (await db.Users.AsNoTracking().SingleAsync(candidate => candidate.Id == user.Id)).FailedLoginAttempts);
+    }
+
+    [Fact]
+    public async Task Test40_CreatedUser_PasswordResetComplete_ThenLoginWithNewPassword_SucceedsThroughArgon2id()
+    {
+        var email = $"reset-login-{Guid.NewGuid():N}@example.test";
+        var oldPassword = "OldPassword123!";
+        var newPassword = "NewPassword456!";
+        var user = await CreateLoginUserAsync(email, oldPassword);
+        var resetCredential = $"integration-reset-{Guid.NewGuid():N}";
+        var now = DateTimeOffset.UtcNow;
+
+        using (var seedScope = _factory.Services.CreateScope())
+        {
+            var db = seedScope.ServiceProvider.GetRequiredService<PropertyOsDbContext>();
+            db.PasswordResetChallenges.Add(new PasswordResetChallenge
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Kind = PasswordResetChallengeKind.EmailToken,
+                CredentialHash = HashResetCredential(resetCredential),
+                ExpiresAt = now.AddMinutes(15),
+                FailedAttempts = 0,
+                MaxAttempts = 1,
+                RequestedIp = IPAddress.Loopback,
+                CreatedAt = now
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = _factory.CreateClient();
+        var resetResponse = await client.PostAsJsonAsync("/api/v1/auth/password-reset/complete", new
+        {
+            resetCredential,
+            newPassword
+        });
+        Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
+
+        using (var verificationScope = _factory.Services.CreateScope())
+        {
+            var db = verificationScope.ServiceProvider.GetRequiredService<PropertyOsDbContext>();
+            var passwordHasher = verificationScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+            var resetUser = await db.Users.AsNoTracking().SingleAsync(candidate => candidate.Id == user.Id);
+
+            Assert.IsType<PropertyOS.Infrastructure.Identity.PasswordHasher>(passwordHasher);
+            Assert.Equal("argon2id", resetUser.PasswordAlgorithm);
+            Assert.NotNull(resetUser.PasswordHash);
+            Assert.StartsWith("argon2id.", resetUser.PasswordHash);
+            Assert.True(passwordHasher.VerifyPassword(newPassword, resetUser.PasswordHash));
+            Assert.False(passwordHasher.VerifyPassword(oldPassword, resetUser.PasswordHash));
+        }
+
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            emailOrPhone = email,
+            password = newPassword
+        });
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
+        Assert.NotNull(login);
+        Assert.False(string.IsNullOrWhiteSpace(login.AccessToken));
+        Assert.Equal(user.Id, login.User.Id);
+        Assert.Equal(LoginStatus.Success, await GetLatestLoginStatusAsync(email));
+    }
+
+    [Fact]
+    public async Task Test41_Login_InactiveUser_PreservesAccountNotActiveBehavior()
+    {
+        var email = $"inactive-{Guid.NewGuid():N}@example.test";
+        await CreateLoginUserAsync(email, "CorrectPassword123!", isActive: false);
+        using var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            emailOrPhone = email,
+            password = "CorrectPassword123!"
+        });
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal("ACCOUNT_NOT_ACTIVE", await ReadProblemCodeAsync(response));
+        Assert.Equal(LoginStatus.FailedNotFound, await GetLatestLoginStatusAsync(email));
+    }
+
+    [Fact]
+    public async Task Test42_Login_LockedUser_PreservesFailedLockedBehavior()
+    {
+        var email = $"locked-{Guid.NewGuid():N}@example.test";
+        await CreateLoginUserAsync(
+            email,
+            "CorrectPassword123!",
+            lockedUntil: DateTimeOffset.UtcNow.AddMinutes(10));
+        using var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            emailOrPhone = email,
+            password = "CorrectPassword123!"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(LoginStatus.FailedLocked, await GetLatestLoginStatusAsync(email));
     }
 
     [Fact]
@@ -909,5 +1086,60 @@ public class Module3SecurityIntegrationTests : IAsyncLifetime, IClassFixture<Web
         db.Companies.Add(company);
         await db.SaveChangesAsync();
         return company.Id;
+    }
+
+    private async Task<User> CreateLoginUserAsync(
+        string email,
+        string password,
+        bool isActive = true,
+        DateTimeOffset? lockedUntil = null)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PropertyOsDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var now = DateTimeOffset.UtcNow;
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = email,
+            PasswordHash = passwordHasher.HashPassword(password),
+            PasswordAlgorithm = "argon2id",
+            FullName = "Integration Login User",
+            IsActive = isActive,
+            LockedUntil = lockedUntil,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+        return user;
+    }
+
+    private async Task<LoginStatus> GetLatestLoginStatusAsync(string identifier)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PropertyOsDbContext>();
+        return await db.LoginHistory
+            .AsNoTracking()
+            .Where(history => history.AttemptedIdentifier == identifier)
+            .OrderByDescending(history => history.CreatedAt)
+            .Select(history => history.Status)
+            .FirstAsync();
+    }
+
+    private static string HashResetCredential(string credential) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(credential))).ToLowerInvariant();
+
+    private static async Task<string?> ReadProblemDetailAsync(HttpResponseMessage response)
+    {
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.TryGetProperty("detail", out var detail) ? detail.GetString() : null;
+    }
+
+    private static async Task<string?> ReadProblemCodeAsync(HttpResponseMessage response)
+    {
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.TryGetProperty("code", out var code) ? code.GetString() : null;
     }
 }

@@ -16,7 +16,9 @@ namespace PropertyOS.Infrastructure.Notifications.Services;
 /// <summary>
 /// Brevo v3 HTTP transactional email implementation for AqariOS.
 /// </summary>
-public class BrevoEmailSender : IEmailSender
+// Retained as an isolated legacy implementation. ResendEmailSender is the active
+// IEmailSender registration.
+public class BrevoEmailSender
 {
     private readonly HttpClient _httpClient;
     private readonly BrevoOptions _brevoOptions;
@@ -72,7 +74,7 @@ public class BrevoEmailSender : IEmailSender
 
         var senderName = !string.IsNullOrWhiteSpace(_brevoOptions.SenderName)
             ? _brevoOptions.SenderName.Trim()
-            : "عقاري نوت";
+            : "عقاري";
 
         var htmlContent = BuildActivationEmailHtml(tenantName.Trim(), activationUrl);
 
@@ -141,7 +143,7 @@ public class BrevoEmailSender : IEmailSender
 <head>
     <meta charset=""UTF-8"">
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-    <title>تفعيل حساب بوابة المستأجر | عقاري نوت</title>
+    <title>تفعيل حساب بوابة المستأجر | عقاري</title>
 </head>
 <body style=""margin:0; padding:0; background-color:#0E1116; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color:#F0F3F6; direction:rtl; text-align:right;"">
     <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""background-color:#0E1116; padding: 40px 16px;"">
@@ -163,7 +165,7 @@ public class BrevoEmailSender : IEmailSender
                                             </svg>
                                         </div>
                                         <span style=""font-size: 22px; font-weight: 700; color: #FFFFFF; vertical-align: middle; letter-spacing: -0.3px;"">
-                                            عقاري نوت
+                                            عقاري
                                         </span>
                                         <span style=""font-size: 13px; font-weight: 500; color: #A4AC86; margin-right: 8px; vertical-align: middle;"">
                                             AqariOS
@@ -182,7 +184,7 @@ public class BrevoEmailSender : IEmailSender
                                 مرحباً بك، {safeTenantName}!
                             </h2>
                             <p style=""margin: 0 0 14px 0; color: #E5E7EB;"">
-                                تم إنشاء حساب بوابة المستأجر الخاص بك بنجاح في منصة <strong>عقاري نوت</strong>.
+                                تم إنشاء حساب بوابة المستأجر الخاص بك بنجاح في منصة <strong>عقاري</strong>.
                             </p>
                             <p style=""margin: 0 0 28px 0; color: #9CA3AF;"">
                                 اضغط على الزر أدناه لتفعيل حسابك وتعيين كلمة المرور لبدء استخدام البوابة.
@@ -219,7 +221,7 @@ public class BrevoEmailSender : IEmailSender
                     <!-- Footer -->
                     <tr>
                         <td style=""padding-top: 20px; border-top: 1px solid #21262D; text-align: center; font-size: 11.5px; color: #6B7280;"">
-                            &copy; {currentYear} عقاري نوت - AqariOS. جميع الحقوق محفوظة.
+                            &copy; {currentYear} عقاري - AqariOS. جميع الحقوق محفوظة.
                         </td>
                     </tr>
                 </table>

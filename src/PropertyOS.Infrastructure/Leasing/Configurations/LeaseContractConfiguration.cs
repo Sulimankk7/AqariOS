@@ -273,6 +273,9 @@ internal sealed class LeaseContractConfiguration : IEntityTypeConfiguration<Leas
             .HasDatabaseName("idx_lease_contracts_expiration")
             .HasFilter("status = 'active' AND deleted_at IS NULL");
 
+        builder.HasIndex(c => new { c.CompanyId, c.StartDate, c.EndDate })
+            .HasDatabaseName("idx_lease_contracts_payg_period_overlap");
+
         // NOTE: MIGRATION SQL REQUIRED for idx_lease_contracts_contract_number_trgm
         // EF Core mapping for GIN trigram index must be added via raw SQL migration:
         // CREATE INDEX idx_lease_contracts_contract_number_trgm ON lease_contracts USING gin (contract_number gin_trgm_ops);

@@ -6,16 +6,10 @@ import { toast } from 'sonner';
 import { getFloorTranslation } from '../constants/translations';
 import { buildingKeys } from '@/features/buildings/hooks/buildingKeys';
 import { isArchiveBlockedError } from '@/shared/lib/archiveBlocked';
+import { getRuntimeLanguage } from '@/shared/i18n';
+import { extractUserFriendlyError } from '@/shared/utils/errorHandling';
 
-function getCurrentLang(): 'en' | 'ar' {
-  try {
-    return (localStorage.getItem('aqari:language') as 'en' | 'ar') || 'en';
-  } catch {
-    return 'en';
-  }
-}
-
-const t = (key: string) => getFloorTranslation(key, getCurrentLang());
+const t = (key: string) => getFloorTranslation(key, getRuntimeLanguage());
 
 export const floorKeys = {
   all: ['floors'] as const,
@@ -51,7 +45,7 @@ export const useCreateFloor = () => {
       toast.success(t('createSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     },
   });
 };
@@ -68,7 +62,7 @@ export const useUpdateFloor = () => {
       toast.success(t('updateSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     },
   });
 };
@@ -87,7 +81,7 @@ export const useDeleteFloor = () => {
       if (isArchiveBlockedError(error)) {
         return;
       }
-      toast.error(error?.detail || error?.message || t('loadError'));
+      toast.error(extractUserFriendlyError(error, t('loadError')));
     },
   });
 };

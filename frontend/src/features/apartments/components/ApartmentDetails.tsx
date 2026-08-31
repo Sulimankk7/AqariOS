@@ -63,7 +63,7 @@ export function ApartmentDetails({ apartment, floorLabel }: ApartmentDetailsProp
                 {/* Clickable Building Name Link with clear link styling */}
                 <div className="flex items-center gap-1.5">
                   <Building2 className="h-3.5 w-3.5 text-primary" />
-                  <span>Building:</span>
+                  <span>{t('building')}:</span>
                   <Link 
                     to={`/buildings/${apartment.buildingId}`} 
                     className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors cursor-pointer"
@@ -75,7 +75,7 @@ export function ApartmentDetails({ apartment, floorLabel }: ApartmentDetailsProp
                 {/* Resolved Floor Label */}
                 <div className="flex items-center gap-1.5">
                   <Layers className="h-3.5 w-3.5 text-primary" />
-                  <span>Floor:</span>
+                  <span>{t('floor')}:</span>
                   <span className="font-medium text-foreground">{resolvedFloorLabel}</span>
                 </div>
               </CardDescription>

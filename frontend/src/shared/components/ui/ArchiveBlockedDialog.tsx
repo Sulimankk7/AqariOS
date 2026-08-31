@@ -20,65 +20,28 @@ interface ArchiveBlockedDialogProps {
   data: ArchiveBlockedPayload | null;
 }
 
-const DEPENDENCY_META: Record<
-  string,
-  { en: string; ar: string; icon: React.ComponentType<{ className?: string }> }
-> = {
-  FLOORS: { en: 'Floors', ar: 'الطوابق', icon: Layers },
-  APARTMENTS: { en: 'Apartments', ar: 'الشقق والوحدات', icon: Home },
-  LEASE_CONTRACTS: { en: 'Active Lease Contracts', ar: 'عقود الإيجار النشطة', icon: FileText },
-  MAINTENANCE_REQUESTS: { en: 'Open Maintenance Requests', ar: 'طلبات الصيانة المفتوحة', icon: Wrench },
-  MARKETPLACE_LISTINGS: { en: 'Marketplace Listings', ar: 'إعلانات السوق العقاري', icon: Store },
-  PARKING_SPOTS: { en: 'Parking Spots', ar: 'مواقف السيارات', icon: Car },
-  PARKING_ASSIGNMENTS: { en: 'Parking Assignments', ar: 'تخصيصات المواقف', icon: Car },
+const DEPENDENCY_META: Record<string, { key: string; icon: React.ComponentType<{ className?: string }> }> = {
+  FLOORS: { key: 'floors', icon: Layers },
+  APARTMENTS: { key: 'apartments', icon: Home },
+  LEASE_CONTRACTS: { key: 'leaseContracts', icon: FileText },
+  MAINTENANCE_REQUESTS: { key: 'maintenanceRequests', icon: Wrench },
+  MARKETPLACE_LISTINGS: { key: 'marketplaceListings', icon: Store },
+  PARKING_SPOTS: { key: 'parkingSpots', icon: Car },
+  PARKING_ASSIGNMENTS: { key: 'parkingAssignments', icon: Car },
 };
 
 export function ArchiveBlockedDialog({ open, onOpenChange, data }: ArchiveBlockedDialogProps) {
-  const { language, direction } = useTranslation();
-  const isAr = language === 'ar';
+  const { t, direction } = useTranslation();
 
   if (!data) return null;
 
-  // Format header title and description cleanly for Arabic and English
-  let entityTypeEn = 'item';
-  let entityTypeAr = 'هذا العنصر';
-
-  let title = data.title || (isAr ? 'تعذر أرشفة السجل' : 'Cannot be archived');
-  if (data.title) {
-    if (data.title.includes('Building')) {
-      entityTypeEn = 'building';
-      entityTypeAr = 'المبنى';
-      const match = data.title.match(/Building "(.*?)" cannot be archived/i);
-      if (isAr) {
-        title = match ? `لا يمكن أرشفة المبنى "${match[1]}"` : 'لا يمكن أرشفة هذا المبنى';
-      }
-    } else if (data.title.includes('Floor')) {
-      entityTypeEn = 'floor';
-      entityTypeAr = 'الطابق';
-      const match = data.title.match(/Floor "(.*?)" cannot be archived/i);
-      if (isAr) {
-        title = match ? `لا يمكن أرشفة الطابق "${match[1]}"` : 'لا يمكن أرشفة هذا الطابق';
-      }
-    } else if (data.title.includes('Apartment')) {
-      entityTypeEn = 'apartment';
-      entityTypeAr = 'الشقة';
-      const match = data.title.match(/Apartment "(.*?)" cannot be archived/i);
-      if (isAr) {
-        title = match ? `لا يمكن أرشفة الشقة "${match[1]}"` : 'لا يمكن أرشفة هذه الشقة';
-      }
-    } else if (data.title.includes('ParkingSpot')) {
-      entityTypeEn = 'parking spot';
-      entityTypeAr = 'موقف السيارات';
-      const match = data.title.match(/ParkingSpot "(.*?)" cannot be archived/i);
-      if (isAr) {
-        title = match ? `لا يمكن أرشفة موقف السيارات "${match[1]}"` : 'لا يمكن أرشفة هذا الموقف';
-      }
-    }
-  }
-
-  const shortDescription = isAr
-    ? `يحتوي ${entityTypeAr} على سجلات نشطة. يرجى أرشفة أو إزالة العناصر التالية أولاً.`
-    : `This ${entityTypeEn} still contains active records. Archive or remove the following items first.`;
+  const entityMatch = data.title?.match(/(Building|Floor|Apartment|ParkingSpot)(?: "(.*?)")? cannot be archived/i);
+  const entityKey = entityMatch?.[1]?.toLowerCase() === 'parkingspot' ? 'parkingSpot' : (entityMatch?.[1]?.toLowerCase() || 'item');
+  const entity = t(`archiveBlocked.entity.${entityKey}`);
+  const title = entityMatch?.[2]
+    ? t('archiveBlocked.titleWithName', { entity, name: entityMatch[2] })
+    : t('archiveBlocked.title', { entity });
+  const shortDescription = t('archiveBlocked.description', { entity });
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -104,7 +67,7 @@ export function ArchiveBlockedDialog({ open, onOpenChange, data }: ArchiveBlocke
           {data.dependencies.map((dep) => {
             const meta = DEPENDENCY_META[dep.code];
             const IconComponent = meta?.icon || Layers;
-            const labelText = isAr ? (meta?.ar || dep.label) : (meta?.en || dep.label);
+            const labelText = meta ? t(`archiveBlocked.dependency.${meta.key}`) : t('common.unknown');
 
             const hasExamples = dep.examples && dep.examples.length > 0;
             const remainingCount = hasExamples && dep.count > dep.examples!.length
@@ -142,7 +105,7 @@ export function ArchiveBlockedDialog({ open, onOpenChange, data }: ArchiveBlocke
 
                     {remainingCount > 0 && (
                       <span className="text-muted-foreground text-[11px] font-medium px-1">
-                        {isAr ? `و +${remainingCount} غيرها` : `+${remainingCount} more`}
+                        {t('archiveBlocked.more', { count: remainingCount })}
                       </span>
                     )}
                   </div>
@@ -157,7 +120,7 @@ export function ArchiveBlockedDialog({ open, onOpenChange, data }: ArchiveBlocke
             onClick={() => onOpenChange(false)}
             className="w-full sm:w-auto px-5"
           >
-            {isAr ? 'إغلاق' : 'Close'}
+            {t('common.close')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

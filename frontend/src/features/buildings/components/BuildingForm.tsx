@@ -103,7 +103,7 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
               )}
             />
 
-            {/* Internal Code - REQUIRED */}
+            {/* Internal Code - OPTIONAL; the backend does not generate one */}
             <FormField
               control={form.control}
               name="internalCode"
@@ -111,13 +111,11 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                 <FormItem>
                   <FormLabel className="flex items-center gap-1 font-medium">
                     <span>{t('internalCode')}</span>
-                    <span className="text-destructive font-bold" aria-hidden="true">*</span>
-                    <span className="sr-only">{t('required')}</span>
+                    <span className="text-muted-foreground font-normal text-xs ms-1.5">{t('optional')}</span>
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder={t('codePlaceholder')} 
-                      aria-required="true"
                       className="placeholder:text-muted-foreground/60 placeholder:font-normal"
                       {...field} 
                     />
@@ -251,7 +249,7 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
               )}
             />
 
-            {/* District - OPTIONAL */}
+            {/* City / District - REQUIRED by the backend command */}
             <FormField
               control={form.control}
               name="address.district"
@@ -259,11 +257,13 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                 <FormItem>
                   <FormLabel className="flex items-center gap-1 font-medium">
                     <span>{t('district')}</span>
-                    <span className="text-muted-foreground font-normal text-xs ms-1.5">{t('optional')}</span>
+                    <span className="text-destructive font-bold" aria-hidden="true">*</span>
+                    <span className="sr-only">{t('required')}</span>
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder={t('districtPlaceholder')} 
+                      aria-required="true"
                       className="placeholder:text-muted-foreground/60 placeholder:font-normal"
                       {...field} 
                     />
@@ -273,7 +273,7 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
               )}
             />
 
-            {/* Area - OPTIONAL */}
+            {/* Area / Neighborhood - REQUIRED by the backend command */}
             <FormField
               control={form.control}
               name="address.area"
@@ -281,11 +281,13 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                 <FormItem>
                   <FormLabel className="flex items-center gap-1 font-medium">
                     <span>{t('area')}</span>
-                    <span className="text-muted-foreground font-normal text-xs ms-1.5">{t('optional')}</span>
+                    <span className="text-destructive font-bold" aria-hidden="true">*</span>
+                    <span className="sr-only">{t('required')}</span>
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder={t('areaPlaceholder')} 
+                      aria-required="true"
                       className="placeholder:text-muted-foreground/60 placeholder:font-normal"
                       {...field} 
                       value={field.value || ''} 

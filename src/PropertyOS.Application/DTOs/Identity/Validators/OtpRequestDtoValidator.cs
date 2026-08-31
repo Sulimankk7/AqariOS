@@ -1,4 +1,5 @@
 using FluentValidation;
+using PropertyOS.Application.Identity;
 
 namespace PropertyOS.Application.DTOs.Identity.Validators;
 
@@ -13,8 +14,8 @@ public class OtpRequestDtoValidator : AbstractValidator<OtpRequestDto>
     public OtpRequestDtoValidator()
     {
         RuleFor(x => x.Phone)
-            .NotEmpty()
-            .WithMessage("Phone number is required.");
+            .Must(phone => OtpPhoneNumber.TryNormalize(phone, out _, allowJordanianLocal: true))
+            .WithMessage("Phone number must be a valid international E.164 number.");
 
         RuleFor(x => x.Purpose)
             .IsInEnum()

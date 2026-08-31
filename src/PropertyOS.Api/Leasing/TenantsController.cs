@@ -64,7 +64,8 @@ public class TenantsController : ControllerBase
             Phone: request.Phone,
             Email: request.Email,
             Occupation: request.Occupation,
-            Employer: request.Employer
+            Employer: request.Employer,
+            PhoneCountryCode: request.PhoneCountryCode
         );
 
         var tenantId = await _mediator.Send(command, cancellationToken);
@@ -119,7 +120,8 @@ public class TenantsController : ControllerBase
             Phone: request.Phone,
             Email: request.Email,
             Occupation: request.Occupation,
-            Employer: request.Employer
+            Employer: request.Employer,
+            PhoneCountryCode: request.PhoneCountryCode
         );
 
         await _mediator.Send(command, cancellationToken);

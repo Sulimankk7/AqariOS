@@ -290,8 +290,10 @@ public sealed class ApprovePlanChangeRequestCommandHandler
         if (!Enum.IsDefined(typeof(BillingCycleEnum), request.RequestedBillingCycle))
             throw new BusinessRuleException("The requested billing cycle is invalid.", "PLAN_CHANGE_BILLING_CYCLE_INVALID");
 
-        var price = request.RequestedBillingCycle == BillingCycleEnum.Yearly
-            ? requestedPlan.YearlyPrice : requestedPlan.MonthlyPrice;
+        var price = requestedPlan.PricingModel == SubscriptionPricingModel.Fixed
+            ? request.RequestedBillingCycle == BillingCycleEnum.Yearly
+                ? requestedPlan.YearlyPrice : requestedPlan.MonthlyPrice
+            : 0m;
         var reviewedAt = _clock.UtcNow;
         subscription.ApplyApprovedPlanChange(
             requestedPlan.Id, request.RequestedBillingCycle, price, requestedPlan.Currency, reviewedAt);

@@ -3,11 +3,13 @@
  */
 
 import React from "react";
+import { useTranslation } from "@/shared/i18n";
 
 export function DashboardSkeleton() {
+  const { t } = useTranslation();
   return (
     <div
-      aria-label="Loading dashboard metrics"
+      aria-label={t("common.loadingDashboardMetrics")}
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse"
     >
       {Array.from({ length: 12 }).map((_, index) => (

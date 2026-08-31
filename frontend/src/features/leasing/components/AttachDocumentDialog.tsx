@@ -25,6 +25,7 @@ import { ContractDocumentType } from '../types/leasing.types';
 import { useAttachContractDocument } from '../hooks/useLeasing';
 import { filesApi } from '@/shared/services/files.api';
 import { getLeasingTranslation } from '../constants/translations';
+import { localizeValidationMessage } from '@/shared/utils/errorHandling';
 import { contractDocumentTypeToLabel } from '../constants/leasingEnums';
 import { useTranslation } from '@/shared/i18n';
 import { extractUserFriendlyError } from '@/shared/utils';
@@ -58,7 +59,7 @@ export function AttachDocumentDialog({
   open,
   onOpenChange,
 }: AttachDocumentDialogProps) {
-  const { language } = useTranslation();
+  const { language, t: globalT } = useTranslation();
   const t = (key: string) => getLeasingTranslation(key, language);
   const attachMutation = useAttachContractDocument();
 
@@ -269,7 +270,7 @@ export function AttachDocumentDialog({
               </SelectContent>
             </Select>
             {errors.documentType && (
-              <p className="text-xs text-destructive">{errors.documentType.message}</p>
+              <p className="text-xs text-destructive">{localizeValidationMessage(errors.documentType.message)}</p>
             )}
           </div>
 
@@ -338,7 +339,7 @@ export function AttachDocumentDialog({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label="Remove selected file"
+                    aria-label={globalT("common.removeSelectedFile")}
                     onClick={() => setSelectedFile(null)}
                   >
                     <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />

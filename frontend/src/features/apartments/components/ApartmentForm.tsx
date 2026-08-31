@@ -137,7 +137,7 @@ export function ApartmentForm({
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select property building" />
+                      <SelectValue placeholder={t('selectBuildingPlaceholder')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>

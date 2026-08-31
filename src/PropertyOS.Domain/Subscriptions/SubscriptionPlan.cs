@@ -1,4 +1,5 @@
 using System;
+using PropertyOS.Domain.Subscriptions.Enums;
 
 namespace PropertyOS.Domain.Subscriptions;
 
@@ -12,6 +13,9 @@ public class SubscriptionPlan
     public string? DescriptionAr { get; set; }
     public decimal MonthlyPrice { get; set; }
     public decimal YearlyPrice { get; set; }
+    public SubscriptionPricingModel PricingModel { get; set; } = SubscriptionPricingModel.Fixed;
+    public decimal? PaygMonthlyUnitPrice { get; set; }
+    public decimal? PaygYearlyMonthlyEquivalentUnitPrice { get; set; }
     public string Currency { get; set; } = "JOD";
     public int? MaxBuildings { get; set; }
     public int? MaxUsers { get; set; }

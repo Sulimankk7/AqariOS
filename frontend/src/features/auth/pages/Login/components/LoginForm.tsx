@@ -9,13 +9,13 @@
 import React, { useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router";
 import { Mail, Lock, Smartphone, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { GoogleLogo } from "@/shared/components/GoogleLogo";
 import { FieldLabel, inputClass } from "@/features/auth/components/FieldLabel";
 import { ArchitecturalButton } from "@/features/auth/components/ArchitecturalButton";
 import { TRANSLATIONS } from "@/features/auth/constants/translations";
 import { authApi } from "@/features/auth/api/auth.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ROUTES } from "@/config/routes";
+import { extractUserFriendlyError, mapApiValidationErrors } from "@/shared/utils/errorHandling";
 
 interface LoginFormProps {
   lang: "en" | "ar";
@@ -49,13 +49,14 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
     try {
       const response = await authApi.login({ 
         emailOrPhone: identifier, 
-        password 
+        password,
+        rememberMe
       });
 
-      const verifiedUser = await login(response.accessToken, response.user);
+      const verifiedUser = await login(response.accessToken, response.user, response.isPersistentSession);
 
       if (onFeedbackMessage) {
-        onFeedbackMessage("Authentication successful. Welcome back!");
+        onFeedbackMessage(t.loginSuccess);
       }
       
       const returnUrl = searchParams.get("returnUrl");
@@ -78,10 +79,9 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
       if (err?.code === "ACCOUNT_NOT_ACTIVE") {
         setErrorMessage(t.pendingApproval);
       } else if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
-        setFieldErrors(err.validationErrors);
+        setFieldErrors(mapApiValidationErrors(err.validationErrors));
       } else {
-        const errorMsg = err?.detail || err?.message || "An unexpected error occurred during login.";
-        setErrorMessage(errorMsg);
+        setErrorMessage(extractUserFriendlyError(err, t.loginError));
       }
     } finally {
       setIsLoading(false);
@@ -89,7 +89,7 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
   };
 
   const handleGoogleSSO = () => {
-    setErrorMessage("Google SSO is not connected in this phase.");
+    setErrorMessage(t.googleUnavailable);
   };
 
   const unmappedErrors = Object.entries(fieldErrors)
@@ -216,7 +216,7 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              aria-label="Toggle password visibility"
+              aria-label={t.togglePasswordVisibility}
             >
               {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
@@ -264,31 +264,6 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
         >
           {t.signInBtn}
         </ArchitecturalButton>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 py-1">
-          <div className="flex-1 h-px bg-outline-variant" />
-          <span
-            className="text-[12px] font-medium text-muted-foreground"
-          >
-            {t.orDivider}
-          </span>
-          <div className="flex-1 h-px bg-outline-variant" />
-        </div>
-
-        {/* Google SSO Button */}
-        <button
-          type="button"
-          onClick={handleGoogleSSO}
-          className={`w-full h-10 font-medium text-[13.5px] rounded-lg transition-colors flex items-center justify-center gap-2.5 cursor-pointer border ${
-            isDark
-              ? "bg-card hover:bg-surface-container-high text-foreground border-outline-variant hover:border-outline"
-              : "bg-card hover:bg-surface-container-low text-foreground border-outline-variant hover:border-outline"
-          }`}
-        >
-          <GoogleLogo />
-          <span>{t.googleSSO}</span>
-        </button>
 
         {/* Switch to Register */}
         <p

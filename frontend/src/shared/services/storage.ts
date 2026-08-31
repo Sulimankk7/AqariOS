@@ -46,9 +46,15 @@ export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 // ── Local Storage helpers ─────────────────────────────────────────────────────
 
 export const storage = {
-  /** Read a value from localStorage. */
+  /**
+   * Read a value. Authentication keys prefer the current tab's sessionStorage
+   * and then fall back to persistent localStorage.
+   */
   get<T>(key: StorageKey): T | null {
-    const raw = safeGet(localStorage, key);
+    const isAuthKey = key === STORAGE_KEYS.accessToken || key === STORAGE_KEYS.rememberMe;
+    const raw = isAuthKey
+      ? safeGet(sessionStorage, key) ?? safeGet(localStorage, key)
+      : safeGet(localStorage, key);
     if (raw === null) return null;
     try {
       return JSON.parse(raw) as T;
@@ -65,11 +71,33 @@ export const storage = {
   /** Remove a key from localStorage. */
   remove(key: StorageKey): void {
     safeRemove(localStorage, key);
+    if (key === STORAGE_KEYS.accessToken || key === STORAGE_KEYS.rememberMe) {
+      safeRemove(sessionStorage, key);
+    }
+  },
+
+  /** Store an access token according to the server-authoritative session mode. */
+  setAccessToken(accessToken: string, isPersistentSession: boolean): void {
+    safeRemove(localStorage, STORAGE_KEYS.accessToken);
+    safeRemove(sessionStorage, STORAGE_KEYS.accessToken);
+    safeRemove(localStorage, STORAGE_KEYS.rememberMe);
+    safeRemove(sessionStorage, STORAGE_KEYS.rememberMe);
+
+    const target = isPersistentSession ? localStorage : sessionStorage;
+    safeSet(target, STORAGE_KEYS.accessToken, JSON.stringify(accessToken));
+    safeSet(target, STORAGE_KEYS.rememberMe, JSON.stringify(isPersistentSession));
+  },
+
+  isPersistentSession(): boolean {
+    return safeGet(localStorage, STORAGE_KEYS.accessToken) !== null;
   },
 
   /** Clear all AqariOS-namespaced keys from localStorage. */
   clearAll(): void {
-    Object.values(STORAGE_KEYS).forEach((k) => safeRemove(localStorage, k));
+    Object.values(STORAGE_KEYS).forEach((k) => {
+      safeRemove(localStorage, k);
+      safeRemove(sessionStorage, k);
+    });
   },
 };
 

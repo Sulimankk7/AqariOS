@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using PropertyOS.Application.Common.Exceptions;
+using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Application.DTOs.Identity;
 using PropertyOS.Application.Identity;
 using PropertyOS.Domain.Identity.Entities;
@@ -28,6 +30,9 @@ public class AuthService : IAuthService
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly ILogger<AuthService>? _logger;
     private readonly IHostEnvironment? _environment;
+    private readonly ISmsSender? _smsSender;
+    private readonly OtpOptions _otpOptions;
+    private readonly RefreshSessionOptions _refreshSessionOptions;
 
     /// <summary>
     /// Initializes a new instance of AuthService.
@@ -37,13 +42,19 @@ public class AuthService : IAuthService
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         ILogger<AuthService>? logger = null,
-        IHostEnvironment? environment = null)
+        IHostEnvironment? environment = null,
+        ISmsSender? smsSender = null,
+        IOptions<OtpOptions>? otpOptions = null,
+        IOptions<RefreshSessionOptions>? refreshSessionOptions = null)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
         _jwtTokenGenerator = jwtTokenGenerator ?? throw new ArgumentNullException(nameof(jwtTokenGenerator));
         _logger = logger;
         _environment = environment;
+        _smsSender = smsSender;
+        _otpOptions = otpOptions?.Value ?? new OtpOptions { HashKey = "unit-test-only-otp-hash-key" };
+        _refreshSessionOptions = refreshSessionOptions?.Value ?? new RefreshSessionOptions();
     }
 
     /// <inheritdoc />
@@ -114,8 +125,16 @@ public class AuthService : IAuthService
 
         var (accessToken, expiresIn) = _jwtTokenGenerator.GenerateAccessToken(user.Id, companyId, roles, permissions);
 
+        var now = DateTimeOffset.UtcNow;
         var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
         var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
+        var isRememberedSession = dto.RememberMe == true;
+        var isPersistentSession = dto.RememberMe != false;
+        var absoluteSessionExpiresAt = isRememberedSession
+            ? now.AddDays(_refreshSessionOptions.RememberedLifetimeDays)
+            : (DateTimeOffset?)null;
+        var refreshTokenExpiresAt = absoluteSessionExpiresAt
+            ?? now.AddDays(_refreshSessionOptions.NormalLifetimeDays);
 
         var familyId = Guid.NewGuid();
         var refreshTokenEntity = new RefreshToken
@@ -123,10 +142,12 @@ public class AuthService : IAuthService
             UserId = user.Id,
             TokenHash = hashedRefreshToken,
             FamilyId = familyId,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
+            ExpiresAt = refreshTokenExpiresAt,
+            IsPersistent = isPersistentSession,
+            AbsoluteSessionExpiresAt = absoluteSessionExpiresAt,
             IpAddress = ParseIpAddress(ipAddress),
             UserAgent = userAgent,
-            IssuedAt = DateTimeOffset.UtcNow
+            IssuedAt = now
         };
 
         _dbContext.RefreshTokens.Add(refreshTokenEntity);
@@ -136,6 +157,8 @@ public class AuthService : IAuthService
         {
             AccessToken = accessToken,
             RefreshToken = rawRefreshToken,
+            IsPersistentSession = refreshTokenEntity.IsPersistent,
+            RefreshTokenExpiresAt = refreshTokenEntity.ExpiresAt,
             TokenType = "Bearer",
             ExpiresIn = expiresIn,
             User = profile
@@ -206,7 +229,9 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Session revoked due to security violation. Please log in again.");
         }
 
-        if (tokenEntity.ExpiresAt <= DateTimeOffset.UtcNow)
+        var now = DateTimeOffset.UtcNow;
+        if (tokenEntity.ExpiresAt <= now ||
+            (tokenEntity.AbsoluteSessionExpiresAt.HasValue && tokenEntity.AbsoluteSessionExpiresAt.Value <= now))
         {
             throw new UnauthorizedAccessException("Refresh token has expired.");
         }
@@ -230,9 +255,12 @@ public class AuthService : IAuthService
             UserId = user.Id,
             TokenHash = newHashedRefreshToken,
             FamilyId = tokenEntity.FamilyId,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
+            ExpiresAt = tokenEntity.AbsoluteSessionExpiresAt
+                ?? now.AddDays(_refreshSessionOptions.NormalLifetimeDays),
+            IsPersistent = tokenEntity.IsPersistent,
+            AbsoluteSessionExpiresAt = tokenEntity.AbsoluteSessionExpiresAt,
             IpAddress = ParseIpAddress(ipAddress),
-            IssuedAt = DateTimeOffset.UtcNow
+            IssuedAt = now
         };
 
         tokenEntity.RevokedAt = DateTimeOffset.UtcNow;
@@ -256,6 +284,8 @@ public class AuthService : IAuthService
         {
             AccessToken = accessToken,
             RefreshToken = newRawRefreshToken,
+            IsPersistentSession = newTokenEntity.IsPersistent,
+            RefreshTokenExpiresAt = newTokenEntity.ExpiresAt,
             TokenType = "Bearer",
             ExpiresIn = expiresIn,
             User = profile
@@ -300,11 +330,44 @@ public class AuthService : IAuthService
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-        var phone = dto.Phone.Trim();
+        if (!OtpPhoneNumber.TryNormalize(dto.Phone, out var phone, allowJordanianLocal: true))
+            throw new ArgumentException("Phone number must be a valid international E.164 number.", nameof(dto));
+        if (dto.Purpose != OtpPurpose.Login)
+            throw new InvalidOperationException("This verification purpose is not available.");
+        if (string.IsNullOrWhiteSpace(_otpOptions.HashKey))
+            throw new InvalidOperationException("OTP security configuration is unavailable.");
 
-        // Generate 6-digit cryptographically random OTP code
-        int codeInt = RandomNumberGenerator.GetInt32(100000, 999999);
-        string rawCode = codeInt.ToString();
+        var eligibleUserExists = await _dbContext.Users.AnyAsync(
+            u => u.Phone == phone && u.IsActive && u.DeletedAt == null,
+            cancellationToken);
+        if (!eligibleUserExists)
+        {
+            _logger?.LogInformation(
+                "OTP request rejected because no active account matches. Destination={DestinationMasked}",
+                MaskPhone(phone));
+            throw new NotFoundException("No account is registered with this phone number.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var latest = await _dbContext.OtpChallenges
+            .Where(c => c.Phone == phone && c.Purpose == dto.Purpose)
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => new { c.CreatedAt })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (latest != null)
+        {
+            var retryAfter = _otpOptions.ResendCooldownSeconds - (int)(now - latest.CreatedAt).TotalSeconds;
+            if (retryAfter > 0) throw new OtpRequestThrottledException(retryAfter);
+        }
+
+        var windowStart = now.AddMinutes(-_otpOptions.DestinationWindowMinutes);
+        var destinationRequestCount = await _dbContext.OtpChallenges.CountAsync(
+            c => c.Phone == phone && c.Purpose == dto.Purpose && c.CreatedAt >= windowStart, cancellationToken);
+        if (destinationRequestCount >= _otpOptions.MaxRequestsPerDestinationWindow)
+            throw new OtpRequestThrottledException(_otpOptions.DestinationWindowMinutes * 60);
+
+        // GetInt32 is CSPRNG-backed; upper bound is exclusive, and D6 preserves leading zeroes.
+        string rawCode = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
         string hashedCode = HashOtpCode(rawCode);
 
         var challenge = new OtpChallenge
@@ -312,22 +375,41 @@ public class AuthService : IAuthService
             Phone = phone,
             CodeHash = hashedCode,
             Purpose = dto.Purpose,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5),
+            ExpiresAt = now.AddMinutes(_otpOptions.ExpiryMinutes),
             ConsumedAt = null,
             FailedAttempts = 0,
             MaxAttempts = 3,
             RequestedIp = ParseIpAddress(clientIp),
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = now
         };
 
+        // Historical rows stay intact but old active codes become immediately unusable.
+        var activeChallenges = _dbContext.OtpChallenges
+            .Where(c => c.Phone == phone && c.Purpose == dto.Purpose && c.ConsumedAt == null && c.ExpiresAt > now);
+        if (_dbContext.Database.IsRelational())
+            await activeChallenges.ExecuteUpdateAsync(s => s.SetProperty(c => c.ConsumedAt, now), cancellationToken);
+        else
+        {
+            foreach (var active in await activeChallenges.ToListAsync(cancellationToken)) active.ConsumedAt = now;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
         _dbContext.OtpChallenges.Add(challenge);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        if (_environment?.IsDevelopment() == true)
+        var message = $"رمز التحقق الخاص بك في AqariOS هو: {rawCode}\nالرمز صالح لمدة {_otpOptions.ExpiryMinutes} دقائق.";
+        // Unit tests use the constructor without DI. Runtime DI always supplies ISmsSender.
+        var sent = _smsSender == null ? _environment == null : await _smsSender.SendAsync(phone, message, cancellationToken);
+        if (!sent)
         {
-            _logger?.LogInformation("DEV OTP for {Phone}: {Code}", phone, rawCode);
+            challenge.ConsumedAt = DateTimeOffset.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            _logger?.LogWarning("OTP delivery failed. Destination={DestinationMasked}", MaskPhone(phone));
+            throw new OtpDeliveryException();
         }
 
+        _logger?.LogInformation("OTP challenge delivered. Destination={DestinationMasked}", MaskPhone(phone));
+        // The API deliberately discards this value; retaining the interface return preserves
+        // existing internal/test callers without exposing the code to clients.
         return rawCode;
     }
 
@@ -340,7 +422,10 @@ public class AuthService : IAuthService
     {
         if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-        var phone = dto.Phone.Trim();
+        if (!OtpPhoneNumber.TryNormalize(dto.Phone, out var phone))
+            throw new UnauthorizedAccessException("OTP code is invalid or has expired.");
+        if (dto.Purpose != OtpPurpose.Login)
+            throw new InvalidOperationException("This verification purpose is not available.");
         var hashedCode = HashOtpCode(dto.Code.Trim());
 
         var challenge = await _dbContext.OtpChallenges
@@ -358,16 +443,36 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("OTP verification attempts exceeded. Please request a new OTP.");
         }
 
-        if (challenge.CodeHash != hashedCode)
+        if (!CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(challenge.CodeHash), Convert.FromHexString(hashedCode)))
         {
-            challenge.FailedAttempts++;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            if (_dbContext.Database.IsRelational())
+                await _dbContext.OtpChallenges.Where(c => c.Id == challenge.Id && c.FailedAttempts < c.MaxAttempts)
+                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.FailedAttempts, c => (short)(c.FailedAttempts + 1)), cancellationToken);
+            else
+            {
+                challenge.FailedAttempts++;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
             throw new UnauthorizedAccessException("OTP code is invalid.");
         }
 
-        challenge.ConsumedAt = DateTimeOffset.UtcNow;
-        challenge.VerifiedIp = ParseIpAddress(ipAddress);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        // A single conditional SQL update is the consumption gate: at most one request can win.
+        var consumed = 0;
+        if (_dbContext.Database.IsRelational())
+            consumed = await _dbContext.OtpChallenges
+                .Where(c => c.Id == challenge.Id && c.ConsumedAt == null && c.ExpiresAt > DateTimeOffset.UtcNow && c.FailedAttempts < c.MaxAttempts)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.ConsumedAt, DateTimeOffset.UtcNow)
+                    .SetProperty(c => c.VerifiedIp, ParseIpAddress(ipAddress)), cancellationToken);
+        else if (challenge.ConsumedAt == null && challenge.ExpiresAt > DateTimeOffset.UtcNow && challenge.FailedAttempts < challenge.MaxAttempts)
+        {
+            challenge.ConsumedAt = DateTimeOffset.UtcNow;
+            challenge.VerifiedIp = ParseIpAddress(ipAddress);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            consumed = 1;
+        }
+        if (consumed != 1)
+            throw new UnauthorizedAccessException("OTP code is invalid or has expired.");
 
         var user = await _dbContext.Users
             .FirstOrDefaultAsync(u => u.Phone == phone && u.IsActive && u.DeletedAt == null, cancellationToken);
@@ -384,6 +489,7 @@ public class AuthService : IAuthService
         var (profile, companyId, roles, permissions) = await LoadUserProfileAndClaimsAsync(user.Id, cancellationToken);
         var (accessToken, expiresIn) = _jwtTokenGenerator.GenerateAccessToken(user.Id, companyId, roles, permissions);
 
+        var refreshIssuedAt = DateTimeOffset.UtcNow;
         var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
         var hashedRefreshToken = _jwtTokenGenerator.HashRefreshToken(rawRefreshToken);
 
@@ -392,9 +498,11 @@ public class AuthService : IAuthService
             UserId = user.Id,
             TokenHash = hashedRefreshToken,
             FamilyId = Guid.NewGuid(),
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
+            ExpiresAt = refreshIssuedAt.AddDays(_refreshSessionOptions.NormalLifetimeDays),
+            IsPersistent = true,
+            AbsoluteSessionExpiresAt = null,
             IpAddress = ParseIpAddress(ipAddress),
-            IssuedAt = DateTimeOffset.UtcNow
+            IssuedAt = refreshIssuedAt
         };
 
         _dbContext.RefreshTokens.Add(refreshTokenEntity);
@@ -404,6 +512,8 @@ public class AuthService : IAuthService
         {
             AccessToken = accessToken,
             RefreshToken = rawRefreshToken,
+            IsPersistentSession = refreshTokenEntity.IsPersistent,
+            RefreshTokenExpiresAt = refreshTokenEntity.ExpiresAt,
             TokenType = "Bearer",
             ExpiresIn = expiresIn,
             User = profile
@@ -538,10 +648,14 @@ public class AuthService : IAuthService
         return System.Net.IPAddress.TryParse(ipString, out var ip) ? ip : System.Net.IPAddress.Loopback;
     }
 
-    private static string HashOtpCode(string code)
+    private string HashOtpCode(string code)
     {
+        byte[] key = Encoding.UTF8.GetBytes(_otpOptions.HashKey);
         byte[] bytes = Encoding.UTF8.GetBytes(code);
-        byte[] hash = SHA256.HashData(bytes);
+        byte[] hash = HMACSHA256.HashData(key, bytes);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
+
+    private static string MaskPhone(string phone)
+        => phone.Length <= 7 ? "***" : $"{phone[..4]}****{phone[^3..]}";
 }

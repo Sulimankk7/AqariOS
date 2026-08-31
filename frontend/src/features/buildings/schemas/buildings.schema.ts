@@ -5,15 +5,15 @@ const addressSchema = z.object({
   governorate: z.nativeEnum(Governorate, {
     errorMap: () => ({ message: 'Please select a valid governorate' }),
   }),
-  district: z.string().max(100, 'District is too long').optional(),
-  area: z.string().max(100, 'Area is too long').optional(),
+  district: z.string().trim().min(1, 'City is required').max(100, 'City is too long'),
+  area: z.string().trim().min(1, 'Area is required').max(100, 'Area is too long'),
   streetName: z.string().max(100, 'Street name is too long').optional(),
   postalCode: z.string().max(20, 'Postal code is too long').optional(),
 });
 
 export const buildingSchema = z.object({
-  name: z.string().min(1, 'Building name is required').max(200, 'Building name is too long'),
-  internalCode: z.string().min(1, 'Internal code is required').max(50, 'Internal code is too long'),
+  name: z.string().min(1, 'Building name is required').max(100, 'Building name is too long'),
+  internalCode: z.string().max(50, 'Internal code is too long').optional().or(z.literal('')),
   buildingType: z.nativeEnum(BuildingType, {
     errorMap: () => ({ message: 'Please select a valid building type' }),
   }),

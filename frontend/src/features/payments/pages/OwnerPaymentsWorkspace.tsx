@@ -38,7 +38,7 @@ export default function OwnerPaymentsWorkspace() {
               disabled={isFetchingNextPage}
               className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
             >
-              {isFetchingNextPage ? t('Loading more...') : t('Load More')}
+              {isFetchingNextPage ? t('common.loadingMore') : t('common.loadMore')}
             </button>
           </div>
         )}

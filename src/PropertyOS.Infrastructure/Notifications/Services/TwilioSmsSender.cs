@@ -16,7 +16,9 @@ namespace PropertyOS.Infrastructure.Notifications.Services;
 /// <summary>
 /// Twilio SMS implementation using Twilio REST API and Messaging Service SID.
 /// </summary>
-public class TwilioSmsSender : ISmsSender
+// Retained as an isolated legacy implementation. InfobipSmsSender is the active
+// ISmsSender registration.
+public class TwilioSmsSender
 {
     private readonly HttpClient _httpClient;
     private readonly TwilioOptions _twilioOptions;

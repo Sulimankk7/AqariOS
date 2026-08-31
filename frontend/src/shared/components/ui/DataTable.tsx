@@ -241,7 +241,7 @@ export function DataTable<T extends Record<string, any>>({
                       <div className="flex items-center gap-2 text-danger">
                         <AlertTriangle className="w-5 h-5" />
                         <span className="font-semibold text-sm">
-                          {errorConfig.message || t("errors.generic", "Failed to load data.")}
+                          {errorConfig.message || t("errors.generic")}
                         </span>
                       </div>
                       {errorConfig.onRetry && (
@@ -251,7 +251,7 @@ export function DataTable<T extends Record<string, any>>({
                           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold bg-background border border-border hover:bg-muted transition-colors text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
-                          {t("common.retry", "Retry")}
+                          {t("common.retry")}
                         </button>
                       )}
                     </div>

@@ -38,7 +38,7 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
       if (GUID_REGEX.test(name)) {
         label = breadcrumbTitles[name] || t("common.details");
       } else if (name === "tenant") {
-        label = t("tenant.portal", "Tenant Portal");
+        label = t("tenant.portal");
         href = "/tenant/dashboard";
       } else {
         const tenantKey = `tenant.navigation.${name}`;
@@ -58,7 +58,7 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
   }
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium flex-wrap">
+    <nav aria-label={t("common.breadcrumb")} className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium flex-wrap">
       <Link
         to={homePath}
         className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"

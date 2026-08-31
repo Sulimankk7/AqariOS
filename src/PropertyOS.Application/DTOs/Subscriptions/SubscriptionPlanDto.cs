@@ -47,6 +47,10 @@ public class SubscriptionPlanDto
     /// </summary>
     public decimal YearlyPrice { get; set; }
 
+    public PropertyOS.Domain.Subscriptions.Enums.SubscriptionPricingModel PricingModel { get; set; }
+    public decimal? PaygMonthlyUnitPrice { get; set; }
+    public decimal? PaygYearlyMonthlyEquivalentUnitPrice { get; set; }
+
     /// <summary>
     /// ISO currency code (e.g., "JOD").
     /// </summary>

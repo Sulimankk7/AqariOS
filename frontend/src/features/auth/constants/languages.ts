@@ -9,7 +9,6 @@ export interface LanguageOption {
 }
 
 export const LANGUAGES: LanguageOption[] = [
-  { value: "en", label: "English (US)" },
-  { value: "ar", label: "العربية (Arabic)" },
-  { value: "fr", label: "Français (French)" },
+  { value: "ar", label: "العربية" },
+  { value: "en", label: "English" },
 ];

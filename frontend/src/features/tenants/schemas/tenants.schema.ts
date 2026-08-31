@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const E164_PHONE_REGEX = /^\+[1-9]\d{6,14}$/;
+export const TENANT_PHONE_INPUT_REGEX = /^[+0-9\s()./-]+$/;
 
 export const createTenantSchema = z.object({
   name: z
@@ -15,9 +15,10 @@ export const createTenantSchema = z.object({
     .string()
     .min(1, { message: 'Phone number is required' })
     .max(20, { message: 'Phone must not exceed 20 characters' })
-    .refine((val) => E164_PHONE_REGEX.test(val.trim()), {
-      message: 'Phone must be a valid E.164 phone number (e.g. +962791234567)',
+    .refine((val) => TENANT_PHONE_INPUT_REGEX.test(val.trim()), {
+      message: 'Phone contains invalid characters',
     }),
+  phoneCountryCode: z.string().length(2).optional().or(z.literal('')),
   email: z
     .string()
     .min(1, { message: 'Email address is required' })
@@ -33,6 +34,15 @@ export const createTenantSchema = z.object({
     .max(100, { message: 'Employer must not exceed 100 characters' })
     .optional()
     .nullable(),
+}).superRefine((value, context) => {
+  const compact = value.phone.replace(/[\s()./-]/g, '');
+  if (!compact.startsWith('+') && !compact.startsWith('00') && !value.phoneCountryCode) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['phoneCountryCode'],
+      message: 'Select a country when entering a local phone number',
+    });
+  }
 });
 
 export const updateTenantSchema = z.object({
@@ -48,9 +58,10 @@ export const updateTenantSchema = z.object({
     .string()
     .min(1, { message: 'Phone number is required' })
     .max(20, { message: 'Phone must not exceed 20 characters' })
-    .refine((val) => E164_PHONE_REGEX.test(val.trim()), {
-      message: 'Phone must be a valid E.164 phone number (e.g. +962791234567)',
+    .refine((val) => TENANT_PHONE_INPUT_REGEX.test(val.trim()), {
+      message: 'Phone contains invalid characters',
     }),
+  phoneCountryCode: z.string().length(2).optional().or(z.literal('')),
   email: z
     .string()
     .email({ message: 'Please enter a valid email address' })
@@ -68,8 +79,16 @@ export const updateTenantSchema = z.object({
     .max(100, { message: 'Employer must not exceed 100 characters' })
     .optional()
     .nullable(),
+}).superRefine((value, context) => {
+  const compact = value.phone.replace(/[\s()./-]/g, '');
+  if (!compact.startsWith('+') && !compact.startsWith('00') && !value.phoneCountryCode) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['phoneCountryCode'],
+      message: 'Select a country when entering a local phone number',
+    });
+  }
 });
 
 export type CreateTenantFormValues = z.infer<typeof createTenantSchema>;
 export type UpdateTenantFormValues = z.infer<typeof updateTenantSchema>;
-

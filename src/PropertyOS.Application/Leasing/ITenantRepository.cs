@@ -32,6 +32,12 @@ public interface ITenantRepository
     Task<bool> ExistsByNationalIdAsync(Guid companyId, string nationalId, Guid? excludeTenantId = null, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// True when a non-deleted Tenant already owns the canonical phone globally,
+    /// optionally excluding the current Tenant during update.
+    /// </summary>
+    Task<bool> ExistsByPhoneAsync(string phone, Guid? excludeTenantId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// True when any non-terminal (draft / pending_signature / active) lease contract
     /// references the tenant. Guards tenant soft-deletion.
     /// </summary>

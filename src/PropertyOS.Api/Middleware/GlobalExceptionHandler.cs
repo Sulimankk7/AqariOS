@@ -159,6 +159,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                         problemDetails.Detail = "A tenant with this national ID already exists.";
                         problemDetails.Extensions["code"] = "TENANT_NATIONAL_ID_ALREADY_EXISTS";
                     }
+                    else if (pgEx.ConstraintName == "uq_tenants_phone_active")
+                    {
+                        problemDetails.Detail = "An active tenant with this phone number already exists.";
+                        problemDetails.Extensions["code"] = "TENANT_PHONE_ALREADY_EXISTS";
+                    }
                     else if (pgEx.ConstraintName is "uq_utility_accounts_lease_type"
                              or "uq_utility_accounts_type_number")
                     {

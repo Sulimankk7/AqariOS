@@ -1,5 +1,8 @@
+import { translateLegacy } from '@/shared/i18n';
+
 export const dictionary = {
   en: {
+    unknown: 'Unknown',
     // Navigation & Headers
     buildings: 'Buildings',
     addBuilding: 'Add Building',
@@ -112,13 +115,14 @@ export const dictionary = {
     },
   },
   ar: {
+    unknown: 'غير معروف',
     // Navigation & Headers
     buildings: 'المباني',
     addBuilding: 'إضافة مبنى',
     editBuilding: 'تعديل مبنى',
     buildingDetails: 'تفاصيل المبنى',
     pageDescription: 'إدارة مباني عقاراتك ومواقعها بسهولة.',
-    createPageDescription: 'إضافة مبنى جديد إلى المحفظة العقارية.',
+    createPageDescription: 'إضافة مبنى جديد إلى النظام.',
     editPageDescription: 'تحديث بيانات المبنى وإحداثيات الموقع.',
     backToBuildings: 'الرجوع إلى المباني',
     
@@ -228,18 +232,8 @@ export const dictionary = {
 /**
  * Resolves a translation key (e.g. "buildings", "buildingTypes.residential") for current locale.
  */
-export function getBuildingTranslation(key: string, lang: 'en' | 'ar' = 'en'): string {
-  const dict = dictionary[lang] || dictionary.en;
-  const parts = key.split('.');
-  let current: any = dict;
-  for (const part of parts) {
-    if (current && typeof current === 'object' && part in current) {
-      current = current[part];
-    } else {
-      return key;
-    }
-  }
-  return typeof current === 'string' ? current : key;
+export function getBuildingTranslation(key: string, lang: 'en' | 'ar' = 'ar'): string {
+  return translateLegacy('buildings', dictionary, lang, key);
 }
 
 export const buildingTranslations = dictionary.en;
