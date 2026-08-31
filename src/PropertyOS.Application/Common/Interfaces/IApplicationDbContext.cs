@@ -35,7 +35,7 @@ public interface IApplicationDbContext
     DbSet<PaygLeaseUsage> PaygLeaseUsage => throw new NotSupportedException();
 
     DbSet<PropertyOS.Domain.Properties.Building> Buildings { get; }
-    DbSet<PropertyOS.Domain.Properties.Floor> Floors { get; }
+    DbSet<PropertyOS.Domain.Properties.Floor> Floors => throw new NotSupportedException();
     DbSet<PropertyOS.Domain.Properties.Apartment> Apartments { get; }
     DbSet<PropertyOS.Domain.Leasing.LeaseContract> LeaseContracts { get; }
     DbSet<PropertyOS.Domain.Leasing.ContractStatusHistory> ContractStatusHistory => throw new NotSupportedException();

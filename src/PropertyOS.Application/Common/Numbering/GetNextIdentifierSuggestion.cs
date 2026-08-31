@@ -41,14 +41,14 @@ public sealed class GetNextIdentifierSuggestionQueryHandler
         var year = _clock.GetJordanBusinessDate().Year;
         var prefix = $"LSE-{year}-";
         var values = await _db.LeaseContracts.AsNoTracking().Where(x => x.CompanyId == companyId && x.ContractNumber.StartsWith(prefix)).Select(x => x.ContractNumber).ToListAsync(ct);
-        return $"{prefix}{NextSuffix(values, prefix):D3}";
+        return $"{prefix}{IdentifierSequence.NextSuffix(values, prefix):D3}";
     }
 
     private async Task<string> NextBuilding(Guid companyId, CancellationToken ct)
     {
         const string prefix = "BLD-";
         var values = await _db.Buildings.AsNoTracking().Where(x => x.CompanyId == companyId && x.InternalCode != null && x.InternalCode.StartsWith(prefix)).Select(x => x.InternalCode!).ToListAsync(ct);
-        return $"{prefix}{NextSuffix(values, prefix):D3}";
+        return $"{prefix}{IdentifierSequence.NextSuffix(values, prefix):D3}";
     }
 
     private async Task<short> NextFloor(Guid companyId, Guid buildingId, CancellationToken ct)
@@ -65,10 +65,17 @@ public sealed class GetNextIdentifierSuggestionQueryHandler
             ?? throw new KeyNotFoundException("Floor was not found.");
         var prefix = $"APT-{floor.FloorNumber}";
         var values = await _db.Apartments.AsNoTracking().Where(x => x.BuildingId == floor.BuildingId && x.UnitNumber.StartsWith(prefix)).Select(x => x.UnitNumber).ToListAsync(ct);
-        return $"{prefix}{NextSuffix(values, prefix):D2}";
+        return $"{prefix}{IdentifierSequence.NextSuffix(values, prefix):D2}";
     }
 
-    private static int NextSuffix(IEnumerable<string> values, string prefix) =>
-        values.Select(x => x[prefix.Length..]).Select(x => int.TryParse(x, out var n) ? n : 0).DefaultIfEmpty(0).Max() + 1;
     private static Guid Required(Guid? value) => value ?? throw new ArgumentException("The parent identifier is required.");
+}
+
+public static class IdentifierSequence
+{
+    public static int NextSuffix(IEnumerable<string> values, string prefix) =>
+        values.Where(x => x.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Select(x => x[prefix.Length..])
+            .Select(x => int.TryParse(x, out var n) ? n : 0)
+            .DefaultIfEmpty(0).Max() + 1;
 }
