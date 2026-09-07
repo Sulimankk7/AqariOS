@@ -4,24 +4,32 @@
  */
 
 export enum NotificationType {
-  General = 0,
-  LeaseExpiry = 1,
-  PaymentDue = 2,
-  PaymentOverdue = 3,
-  MaintenanceUpdate = 4,
-  SystemAlert = 5,
+  NewLease = 0,
+  LeaseExpiration = 1,
+  RentDue = 2,
+  RentPaid = 3,
+  LatePayment = 4,
+  MaintenanceRequestCreated = 5,
+  MaintenanceRequestUpdated = 6,
+  MarketplaceViewingRequest = 7,
+  DocumentExpiring = 8,
+  GeneralNotification = 9,
+  UtilityBillElectricity = 10,
+  UtilityBillWater = 11,
 }
 
 export enum NotificationPriority {
   Low = 0,
   Normal = 1,
   High = 2,
-  Urgent = 3,
+  Critical = 3,
 }
 
 export enum NotificationStatus {
-  Unread = 0,
-  Read = 1,
+  Pending = 0,
+  Sent = 1,
+  Failed = 2,
+  Cancelled = 3,
 }
 
 export interface NotificationDto {
@@ -45,4 +53,3 @@ export interface GetMyNotificationsParams {
 export interface MarkAllNotificationsAsReadResult {
   markedCount: number;
 }
-

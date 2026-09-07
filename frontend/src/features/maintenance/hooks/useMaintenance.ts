@@ -12,6 +12,7 @@ import {
 } from '../types/maintenance.types';
 import { toast } from 'sonner';
 import { useTranslation } from '@/shared/i18n';
+import { extractUserFriendlyError } from '@/shared/utils/errorHandling';
 
 export const useMaintenanceRequests = (filters?: MaintenanceRequestFilterOptions) => {
   return useQuery({
@@ -61,8 +62,8 @@ export const useCreateMaintenanceRequest = () => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.lists() });
       toast.success(t('maintenance.createSuccess'));
     },
-    onError: () => {
-      toast.error(t('maintenance.createFailed'));
+    onError: (error) => {
+      toast.error(extractUserFriendlyError(error, t('maintenance.createFailed')));
     },
   });
 };
@@ -77,8 +78,8 @@ export const useUpdateMaintenanceRequest = (id: string) => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.detail(id) });
       toast.success(t('maintenance.updateSuccess'));
     },
-    onError: () => {
-      toast.error(t('maintenance.updateFailed'));
+    onError: (error) => {
+      toast.error(extractUserFriendlyError(error, t('maintenance.updateFailed')));
     },
   });
 };
@@ -94,8 +95,8 @@ export const useUpdateMaintenanceStatus = (id: string) => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.history(id) });
       toast.success(t('maintenance.statusUpdated'));
     },
-    onError: () => {
-      toast.error(t('maintenance.statusUpdateFailed'));
+    onError: (error) => {
+      toast.error(extractUserFriendlyError(error, t('maintenance.statusUpdateFailed')));
     },
   });
 };
@@ -109,8 +110,8 @@ export const useAddMaintenanceComment = (id: string) => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.comments(id) });
       toast.success(t('maintenance.commentAdded'));
     },
-    onError: () => {
-      toast.error(t('maintenance.commentAddFailed'));
+    onError: (error) => {
+      toast.error(extractUserFriendlyError(error, t('maintenance.commentAddFailed')));
     },
   });
 };
@@ -124,8 +125,8 @@ export const useRemoveMaintenanceComment = (id: string) => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.comments(id) });
       toast.success(t('maintenance.commentRemoved'));
     },
-    onError: () => {
-      toast.error(t('maintenance.commentRemoveFailed'));
+    onError: (error) => {
+      toast.error(extractUserFriendlyError(error, t('maintenance.commentRemoveFailed')));
     },
   });
 };
@@ -139,8 +140,8 @@ export const useAddMaintenanceAttachment = (id: string) => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.attachments(id) });
       toast.success(t('maintenance.attachmentAdded'));
     },
-    onError: () => {
-      toast.error(t('maintenance.attachmentAddFailed'));
+    onError: (error) => {
+      toast.error(extractUserFriendlyError(error, t('maintenance.attachmentAddFailed')));
     },
   });
 };
@@ -154,8 +155,8 @@ export const useRemoveMaintenanceAttachment = (id: string) => {
       queryClient.invalidateQueries({ queryKey: maintenanceKeys.attachments(id) });
       toast.success(t('maintenance.attachmentRemoved'));
     },
-    onError: () => {
-      toast.error(t('maintenance.attachmentRemoveFailed'));
+    onError: (error) => {
+      toast.error(extractUserFriendlyError(error, t('maintenance.attachmentRemoveFailed')));
     },
   });
 };

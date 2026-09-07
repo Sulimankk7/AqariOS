@@ -1,5 +1,5 @@
 import { http } from "@/shared/lib/http";
-import type { NotificationDto, GetMyNotificationsParams } from "@/features/notifications/types/notifications.types";
+import type { NotificationDto, GetMyNotificationsParams, MarkAllNotificationsAsReadResult } from "@/features/notifications/types/notifications.types";
 
 export const notificationsApi = {
   /**
@@ -7,7 +7,13 @@ export const notificationsApi = {
    * GET /api/v1/notifications/me
    */
   getMyNotifications(params?: GetMyNotificationsParams): Promise<NotificationDto[]> {
-    return http.get<NotificationDto[]>("/api/v1/notifications/me", { params });
+    const query = new URLSearchParams();
+    if (params?.pageSize !== undefined) query.set('pageSize', String(params.pageSize));
+    if (params?.lastSeenCreatedAt && params?.lastSeenId) {
+      query.set('lastSeenCreatedAt', params.lastSeenCreatedAt);
+      query.set('lastSeenId', params.lastSeenId);
+    }
+    return http.get<NotificationDto[]>(`/api/v1/notifications/me${query.size ? `?${query}` : ''}`);
   },
 
   /**

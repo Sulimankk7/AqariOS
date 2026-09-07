@@ -62,13 +62,15 @@ export function entityLabel(
   language: "ar" | "en",
 ): string {
   const raw = normalized(value, domain);
-  if (!raw) return t("common.unknown");
+  // An absent value is not an unsupported enum; preserve the product's "not specified" meaning.
+  if (!raw) return t("common.notSpecified");
   const key = aliases[domain]?.[raw] ?? raw;
   const translationKey = `enums.${domain}.${key}`;
   const translated = t(translationKey);
   if (translated === t("common.missingTranslation")) {
     reportMissingTranslation(translationKey, language);
-    return t("common.unknown");
+    // The value is known, but its dictionary entry is missing. Do not mislabel it as unknown.
+    return translated;
   }
   return translated;
 }

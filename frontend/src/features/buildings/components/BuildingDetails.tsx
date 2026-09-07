@@ -5,6 +5,7 @@ import { getBuildingTranslation } from '../constants/translations';
 import { buildingTypeToLabel, governorateToLabel } from '../constants/buildingEnums';
 import { useTranslation } from '@/shared/i18n';
 import { FloorsList } from '@/features/floors/components/FloorsList';
+import { useFloors } from '@/features/floors/hooks/useFloors';
 import { useApartments } from '@/features/apartments/hooks/useApartments';
 import { occupancyStatusToLabel, OccupancyStatus } from '@/features/apartments/constants/apartmentEnums';
 import { getApartmentTranslation } from '@/features/apartments/constants/translations';
@@ -39,6 +40,7 @@ export function BuildingDetails({ building }: BuildingDetailsProps) {
   const aptT = (key: string) => getApartmentTranslation(key, language);
 
   const { data: apartments, isLoading: isLoadingApartments } = useApartments({ buildingId: building.id });
+  const { data: floors, isLoading: isLoadingFloors } = useFloors(building.id);
 
   const getOccupancyBadgeVariant = (status: OccupancyStatus) => {
     switch (status) {
@@ -102,6 +104,13 @@ export function BuildingDetails({ building }: BuildingDetailsProps) {
 
               <div className="space-y-1">
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Layers className="h-3.5 w-3.5" /> {t('managedFloors')}
+                </span>
+                <p className="font-medium text-sm">{isLoadingFloors ? '-' : floors?.length ?? 0}</p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5" /> {t('constructionYear')}
                 </span>
                 <p className="font-medium text-sm">{building.constructionYear || '-'}</p>
@@ -155,7 +164,7 @@ export function BuildingDetails({ building }: BuildingDetailsProps) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Layers className="h-4 w-4 text-primary" />
-              {t('totalFloors')}
+              {t('managedFloors')}
             </CardTitle>
             <Button 
               size="sm" 
@@ -177,15 +186,22 @@ export function BuildingDetails({ building }: BuildingDetailsProps) {
         {/* Apartments Card - Real Data Display */}
         <Card className="shadow-xs md:col-span-2">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center justify-between">
-              <span className="flex items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Home className="h-4 w-4 text-primary" />
                 {t('apartments')}
-              </span>
-              <Badge variant="outline" className="text-xs">
-                {totalCount} {t('totalCount')}
-              </Badge>
-            </CardTitle>
+                <Badge variant="outline" className="text-xs">
+                  {totalCount} {t('totalCount')}
+                </Badge>
+              </CardTitle>
+              <Button
+                size="sm"
+                onClick={() => navigate(`/apartments/new?buildingId=${encodeURIComponent(building.id)}`)}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5 rtl:ml-1.5 rtl:mr-0" />
+                {aptT('addApartment')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="pt-2">
             {isLoadingApartments ? (

@@ -1,21 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationsApi } from "@/features/notifications/api/notifications.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ApiError } from "@/shared/lib/http";
 import type { GetMyNotificationsParams } from "@/features/notifications/types/notifications.types";
 
 /**
  * Hook to fetch unread notification count with tenant/user cache isolation.
  */
-export function useUnreadNotificationCount() {
+export function useUnreadNotificationCount({ poll = false }: { poll?: boolean } = {}) {
   const { user, isAuthenticated } = useAuth();
   const userId = user?.id;
 
   return useQuery({
-    queryKey: ["tenant", userId, "notifications", "unread-count"],
+    queryKey: ["tenant", userId, "notifications", user?.companyId, "unread-count"],
     queryFn: () => notificationsApi.getUnreadCount(),
     enabled: isAuthenticated && !!userId,
     staleTime: 30 * 1000, // 30 seconds stale time
-    refetchInterval: 60 * 1000, // Background polling every 60 seconds
+    refetchInterval: poll ? 60 * 1000 : false,
+    retry: (failureCount, error) =>
+      failureCount < 2 && (!(error instanceof ApiError) || error.status >= 500),
   });
 }
 
@@ -27,10 +30,11 @@ export function useMyNotifications(params?: GetMyNotificationsParams) {
   const userId = user?.id;
 
   return useQuery({
-    queryKey: ["tenant", userId, "notifications", "list", params],
+    queryKey: ["tenant", userId, "notifications", user?.companyId, "list", params],
     queryFn: () => notificationsApi.getMyNotifications(params),
     enabled: isAuthenticated && !!userId,
     staleTime: 15 * 1000,
+    retry: false,
   });
 }
 

@@ -51,6 +51,7 @@ import { leasingApi } from '../api/leasing.api';
 import { useDeleteContractDocument } from '../hooks/useLeasing';
 import { Eye, Download, Trash2 } from 'lucide-react';
 import { LeaseUtilityAccountsSection } from '@/features/utilityBills/components/LeaseUtilityAccountsSection';
+import { LeaseParkingSection } from '@/features/parking/LeaseParkingSection';
 
 
 interface LeaseContractDetailsProps {
@@ -343,6 +344,8 @@ export function LeaseContractDetails({ contract }: LeaseContractDetailsProps) {
 
       {/* Documents List */}
       <LeaseUtilityAccountsSection leaseContractId={contract.id} />
+
+      <LeaseParkingSection leaseContractId={contract.id} />
 
       {/* Documents List */}
       <Card>

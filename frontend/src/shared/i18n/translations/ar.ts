@@ -3,7 +3,9 @@
  * Complete Coverage across all Namespaces & Pluralization Rules.
  */
 
+import { mvpAr } from '../../../features/mvp/copy';
 export const ar = {
+  mvp: mvpAr,
   common: {
     appName: "عقاري",
     tagline: "النظام المؤسسي لإدارة العقارات والأملاك",
@@ -108,7 +110,7 @@ export const ar = {
     dashboard: "لوحة التحكم",
     buildings: "المباني",
     apartments: "الشقق والوحدات",
-    parking: "المواقف والجسور",
+    parking: "المواقف والكراجات",
     leases: "عقود الإيجار",
     tenants: "المستأجرين",
     payments: "الدفعات والتحصيل",
@@ -116,7 +118,7 @@ export const ar = {
     utilityBills: "فواتير الخدمات",
     maintenance: "الصيانة والأعطال",
     marketplace: "سوق الخدمات",
-    documents: "المستندات والأرشيف",
+    documents: "المستندات",
     notifications: "الإشعارات",
     settings: "الإعدادات",
     companySettings: "ملف الشركة",
@@ -346,7 +348,7 @@ export const ar = {
     buildingCommercial: "تجاري",
     buildingMixedUse: "متعدد الاستخدام",
     internalCode: "الرمز الداخلي",
-    totalFloors: "عدد الطوابق",
+    totalFloors: "طوابق الترخيص",
     unitsCount: "عدد الوحدات",
     constructionYear: "سنة الإنشاء",
     address: "العنوان",
@@ -644,6 +646,21 @@ export const ar = {
   },
   errors: {
     generic: "تعذر إكمال العملية. يرجى المحاولة مرة أخرى.",
+    imageLoad: "تعذر تحميل الصورة",
+    activationInvalidLink: "رابط التفعيل غير صالح أو مفقود.",
+    activationStatusFailed: "تعذر التحقق من رابط التفعيل. حاول لاحقاً أو تواصل مع إدارة العقار.",
+    activationPasswordTooShort: "يجب أن تتكون كلمة المرور من 8 خانات على الأقل.",
+    activationPasswordMismatch: "كلمتا المرور غير متطابقتين.",
+    activationFailed: "فشل تفعيل الحساب. قد يكون رابط التفعيل منتهياً أو مستخدماً مسبقاً.",
+    activationExpiredTitle: "انتهت صلاحية رابط التفعيل",
+    activationExpiredDescription: "انتهت صلاحية رابط التفعيل هذا (صلاحية الرابط 48 ساعة من وقت إصداره).",
+    activationExpiredHelp: "يرجى التواصل مع إدارة العقار لطلب إرسال رابط تفعيل جديد لحسابك.",
+    activationAlreadyUsedTitle: "تم استخدام رابط التفعيل هذا مسبقًا",
+    activationInvalidTitle: "رابط التفعيل غير صالح",
+    activationAlreadyUsedDescription: "تم استخدام هذا الرابط لإنشاء كلمة المرور وتفعيل الحساب مسبقاً. لا يمكن استخدام الرابط مرة ثانية.",
+    activationAlreadyUsedHelp: "إذا كنت قد فعّلت حسابك بالفعل، يمكنك تسجيل الدخول مباشرة باستخدام بريدك الإلكتروني أو رقم هاتفك وكلمة المرور.",
+    activationBackToLogin: "العودة إلى تسجيل الدخول",
+    activationGoToLogin: "الانتقال إلى تسجيل الدخول",
     network: "فشل الاتصال بالشبكة. تحقق من اتصال الإنترنت.",
     unauthorized: "انتهت الجلسة. يرجى تسجيل الدخول من جديد.",
     forbidden: "ليس لديك صلاحية لتنفيذ هذا الإجراء.",
@@ -674,6 +691,13 @@ export const ar = {
       PASSWORD_RESET_OTP_EXPIRED: "انتهت صلاحية رمز إعادة تعيين كلمة المرور.",
       PASSWORD_RESET_OTP_ATTEMPTS_EXCEEDED: "تم تجاوز عدد محاولات التحقق المسموح بها.",
       PASSWORD_RESET_AUTHORIZATION_EXPIRED: "انتهت صلاحية تفويض إعادة تعيين كلمة المرور.",
+      EMAIL_ALREADY_EXISTS: "عنوان البريد الإلكتروني مستخدم بالفعل.",
+      PHONE_ALREADY_EXISTS: "رقم الهاتف مستخدم بالفعل.",
+      TENANT_NATIONAL_ID_ALREADY_EXISTS: "يوجد مستأجر بهذا الرقم الوطني بالفعل.",
+      UTILITY_ACCOUNT_ALREADY_LINKED: "حساب الخدمة هذا مرتبط بالفعل.",
+      RESOURCE_ALREADY_EXISTS: "يوجد سجل مطابق بالفعل.",
+      USED_PLAN_IMMUTABLE: "لا يمكن تعديل التعريف التجاري لخطة مستخدمة.",
+      PLAN_CHANGE_REQUEST_IMMUTABLE: "لم يعد من الممكن تعديل طلب تغيير الخطة.",
     },
   },
   utilityManagement: {

@@ -37,6 +37,8 @@ export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
 
       if (GUID_REGEX.test(name)) {
         label = breadcrumbTitles[name] || t("common.details");
+      } else if (["parking", "documents", "notifications", "settings"].includes(name)) {
+        label = t(`mvp.${name}`);
       } else if (name === "tenant") {
         label = t("tenant.portal");
         href = "/tenant/dashboard";

@@ -5536,7 +5536,7 @@ namespace PropertyOS.Infrastructure.Persistence.Migrations
 
                     b.ToTable("parking_assignments", null, t =>
                         {
-                            t.HasCheckConstraint("chk_parking_assignments_dates", "assigned_to IS NULL OR assigned_to > assigned_from");
+                            t.HasCheckConstraint("chk_parking_assignments_dates", "assigned_to IS NULL OR assigned_to >= assigned_from");
                         });
                 });
 

@@ -6,7 +6,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
  * Custom hook to fetch the currently authenticated tenant's authoritative profile.
  * Uses strict tenant/user cache isolation key: ["tenant", userId, "profile"].
  */
-export function useTenantProfile() {
+export function useTenantProfile(enabled = true) {
   const { user, isAuthenticated } = useAuth();
   const userId = user?.id;
   const isTenant = user?.roleCode === "TENANT";
@@ -14,7 +14,7 @@ export function useTenantProfile() {
   return useQuery({
     queryKey: ["tenant", userId, "profile"],
     queryFn: () => tenantPortalApi.getProfile(),
-    enabled: isAuthenticated && isTenant && !!userId,
+    enabled: enabled && isAuthenticated && isTenant && !!userId,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   });

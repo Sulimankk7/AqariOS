@@ -18,7 +18,7 @@ import { emergencyContactSchema, EmergencyContactFormData } from '../schemas/eme
 import { useCreateEmergencyContact, useUpdateEmergencyContact } from '../hooks/useEmergencyContacts';
 import { getTenantTranslation } from '../constants/translations';
 import { useTranslation } from '@/shared/i18n';
-import { extractUserFriendlyError } from '@/shared/utils';
+import { extractUserFriendlyError, localizeValidationMessage } from '@/shared/utils';
 
 interface EmergencyContactFormDialogProps {
   tenantId: string;
@@ -35,6 +35,10 @@ export function EmergencyContactFormDialog({
 }: EmergencyContactFormDialogProps) {
   const { language } = useTranslation();
   const t = (key: string) => getTenantTranslation(key, language);
+  const fieldError = (message: string | undefined, fallbackKey: string) => {
+    const value = message || fallbackKey;
+    return /^[A-Za-z][A-Za-z0-9]*$/.test(value) ? t(value) : localizeValidationMessage(value);
+  };
 
   const isEditing = !!initialData;
   const createMutation = useCreateEmergencyContact(tenantId);
@@ -95,7 +99,7 @@ export function EmergencyContactFormDialog({
           onError: (err: any) => {
             if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
               Object.entries(err.validationErrors).forEach(([field, messages]) => {
-                const fieldName = field.toLowerCase() as keyof EmergencyContactFormData;
+                const fieldName = `${field.charAt(0).toLowerCase()}${field.slice(1)}` as keyof EmergencyContactFormData;
                 const messageList = messages as string[];
                 if (fieldName in data && messageList.length > 0) {
                   setError(fieldName, { message: messageList[0] });
@@ -115,7 +119,7 @@ export function EmergencyContactFormDialog({
         onError: (err: any) => {
           if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
             Object.entries(err.validationErrors).forEach(([field, messages]) => {
-              const fieldName = field.toLowerCase() as keyof EmergencyContactFormData;
+              const fieldName = `${field.charAt(0).toLowerCase()}${field.slice(1)}` as keyof EmergencyContactFormData;
               const messageList = messages as string[];
               if (fieldName in data && messageList.length > 0) {
                 setError(fieldName, { message: messageList[0] });
@@ -161,7 +165,7 @@ export function EmergencyContactFormDialog({
             />
             {errors.name && (
               <p id="emergencyContactName-error" className="text-xs text-destructive">
-                {t(errors.name.message || 'nameRequired')}
+                {fieldError(errors.name.message, 'nameRequired')}
               </p>
             )}
           </div>
@@ -181,7 +185,7 @@ export function EmergencyContactFormDialog({
             />
             {errors.relationshipType && (
               <p id="emergencyContactRelationship-error" className="text-xs text-destructive">
-                {t(errors.relationshipType.message || 'relationshipTypeRequired')}
+                {fieldError(errors.relationshipType.message, 'relationshipTypeRequired')}
               </p>
             )}
           </div>
@@ -201,7 +205,7 @@ export function EmergencyContactFormDialog({
             />
             {errors.phone && (
               <p id="emergencyContactPhone-error" className="text-xs text-destructive">
-                {t(errors.phone.message || 'phoneRequired')}
+                {fieldError(errors.phone.message, 'phoneRequired')}
               </p>
             )}
           </div>

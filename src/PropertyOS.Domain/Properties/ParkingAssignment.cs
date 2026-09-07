@@ -39,12 +39,12 @@ public class ParkingAssignment : ISoftDeletable
         if (parkingSpotId == Guid.Empty) throw new ArgumentException("Required", nameof(parkingSpotId));
         if (leaseContractId == Guid.Empty) throw new ArgumentException("Required", nameof(leaseContractId));
         
-        if (assignedTo.HasValue && assignedTo.Value <= assignedFrom)
-            throw new ArgumentException("AssignedTo must be greater than AssignedFrom.");
+        if (assignedTo.HasValue && assignedTo.Value < assignedFrom)
+            throw new ArgumentException("AssignedTo cannot precede AssignedFrom.");
 
         return new ParkingAssignment
         {
-            Id = Guid.Empty,
+            Id = Guid.CreateVersion7(),
             CompanyId = companyId,
             ParkingSpotId = parkingSpotId,
             LeaseContractId = leaseContractId,
@@ -56,6 +56,22 @@ public class ParkingAssignment : ISoftDeletable
             CreatedBy = createdBy,
             UpdatedBy = createdBy
         };
+    }
+
+    public void EndAssignment(DateOnly endedOn, DateTimeOffset updatedAt, Guid? updatedBy)
+    {
+        if (DeletedAt.HasValue)
+            throw new InvalidOperationException("Cannot end a deleted assignment.");
+        if (Status == ParkingAssignmentStatus.Ended) return;
+        if (Status != ParkingAssignmentStatus.Active)
+            throw new InvalidOperationException("Only active assignments can be ended.");
+        if (endedOn < AssignedFrom)
+            throw new ArgumentException("End date cannot precede assignment start.", nameof(endedOn));
+
+        Status = ParkingAssignmentStatus.Ended;
+        AssignedTo = endedOn;
+        UpdatedAt = updatedAt;
+        UpdatedBy = updatedBy;
     }
 
     public void SoftDelete(DateTimeOffset deletedAt, Guid? deletedBy)

@@ -9,6 +9,7 @@ import { PageHeader } from '@/shared/components/ui/Headers';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { useSetBreadcrumbTitle } from '@/shared/components/layout/BreadcrumbContext';
+import { extractUserFriendlyError, getUserFacingErrorKind } from '@/shared/utils';
 
 export default function EditApartmentPage() {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function EditApartmentPage() {
   const { language } = useTranslation();
   const t = (key: string) => getApartmentTranslation(key, language);
   
-  const { data: apartment, isLoading, error } = useApartment(id!);
+  const { data: apartment, isLoading, error, refetch } = useApartment(id!);
   const updateMutation = useUpdateApartment();
 
   useSetBreadcrumbTitle(apartment?.id, apartment?.unitNumber ? `Unit ${apartment.unitNumber}` : undefined);
@@ -33,7 +34,8 @@ export default function EditApartmentPage() {
   }
 
   if (error || !apartment) {
-    return <div className="p-8 text-center text-destructive">{t('notFound')}</div>;
+    const isNotFound = !apartment && (!error || getUserFacingErrorKind(error) === 'notFound');
+    return <div className="p-8 text-center space-y-4"><p className="text-destructive">{isNotFound ? t('notFound') : extractUserFriendlyError(error, t('loadError'))}</p>{!isNotFound && <Button variant="outline" onClick={() => refetch()}>{t('retry')}</Button>}</div>;
   }
 
   return (

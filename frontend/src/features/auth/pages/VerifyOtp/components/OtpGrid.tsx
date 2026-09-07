@@ -91,7 +91,7 @@ export function OtpGrid({ lang, onFeedbackMessage }: OtpGridProps) {
       if (err instanceof ApiError && err.status === 429) {
         const retryAfter = err.retryAfterSeconds ?? 60;
         timer.start(retryAfter);
-        setErrorMessage(`Please wait ${retryAfter} seconds before requesting another code.`);
+        setErrorMessage(extractUserFriendlyError(err, t.otpError));
       } else {
         setErrorMessage(extractUserFriendlyError(err, t.otpError));
       }

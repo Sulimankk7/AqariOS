@@ -18,7 +18,7 @@ import { familyMemberSchema, FamilyMemberFormData } from '../schemas/familyMembe
 import { useCreateFamilyMember, useUpdateFamilyMember } from '../hooks/useFamilyMembers';
 import { getTenantTranslation } from '../constants/translations';
 import { useTranslation } from '@/shared/i18n';
-import { extractUserFriendlyError } from '@/shared/utils';
+import { extractUserFriendlyError, localizeValidationMessage } from '@/shared/utils';
 
 interface FamilyMemberFormDialogProps {
   tenantId: string;
@@ -35,6 +35,10 @@ export function FamilyMemberFormDialog({
 }: FamilyMemberFormDialogProps) {
   const { language } = useTranslation();
   const t = (key: string) => getTenantTranslation(key, language);
+  const fieldError = (message: string | undefined, fallbackKey: string) => {
+    const value = message || fallbackKey;
+    return /^[A-Za-z][A-Za-z0-9]*$/.test(value) ? t(value) : localizeValidationMessage(value);
+  };
 
   const isEditing = !!initialData;
   const createMutation = useCreateFamilyMember(tenantId);
@@ -95,7 +99,7 @@ export function FamilyMemberFormDialog({
           onError: (err: any) => {
             if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
               Object.entries(err.validationErrors).forEach(([field, messages]) => {
-                const fieldName = field.toLowerCase() as keyof FamilyMemberFormData;
+                const fieldName = `${field.charAt(0).toLowerCase()}${field.slice(1)}` as keyof FamilyMemberFormData;
                 const messageList = messages as string[];
                 if (fieldName in data && messageList.length > 0) {
                   setError(fieldName, { message: messageList[0] });
@@ -115,7 +119,7 @@ export function FamilyMemberFormDialog({
         onError: (err: any) => {
           if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
             Object.entries(err.validationErrors).forEach(([field, messages]) => {
-              const fieldName = field.toLowerCase() as keyof FamilyMemberFormData;
+              const fieldName = `${field.charAt(0).toLowerCase()}${field.slice(1)}` as keyof FamilyMemberFormData;
               const messageList = messages as string[];
               if (fieldName in data && messageList.length > 0) {
                 setError(fieldName, { message: messageList[0] });
@@ -161,7 +165,7 @@ export function FamilyMemberFormDialog({
             />
             {errors.name && (
               <p id="familyMemberName-error" className="text-xs text-destructive">
-                {t(errors.name.message || 'nameRequired')}
+                {fieldError(errors.name.message, 'nameRequired')}
               </p>
             )}
           </div>
@@ -181,7 +185,7 @@ export function FamilyMemberFormDialog({
             />
             {errors.relationshipType && (
               <p id="familyMemberRelationship-error" className="text-xs text-destructive">
-                {t(errors.relationshipType.message || 'relationshipTypeRequired')}
+                {fieldError(errors.relationshipType.message, 'relationshipTypeRequired')}
               </p>
             )}
           </div>
@@ -199,7 +203,7 @@ export function FamilyMemberFormDialog({
             />
             {errors.ageBracket && (
               <p id="familyMemberAgeBracket-error" className="text-xs text-destructive">
-                {t(errors.ageBracket.message || 'ageBracketMax30')}
+                {fieldError(errors.ageBracket.message, 'ageBracketMax30')}
               </p>
             )}
           </div>

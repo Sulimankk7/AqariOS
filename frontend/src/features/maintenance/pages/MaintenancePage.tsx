@@ -42,10 +42,10 @@ export const MaintenancePage = () => {
       {error ? (
         <div className="p-8 text-center space-y-4">
           <p className="text-destructive font-medium">
-            {extractUserFriendlyError(error, 'حدث خطأ أثناء تحميل طلبات الصيانة')}
+            {extractUserFriendlyError(error, t('maintenance.loadError'))}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
-            إعادة المحاولة
+            {t('maintenance.retry')}
           </Button>
         </div>
       ) : (

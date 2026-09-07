@@ -15,10 +15,10 @@ export function AuthFooter({ lang, isDark = false }: AuthFooterProps) {
 
   return (
     <div
-      className="w-full px-8 py-4 border-t border-outline-variant bg-topbar/80 flex items-center justify-between text-[12px] font-medium text-muted-foreground transition-colors duration-350 shrink-0"
+      className="flex w-full min-w-0 flex-wrap items-center justify-between gap-3 border-t border-outline-variant bg-topbar/80 px-4 py-3 text-[12px] font-medium text-muted-foreground transition-colors duration-350 sm:px-8 sm:py-4 shrink-0"
     >
       <span className="hidden sm:inline">{t.copyright}</span>
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
         <a
           href="#"
           className="transition-colors hover:text-foreground"

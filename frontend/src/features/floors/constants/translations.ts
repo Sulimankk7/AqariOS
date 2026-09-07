@@ -56,6 +56,7 @@ export const dictionary = {
     createSuccess: 'Floor created successfully',
     updateSuccess: 'Floor updated successfully',
     deleteSuccess: 'Floor archived successfully',
+    numberExists: 'Floor number {number} already exists in this building.',
     deleteConfirmTitle: 'Archive Floor',
     deleteConfirmMessage: 'Are you sure you want to archive this floor? This action will mark the floor inactive and affect associated units.',
 
@@ -123,6 +124,7 @@ export const dictionary = {
     createSuccess: 'تم إضافة الطابق بنجاح',
     updateSuccess: 'تم تحديث بيانات الطابق بنجاح',
     deleteSuccess: 'تم أرشفة الطابق بنجاح',
+    numberExists: 'رقم الطابق {number} موجود مسبقًا في هذا المبنى.',
     deleteConfirmTitle: 'أرشفة الطابق',
     deleteConfirmMessage: 'هل أنت تأكد من رغبتك في أرشفة هذا الطابق؟ سيتم تغيير حالته إلى غير نشط.',
 

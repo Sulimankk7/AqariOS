@@ -35,11 +35,11 @@ export function AuthTopBar({ lang, isDark, onLangChange, onToggleTheme }: AuthTo
 
   return (
     <div
-      className="w-full flex items-center justify-between px-8 py-4 border-b border-outline-variant bg-topbar/95 backdrop-blur-md transition-colors duration-350 shrink-0"
+      className="flex w-full min-w-0 flex-col gap-3 border-b border-outline-variant bg-topbar/95 px-4 py-3 transition-colors duration-350 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-4 shrink-0"
     >
       {/* Quick Workflow Navigation Pill Selector */}
       <div
-        className="flex items-center gap-1 p-1 rounded-lg border border-outline-variant bg-surface-container transition-colors duration-350"
+        className="flex max-w-full items-center gap-1 rounded-lg border border-outline-variant bg-surface-container p-1 text-center transition-colors duration-350"
       >
         <button
           type="button"
@@ -74,7 +74,7 @@ export function AuthTopBar({ lang, isDark, onLangChange, onToggleTheme }: AuthTo
       </div>
 
       {/* Right Navigation Controls: Skyscraper Theme Toggle + Bilingual Switcher */}
-      <div className="flex items-center gap-4">
+      <div className="flex max-w-full flex-wrap items-center gap-3 sm:gap-4">
         {/* Custom Glass Skyscraper Theme Switch */}
         <SkyscraperThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 

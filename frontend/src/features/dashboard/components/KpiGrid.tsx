@@ -29,9 +29,10 @@ import { ROUTES } from "@/config/routes";
 
 interface KpiGridProps {
   data: DashboardSummaryDto;
+  routePrefix?: string;
 }
 
-export function KpiGrid({ data }: KpiGridProps) {
+export function KpiGrid({ data, routePrefix = "" }: KpiGridProps) {
   const { t, formatCurrency } = useTranslation();
   const { property, leasing, payments, financials } = data;
 
@@ -50,7 +51,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("properties.building", { count: property.totalBuildings })}
             icon={Building2}
             variant="default"
-            path={ROUTES.buildings.root}
+            path={`${routePrefix}${ROUTES.buildings.root}`}
           />
           <KpiCard
             title={t("properties.totalApartments")}
@@ -58,7 +59,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("properties.apartment", { count: property.totalApartments })}
             icon={Home}
             variant="default"
-            path={ROUTES.apartments.root}
+            path={`${routePrefix}${ROUTES.apartments.root}`}
           />
           <KpiCard
             title={t("properties.occupancyRate")}
@@ -66,7 +67,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("properties.occupiedApartments")}
             icon={Users}
             variant={property.occupancyRate >= 80 ? "success" : "warning"}
-            path={ROUTES.buildings.root}
+            path={`${routePrefix}${ROUTES.buildings.root}`}
           />
           <KpiCard
             title={t("properties.occupiedApartments")}
@@ -74,7 +75,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("properties.apartment", { count: property.occupiedApartments })}
             icon={Home}
             variant="info"
-            path={ROUTES.apartments.root}
+            path={`${routePrefix}${ROUTES.apartments.root}`}
           />
           <KpiCard
             title={t("properties.vacantApartments")}
@@ -82,7 +83,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("properties.apartment", { count: property.vacantApartments })}
             icon={Building}
             variant="default"
-            path={ROUTES.apartments.root}
+            path={`${routePrefix}${ROUTES.apartments.root}`}
           />
         </div>
       </section>
@@ -99,7 +100,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("leasing.lease", { count: leasing.activeLeases })}
             icon={FileText}
             variant="info"
-            path={ROUTES.leases.root}
+            path={`${routePrefix}${ROUTES.leases.root}`}
           />
           <KpiCard
             title={t("leasing.expiringIn30Days")}
@@ -107,7 +108,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("leasing.lease", { count: leasing.expiringIn30Days })}
             icon={Clock}
             variant={leasing.expiringIn30Days > 0 ? "warning" : "default"}
-            path={ROUTES.leases.root}
+            path={`${routePrefix}${ROUTES.leases.root}`}
           />
           <KpiCard
             title={t("leasing.newLeasesThisMonth")}
@@ -115,7 +116,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("leasing.lease", { count: leasing.newLeasesThisMonth })}
             icon={FilePlus}
             variant="success"
-            path={ROUTES.leases.root}
+            path={`${routePrefix}${ROUTES.leases.root}`}
           />
         </div>
       </section>
@@ -132,7 +133,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("financials.collectedThisMonth")}
             icon={Wallet}
             variant="success"
-            path={ROUTES.payments.root}
+            path={`${routePrefix}${ROUTES.payments.root}`}
           />
           <KpiCard
             title={t("financials.outstandingAmount")}
@@ -140,7 +141,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("financials.outstandingAmount")}
             icon={CircleDollarSign}
             variant={payments.outstandingAmount > 0 ? "warning" : "default"}
-            path={ROUTES.payments.root}
+            path={`${routePrefix}${ROUTES.payments.root}`}
           />
           <KpiCard
             title={t("financials.overduePayments")}
@@ -148,7 +149,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("financials.payment", { count: payments.overduePayments })}
             icon={AlertTriangle}
             variant={payments.overduePayments > 0 ? "danger" : "default"}
-            path={ROUTES.payments.root}
+            path={`${routePrefix}${ROUTES.payments.root}`}
           />
           <KpiCard
             title={t("financials.expensesThisMonth")}
@@ -156,7 +157,7 @@ export function KpiGrid({ data }: KpiGridProps) {
             description={t("financials.expensesThisMonth")}
             icon={Receipt}
             variant="default"
-            path={ROUTES.financialOperations.root}
+            path={`${routePrefix}${ROUTES.financialOperations.root}`}
           />
         </div>
       </section>

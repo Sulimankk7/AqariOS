@@ -24,6 +24,9 @@ public class TerminateLeaseContractCommandHandlerTests
 
         public Task<LeaseContract?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(ContractToReturn);
 
+        public Task<LeaseContract?> GetByIdForUpdateAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(ContractToReturn);
+
         public Task AddStatusHistoryAsync(ContractStatusHistory statusHistory, CancellationToken cancellationToken = default)
         {
             AddedHistory.Add(statusHistory);

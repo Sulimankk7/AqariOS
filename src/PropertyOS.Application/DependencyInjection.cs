@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvisioningStep, CreateCompanyStep>();
         services.AddScoped<ITenantProvisioningStep, SaveInitialTenantEntitiesStep>();
         services.AddScoped<ITenantProvisioningStep, CreateCompanySettingsStep>();
+        services.AddScoped<ITenantProvisioningStep, CreateCompanyReceiptSequenceStep>();
         services.AddScoped<ITenantProvisioningStep, CreateCompanyAdminRoleStep>();
         services.AddScoped<ITenantProvisioningStep, CreateUserCompanyMembershipStep>();
         services.AddScoped<ITenantProvisioningStep, CreateLandlordRegistrationStep>();

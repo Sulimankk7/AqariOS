@@ -12,6 +12,19 @@ import {
 import { getBuildingTranslation } from '../constants/translations';
 import { toBuildingForm } from '../utils/buildingMappers';
 import { buildingsApi } from '../api/buildings.api';
+import { locationsApi } from '../api/locations.api';
+import type {
+  AddressEnrichment,
+  AddressField,
+} from '../utils/reverseGeocoding';
+import {
+  applySuggestedAddress,
+  hasApplicableSuggestion,
+  isCurrentGeocodingResponse,
+  meaningfulFormattedAddress,
+  mergeAutomaticEnrichment,
+  toAddressEnrichment,
+} from '../utils/reverseGeocoding';
 import { useTranslation } from '@/shared/i18n';
 import { MapPicker } from '@/shared/components/ui/MapPicker';
 import { 
@@ -31,7 +44,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/app/components/ui/select';
-import { MapPin } from 'lucide-react';
 
 interface BuildingFormProps {
   initialData?: BuildingDto;
@@ -42,6 +54,20 @@ interface BuildingFormProps {
 export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormProps) {
   const { language } = useTranslation();
   const t = (key: string) => getBuildingTranslation(key, language);
+  const lookupAbort = React.useRef<AbortController | null>(null);
+  const lookupSequence = React.useRef(0);
+  const manuallyEditedAddressFields = React.useRef(new Set<AddressField>(initialData
+    ? (['governorate', 'district', 'area', 'streetName', 'postalCode'] as AddressField[]).filter((field) => {
+        const value = toBuildingForm(initialData).address[field];
+        return field === 'governorate' || (typeof value === 'string' && value.trim().length > 0);
+      })
+    : []));
+  const [isGeocoding, setIsGeocoding] = React.useState(false);
+  const [geocodingFailed, setGeocodingFailed] = React.useState(false);
+  const [addressSuggestion, setAddressSuggestion] = React.useState<{
+    formattedAddress: string;
+    enrichment: AddressEnrichment;
+  } | null>(null);
 
   const form = useForm<BuildingFormValues>({
     resolver: zodResolver(buildingSchema),
@@ -71,13 +97,148 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
     }).catch(() => undefined);
   }, []);
 
+  React.useEffect(() => () => lookupAbort.current?.abort(), []);
+
   const watchLat = form.watch('gpsLatitude');
   const watchLng = form.watch('gpsLongitude');
+  const watchAddress = form.watch('address');
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const markAddressFieldManual = (field: AddressField) => {
+    manuallyEditedAddressFields.current.add(field);
+  };
+
+  const applyAddressPatch = (patch: Partial<BuildingFormValues['address']>) => {
+    if (patch.governorate !== undefined) form.setValue('address.governorate', patch.governorate, { shouldValidate: true });
+    if (patch.district !== undefined) form.setValue('address.district', patch.district, { shouldValidate: true });
+    if (patch.area !== undefined) form.setValue('address.area', patch.area, { shouldValidate: true });
+    if (patch.streetName !== undefined) form.setValue('address.streetName', patch.streetName, { shouldValidate: true });
+    if (patch.postalCode !== undefined) form.setValue('address.postalCode', patch.postalCode, { shouldValidate: true });
+  };
+
+  const handleLocationSelect = async (lat: number, lng: number) => {
     form.setValue('gpsLatitude', lat, { shouldValidate: true, shouldDirty: true });
     form.setValue('gpsLongitude', lng, { shouldValidate: true, shouldDirty: true });
+    lookupAbort.current?.abort();
+    const controller = new AbortController();
+    lookupAbort.current = controller;
+    const sequence = ++lookupSequence.current;
+    setIsGeocoding(true);
+    setGeocodingFailed(false);
+    setAddressSuggestion(null);
+    try {
+      const result = await locationsApi.reverseGeocode(lat, lng, language, controller.signal);
+      if (!isCurrentGeocodingResponse(sequence, lookupSequence.current, controller.signal.aborted)) return;
+      const current = form.getValues('address');
+      const enrichment = toAddressEnrichment(result);
+      const formattedAddress = meaningfulFormattedAddress(result);
+
+      applyAddressPatch(mergeAutomaticEnrichment(current, enrichment, manuallyEditedAddressFields.current));
+      setAddressSuggestion(formattedAddress ? { formattedAddress, enrichment } : null);
+    } catch (error) {
+      if (!controller.signal.aborted && sequence === lookupSequence.current) setGeocodingFailed(true);
+    } finally {
+      if (sequence === lookupSequence.current) setIsGeocoding(false);
+    }
   };
+
+  const canApplySuggestion = addressSuggestion !== null && hasApplicableSuggestion(
+    watchAddress,
+    addressSuggestion.enrichment,
+    manuallyEditedAddressFields.current,
+  );
+
+  const handleUseSuggestedAddress = () => {
+    if (!addressSuggestion) return;
+    applyAddressPatch(applySuggestedAddress(
+      form.getValues('address'),
+      addressSuggestion.enrichment,
+      manuallyEditedAddressFields.current,
+    ));
+  };
+
+  const mapEnrichmentSection = (
+    <div className="space-y-3">
+      <MapPicker
+        lat={watchLat}
+        lng={watchLng}
+        onLocationSelect={handleLocationSelect}
+        height="280px"
+      />
+      {isGeocoding && <p role="status" className="text-sm text-muted-foreground">{t('geocodingLoading')}</p>}
+      {geocodingFailed && <p role="status" className="text-sm text-amber-700">{t('geocodingFailure')}</p>}
+      {addressSuggestion && (
+        <div className="rounded-md border bg-muted/30 p-3" role="status">
+          <p className="text-xs font-medium text-muted-foreground">{t('suggestedAddress')}</p>
+          <p className="mt-1 text-sm text-foreground" dir="auto">{addressSuggestion.formattedAddress}</p>
+          {canApplySuggestion ? (
+            <Button type="button" variant="outline" size="sm" className="mt-3" onClick={handleUseSuggestedAddress}>
+              {t('useSuggestedAddress')}
+            </Button>
+          ) : (!addressSuggestion.enrichment.district
+            || !addressSuggestion.enrichment.area
+            || !addressSuggestion.enrichment.streetName) ? (
+            <p className="mt-2 text-xs text-muted-foreground">{t('addressDetailsManual')}</p>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+
+  const coordinateFields = (
+    <details className="rounded-md border bg-muted/20 p-3">
+      <summary className="cursor-pointer text-sm font-medium text-muted-foreground">{t('coordinatesDetails')}</summary>
+      <div className="grid grid-cols-2 gap-4 pt-3">
+        <FormField
+          control={form.control}
+          name="gpsLatitude"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-1 text-xs">
+                <span>{t('gpsLatitude')}</span>
+                <span className="text-muted-foreground font-normal text-xs ms-1">{t('optional')}</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.000001"
+                  placeholder={t('gpsAutoFilledPlaceholder')}
+                  className="placeholder:text-muted-foreground/60 placeholder:font-normal text-xs font-mono"
+                  {...field}
+                  value={field.value !== undefined ? field.value : ''}
+                  onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="gpsLongitude"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-1 text-xs">
+                <span>{t('gpsLongitude')}</span>
+                <span className="text-muted-foreground font-normal text-xs ms-1">{t('optional')}</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.000001"
+                  placeholder={t('gpsAutoFilledPlaceholder')}
+                  className="placeholder:text-muted-foreground/60 placeholder:font-normal text-xs font-mono"
+                  {...field}
+                  value={field.value !== undefined ? field.value : ''}
+                  onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </details>
+  );
 
   return (
     <Form {...form}>
@@ -147,7 +308,7 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                     <span className="sr-only">{t('required')}</span>
                   </FormLabel>
                   <Select 
-                    onValueChange={(val) => field.onChange(Number(val))} 
+                    onValueChange={(val) => field.onChange(Number(val))}
                     value={field.value !== undefined ? String(field.value) : String(BuildingType.Residential)}
                   >
                     <FormControl>
@@ -191,6 +352,7 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                       onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} 
                     />
                   </FormControl>
+                  <p className="text-xs text-muted-foreground">{t('licensedFloorsDescription')}</p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -226,6 +388,8 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2 text-foreground">{t('locationAndAddress')}</h3>
 
+            {mapEnrichmentSection}
+
             {/* Governorate - REQUIRED */}
             <FormField
               control={form.control}
@@ -238,7 +402,10 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                     <span className="sr-only">{t('required')}</span>
                   </FormLabel>
                   <Select 
-                    onValueChange={(val) => field.onChange(Number(val))} 
+                    onValueChange={(val) => {
+                      markAddressFieldManual('governorate');
+                      field.onChange(Number(val));
+                    }}
                     value={field.value !== undefined ? String(field.value) : String(Governorate.Amman)}
                   >
                     <FormControl>
@@ -276,6 +443,10 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                       aria-required="true"
                       className="placeholder:text-muted-foreground/60 placeholder:font-normal"
                       {...field} 
+                      onChange={(event) => {
+                        markAddressFieldManual('district');
+                        field.onChange(event);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -301,6 +472,10 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                       className="placeholder:text-muted-foreground/60 placeholder:font-normal"
                       {...field} 
                       value={field.value || ''} 
+                      onChange={(event) => {
+                        markAddressFieldManual('area');
+                        field.onChange(event);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -324,6 +499,10 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                       className="placeholder:text-muted-foreground/60 placeholder:font-normal"
                       {...field} 
                       value={field.value || ''} 
+                      onChange={(event) => {
+                        markAddressFieldManual('streetName');
+                        field.onChange(event);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -347,86 +526,18 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
                       className="placeholder:text-muted-foreground/60 placeholder:font-normal"
                       {...field} 
                       value={field.value || ''} 
+                      onChange={(event) => {
+                        markAddressFieldManual('postalCode');
+                        field.onChange(event);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
-        </div>
 
-        {/* GPS Coordinates Section with Map Picker */}
-        <div className="space-y-4 border-t pt-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-              <MapPin className="h-5 w-5 text-primary" />
-              {t('gpsAndMapTitle')}
-              <span className="text-muted-foreground font-normal text-xs ms-1.5">{t('optional')}</span>
-            </h3>
-            {watchLat && watchLng && (
-              <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
-                Lat: {watchLat.toFixed(6)}, Lng: {watchLng.toFixed(6)}
-              </span>
-            )}
-          </div>
-
-          <MapPicker
-            lat={watchLat}
-            lng={watchLng}
-            onLocationSelect={handleLocationSelect}
-            height="320px"
-          />
-
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <FormField
-              control={form.control}
-              name="gpsLatitude"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1 text-xs">
-                    <span>{t('gpsLatitude')}</span>
-                    <span className="text-muted-foreground font-normal text-xs ms-1">{t('optional')}</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.000001"
-                      placeholder={t('gpsAutoFilledPlaceholder')}
-                      className="placeholder:text-muted-foreground/60 placeholder:font-normal text-xs font-mono"
-                      {...field} 
-                      value={field.value !== undefined ? field.value : ''}
-                      onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="gpsLongitude"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1 text-xs">
-                    <span>{t('gpsLongitude')}</span>
-                    <span className="text-muted-foreground font-normal text-xs ms-1">{t('optional')}</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.000001"
-                      placeholder={t('gpsAutoFilledPlaceholder')}
-                      className="placeholder:text-muted-foreground/60 placeholder:font-normal text-xs font-mono"
-                      {...field} 
-                      value={field.value !== undefined ? field.value : ''}
-                      onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {coordinateFields}
           </div>
         </div>
 

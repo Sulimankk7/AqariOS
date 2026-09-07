@@ -93,6 +93,8 @@ const SIDEBAR_COLLAPSED_KEY = "aqari:sidebar_collapsed";
 const BROADCAST_CHANNEL_NAME = "aqari_auth_channel";
 
 const PUBLIC_UI_ROUTES = [
+  "/",
+  "/demo",
   "/auth/login",
   "/auth/register",
   "/auth/forgot-password",
@@ -103,7 +105,16 @@ const PUBLIC_UI_ROUTES = [
 
 function isPublicUiRoute(path: string): boolean {
   const normalized = path.toLowerCase();
-  return PUBLIC_UI_ROUTES.some((route) => normalized.startsWith(route));
+  return PUBLIC_UI_ROUTES.some((route) =>
+    route === "/"
+      ? normalized === route
+      : normalized === route || normalized.startsWith(`${route}/`),
+  );
+}
+
+function isAuthBootstrapFreeRoute(path: string): boolean {
+  const normalized = path.toLowerCase();
+  return normalized === "/" || normalized === "/demo" || normalized.startsWith("/demo/");
 }
 
 function purgeStorage(): void {
@@ -185,6 +196,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
 
     async function initializeSession() {
+      if (isAuthBootstrapFreeRoute(window.location.pathname)) {
+        setUser(null);
+        setAuthStatus("unauthenticated");
+        return;
+      }
+
       const token = storage.get<string>(STORAGE_KEYS.accessToken);
 
       if (!token) {

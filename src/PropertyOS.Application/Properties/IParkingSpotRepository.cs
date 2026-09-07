@@ -16,6 +16,9 @@ public interface IParkingSpotRepository
     /// </summary>
     Task<ParkingSpot?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>Locks an owned spot for the current command transaction.</summary>
+    Task<ParkingSpot?> GetByIdForUpdateAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Adds a new parking spot to the change tracker.
     /// </summary>

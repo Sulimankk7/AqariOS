@@ -7,6 +7,7 @@ using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Leasing;
 using PropertyOS.Domain.Leasing.Enums;
+using PropertyOS.Application.Properties;
 
 namespace PropertyOS.Application.Leasing.Commands.ExpireLeaseContract;
 
@@ -15,20 +16,36 @@ public class ExpireLeaseContractCommandHandler : IRequestHandler<ExpireLeaseCont
     private readonly ILeaseContractRepository _leaseContractRepository;
     private readonly ICurrentUserContext _currentUserContext;
     private readonly IBusinessClock _businessClock;
+    private readonly ITenantContext? _tenantContext;
+    private readonly IParkingAssignmentRepository? _parkingAssignments;
 
     public ExpireLeaseContractCommandHandler(
         ILeaseContractRepository leaseContractRepository,
         ICurrentUserContext currentUserContext,
         IBusinessClock businessClock)
+        : this(leaseContractRepository, currentUserContext, businessClock, null, null)
+    {
+    }
+
+    public ExpireLeaseContractCommandHandler(
+        ILeaseContractRepository leaseContractRepository,
+        ICurrentUserContext currentUserContext,
+        IBusinessClock businessClock,
+        ITenantContext? tenantContext,
+        IParkingAssignmentRepository? parkingAssignments)
     {
         _leaseContractRepository = leaseContractRepository;
         _currentUserContext = currentUserContext;
         _businessClock = businessClock;
+        _tenantContext = tenantContext;
+        _parkingAssignments = parkingAssignments;
     }
 
     public async Task<Unit> Handle(ExpireLeaseContractCommand request, CancellationToken cancellationToken)
     {
-        var contract = await _leaseContractRepository.GetByIdAsync(request.ContractId, cancellationToken);
+        var contract = _tenantContext?.CompanyId is Guid companyId
+            ? await _leaseContractRepository.GetByIdForUpdateAsync(request.ContractId, companyId, cancellationToken)
+            : await _leaseContractRepository.GetByIdAsync(request.ContractId, cancellationToken);
         if (contract == null)
             throw new NotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
 
@@ -54,6 +71,10 @@ public class ExpireLeaseContractCommandHandler : IRequestHandler<ExpireLeaseCont
         );
 
         await _leaseContractRepository.AddStatusHistoryAsync(history, cancellationToken);
+
+        if (_parkingAssignments != null)
+            await _parkingAssignments.EndActiveByLeaseAsync(contract.Id, contract.CompanyId, contract.EndDate,
+                effectiveAsOf, _currentUserContext.UserId, cancellationToken);
 
         return Unit.Value;
     }

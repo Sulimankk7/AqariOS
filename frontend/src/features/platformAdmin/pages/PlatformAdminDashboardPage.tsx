@@ -53,7 +53,8 @@ export function PlatformAdminDashboardPage() {
 }
 
 function MetricCard({ label, value, loading, error, icon: Icon, formatNumber }: { label: string; value?: number; loading: boolean; error: boolean; icon: typeof Building2; formatNumber: (value: number) => string }) {
-  return <div className="rounded-lg border border-border bg-card p-4"><div className="flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{label}</p><Icon className="h-4 w-4 text-muted-foreground" /></div>{loading ? <Skeleton className="mt-3 h-8 w-20" /> : error ? <p className="mt-3 text-sm text-destructive">—</p> : <p className="mt-2 text-2xl font-bold tabular-nums">{formatNumber(value ?? 0)}</p>}</div>;
+  const { t } = useTranslation();
+  return <div className="rounded-lg border border-border bg-card p-4"><div className="flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{label}</p><Icon className="h-4 w-4 text-muted-foreground" /></div>{loading ? <Skeleton className="mt-3 h-8 w-20" /> : error ? <p className="mt-3 text-xs text-destructive">{t("errors.generic")}</p> : <p className="mt-2 text-2xl font-bold tabular-nums">{formatNumber(value ?? 0)}</p>}</div>;
 }
 
 function AttentionItem({ title, count, loading, error, retry, href, action, arrow, retryLabel, formatNumber }: { title: string; count?: number; loading: boolean; error: boolean; retry: () => unknown; href: string; action: string; arrow: React.ReactNode; retryLabel: string; formatNumber: (value: number) => string }) {

@@ -39,8 +39,29 @@ builder.Services.AddCors(options =>
             origins = new[] { "http://localhost:5173" };
         }
 
-        policy.WithOrigins(origins)
-              .AllowAnyHeader()
+        var allowLoopbackOrigins = builder.Configuration.GetValue<bool>("Cors:AllowLoopbackOrigins");
+        if (allowLoopbackOrigins)
+        {
+            var configuredOrigins = origins.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            policy.SetIsOriginAllowed(origin =>
+            {
+                if (configuredOrigins.Contains(origin))
+                {
+                    return true;
+                }
+
+                return Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+                    && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+                    && uri.IsLoopback
+                    && string.IsNullOrEmpty(uri.UserInfo);
+            });
+        }
+        else
+        {
+            policy.WithOrigins(origins);
+        }
+
+        policy.AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
@@ -473,7 +494,10 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+if (app.Configuration.GetValue("HttpsRedirection:Enabled", true))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseRouting();
 

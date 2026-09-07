@@ -104,7 +104,7 @@ export function FloorDetails({ floor }: FloorDetailsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <ApartmentsList floorId={floor.id} />
+          <ApartmentsList floorId={floor.id} hideCreateAction />
         </CardContent>
       </Card>
     </div>

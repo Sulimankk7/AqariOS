@@ -303,7 +303,8 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
         alert(t("tenant.payments.noReceiptPdf"));
       }
     } catch (err) {
-      console.error('Failed to download tenant receipt:', err);
+      if (import.meta.env.DEV) console.error('Failed to download tenant receipt:', err);
+      toast.error(t("tenant.payments.downloadSettlementError"));
     } finally {
       setIsDownloadingReceipt(false);
     }
@@ -316,7 +317,8 @@ function PaymentCard({ payment, language, t, onSubmitVerification }: PaymentCard
         window.open(fileRes.downloadUrl, '_blank');
         return;
       } catch (err) {
-        console.error('Failed to download transaction receipt:', err);
+        if (import.meta.env.DEV) console.error('Failed to download transaction receipt:', err);
+        toast.error(t("tenant.payments.downloadSettlementError"));
       }
     }
     handleDownloadReceipt();

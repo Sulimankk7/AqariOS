@@ -364,4 +364,55 @@ public class ParkingPhysicalInvariantTests : IAsyncLifetime
         var ex = await Assert.ThrowsAsync<PostgresException>(() => appCmd.ExecuteNonQueryAsync());
         ex.SqlState.Should().Be("42501"); // insufficient_privilege
     }
+
+    [Fact]
+    public async Task ParkingAssignment_ConcurrentInserts_ExactlyOneCommits()
+    {
+        await using var setup = new NpgsqlConnection(_fixture.RawConnectionString);
+        await setup.OpenAsync();
+        var (companyId, buildingId) = await SeedCompanyAndBuilding(setup, "RaceCompany", "RaceBuilding");
+        var spotId = await SeedParkingSpot(setup, companyId, buildingId, "R-01");
+        var leaseA = await SeedLeaseContract(setup, companyId);
+        var leaseB = await SeedLeaseContract(setup, companyId);
+        var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async Task<string?> Insert(Guid leaseId)
+        {
+            await using var conn = new NpgsqlConnection(_fixture.RawConnectionString);
+            await conn.OpenAsync();
+            await using var tx = await conn.BeginTransactionAsync();
+            await gate.Task;
+            try
+            {
+                await using var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO parking_assignments
+                        (company_id, parking_spot_id, lease_contract_id, status, assigned_from, created_at, updated_at)
+                    VALUES (@companyId, @spotId, @leaseId, 'active', CURRENT_DATE, now(), now());";
+                cmd.Parameters.AddWithValue("companyId", companyId);
+                cmd.Parameters.AddWithValue("spotId", spotId);
+                cmd.Parameters.AddWithValue("leaseId", leaseId);
+                await cmd.ExecuteNonQueryAsync();
+                await tx.CommitAsync();
+                return null;
+            }
+            catch (PostgresException exception)
+            {
+                await tx.RollbackAsync();
+                return exception.SqlState;
+            }
+        }
+
+        var attempts = new[] { Insert(leaseA), Insert(leaseB) };
+        gate.SetResult(true);
+        var results = await Task.WhenAll(attempts).WaitAsync(TimeSpan.FromSeconds(30));
+        results.Count(result => result == null).Should().Be(1);
+        results.Count(result => result == PostgresErrorCodes.UniqueViolation).Should().Be(1);
+
+        await using var count = setup.CreateCommand();
+        count.CommandText = "SELECT count(*) FROM parking_assignments WHERE parking_spot_id = @spotId AND status = 'active';";
+        count.Parameters.AddWithValue("spotId", spotId);
+        Convert.ToInt32(await count.ExecuteScalarAsync()).Should().Be(1);
+    }
 }

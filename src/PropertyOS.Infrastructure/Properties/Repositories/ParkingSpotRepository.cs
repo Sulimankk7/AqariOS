@@ -31,6 +31,15 @@ public class ParkingSpotRepository : IParkingSpotRepository
         await _dbContext.ParkingSpots.AddAsync(spot, cancellationToken);
     }
 
+    public Task<ParkingSpot?> GetByIdForUpdateAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        if (_dbContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("A command transaction is required.");
+        return _dbContext.ParkingSpots.FromSqlInterpolated(
+            $"SELECT * FROM parking_spots WHERE id = {id} AND company_id = {companyId} AND deleted_at IS NULL FOR UPDATE")
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public Task<bool> ExistsBySpotCodeAsync(Guid buildingId, string spotCode, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(spotCode)) return Task.FromResult(false);

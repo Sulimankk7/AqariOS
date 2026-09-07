@@ -16,25 +16,29 @@ export interface TopbarProps {
   portal?: PortalContext;
   showSearch?: boolean;
   showNotifications?: boolean;
+  showAccountMenu?: boolean;
+  showThemeSwitcherOnMobile?: boolean;
+  contextLabelOverride?: string;
+  trailingAction?: React.ReactNode;
 }
 
-export function Topbar({ onOpenMobileNav, portal = "company", showSearch = portal === "company", showNotifications = true }: TopbarProps) {
+export function Topbar({ onOpenMobileNav, portal = "company", showSearch = portal === "company", showNotifications = true, showAccountMenu = true, showThemeSwitcherOnMobile = false, contextLabelOverride, trailingAction }: TopbarProps) {
   const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { data: tenantProfile } = useTenantProfile();
+  const isTenant = portal === "tenant";
+  const { data: tenantProfile } = useTenantProfile(isTenant);
   const headerRef = useRef<HTMLElement>(null);
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const isTenant = portal === "tenant";
   const isPlatform = portal === "platform";
   const displayName = isTenant && tenantProfile?.name ? tenantProfile.name : (user?.name ?? "");
   const displayEmail = isTenant && tenantProfile?.email ? tenantProfile.email : (user?.email ?? "");
   const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
-  const companyInfo = portal === "company" && user ? {
+  const companyInfo = portal === "company" && user && !contextLabelOverride ? {
     name: user.companyName || t("common.organizationName", { name: user.name }),
     code: "AQ-ORG",
     avatar: (user.companyName || user.name || "A").slice(0, 1).toUpperCase(),
@@ -59,7 +63,7 @@ export function Topbar({ onOpenMobileNav, portal = "company", showSearch = porta
   };
 
   const toggleLanguage = () => setLanguage(language === "ar" ? "en" : "ar");
-  const contextLabel = isPlatform ? t("platformAdmin.title") : isTenant ? t("tenant.portal") : companyInfo?.name;
+  const contextLabel = contextLabelOverride ?? (isPlatform ? t("platformAdmin.title") : isTenant ? t("tenant.portal") : companyInfo?.name);
   const ContextIcon = isPlatform || isTenant ? ShieldCheck : Building2;
 
   const themeOptions = [
@@ -115,7 +119,7 @@ export function Topbar({ onOpenMobileNav, portal = "company", showSearch = porta
           <Globe className="size-4 text-primary" /><span>{language === "en" ? "العربية" : "EN"}</span>
         </button>
 
-        <div className="relative hidden sm:block">
+        <div className={cn("relative", !showThemeSwitcherOnMobile && "hidden sm:block")}>
           <button type="button" onClick={() => { closeOtherMenus("theme"); setThemeMenuOpen((open) => !open); }} aria-label={t("common.changeTheme")} aria-expanded={themeMenuOpen} className="grid size-10 place-items-center rounded-full border border-border text-foreground hover:bg-secondary">
             {theme === "light" ? <Sun className="size-4" /> : theme === "dark" ? <Moon className="size-4" /> : <Monitor className="size-4" />}
           </button>
@@ -128,7 +132,9 @@ export function Topbar({ onOpenMobileNav, portal = "company", showSearch = porta
 
         {showNotifications && <NotificationBell />}
 
-        {user && (
+        {trailingAction}
+
+        {showAccountMenu && user && (
           <div className="relative">
             <button type="button" onClick={() => { closeOtherMenus("user"); setUserMenuOpen((open) => !open); }} aria-label={t("common.userMenu")} aria-expanded={userMenuOpen} className="flex h-10 items-center gap-2 rounded-full border border-border bg-surface-container-low p-1 pe-2 hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary type-label-large font-bold text-primary-foreground">{avatarInitial}</span>

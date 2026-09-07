@@ -6,6 +6,7 @@ import { ArchitecturalButton } from '@/features/auth/components/ArchitecturalBut
 import { authApi } from '@/features/auth/api/auth.api';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { extractUserFriendlyError } from '@/shared/utils';
+import { useTranslation } from '@/shared/i18n';
 import type { TenantActivationStatusDto } from '@/features/auth/types/auth.types';
 
 export default function ActivateTenantPage() {
@@ -13,6 +14,7 @@ export default function ActivateTenantPage() {
   const token = searchParams.get('token');
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [isValidating, setIsValidating] = useState(true);
   const [statusData, setStatusData] = useState<TenantActivationStatusDto | null>(null);
@@ -34,7 +36,7 @@ export default function ActivateTenantPage() {
         if (isMounted) {
           setStatusData({
             status: 'INVALID',
-            message: 'رابط التفعيل غير صالح أو مفقود.',
+            message: t('errors.activationInvalidLink'),
           });
           setIsValidating(false);
         }
@@ -51,7 +53,7 @@ export default function ActivateTenantPage() {
         if (isMounted) {
           setStatusData({
             status: 'INVALID',
-            message: 'تعذر التحقق من رابط التفعيل. يرجى المحاولة لاحقاً أو التواصل مع إدارة العقار.',
+            message: t('errors.activationStatusFailed'),
           });
         }
       } finally {
@@ -66,24 +68,24 @@ export default function ActivateTenantPage() {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, [token, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     if (!token) {
-      setErrorMessage('رابط التفعيل غير صالح أو مفقود.');
+      setErrorMessage(t('errors.activationInvalidLink'));
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage('يجب أن تتكون كلمة المرور من 8 خانات على الأقل.');
+      setErrorMessage(t('errors.activationPasswordTooShort'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage('كلمتا المرور غير متطابقتين.');
+      setErrorMessage(t('errors.activationPasswordMismatch'));
       return;
     }
 
@@ -101,7 +103,7 @@ export default function ActivateTenantPage() {
       // Redirect tenant directly to Tenant Portal Dashboard
       navigate('/tenant/dashboard', { replace: true });
     } catch (err: any) {
-      const fallback = 'فشل تفعيل الحساب. قد يكون رابط التفعيل منتهياً أو تم استخدامه مسبقاً.';
+      const fallback = t('errors.activationFailed');
       setErrorMessage(extractUserFriendlyError(err, fallback));
     } finally {
       setIsLoading(false);
@@ -131,12 +133,12 @@ export default function ActivateTenantPage() {
           </div>
 
           <div className="space-y-1.5">
-            <h2 className="text-xl font-bold text-white">انتهت صلاحية رابط التفعيل</h2>
+            <h2 className="text-xl font-bold text-white">{t('errors.activationExpiredTitle')}</h2>
             <p className="text-xs text-amber-200/90 leading-relaxed">
-              انتهت صلاحية رابط التفعيل هذا (صلاحية الرابط 48 ساعة من وقت إصداره).
+              {t('errors.activationExpiredDescription')}
             </p>
             <p className="text-xs text-gray-400 leading-relaxed pt-1">
-              يرجى التواصل مع إدارة العقار لطلب إرسال رابط تفعيل جديد لحسابك.
+              {t('errors.activationExpiredHelp')}
             </p>
           </div>
 
@@ -147,7 +149,7 @@ export default function ActivateTenantPage() {
               isDark={true}
               className="w-full"
             >
-              العودة إلى تسجيل الدخول
+              {t('errors.activationBackToLogin')}
             </ArchitecturalButton>
           </div>
         </div>
@@ -168,16 +170,16 @@ export default function ActivateTenantPage() {
 
           <div className="space-y-1.5">
             <h2 className="text-xl font-bold text-white">
-              {isUsed ? 'تم استخدام رابط التفعيل هذا مسبقًا' : 'رابط التفعيل غير صالح'}
+              {isUsed ? t('errors.activationAlreadyUsedTitle') : t('errors.activationInvalidTitle')}
             </h2>
             <p className="text-xs text-gray-300 leading-relaxed">
               {isUsed
-                ? 'تم استخدام هذا الرابط لإنشاء كلمة المرور وتفعيل الحساب مسبقاً. لا يمكن استخدام الرابط لمرة ثانية.'
-                : statusData?.message || 'رابط التفعيل غير صالح أو مفقود. يرجى التأكد من الرابط أو طلب رابط جديد.'}
+                ? t('errors.activationAlreadyUsedDescription')
+                : t('errors.activationInvalidLink')}
             </p>
             {isUsed && (
               <p className="text-xs text-emerald-400/90 pt-1">
-                إذا كنت قد فعّلت حسابك بالفعل، يمكنك تسجيل الدخول مباشرة باستخدام بريدك الإلكتروني أو رقم هاتفك وكلمة المرور.
+                {t('errors.activationAlreadyUsedHelp')}
               </p>
             )}
           </div>
@@ -189,7 +191,7 @@ export default function ActivateTenantPage() {
               isDark={true}
               className="w-full"
             >
-              الانتقال إلى تسجيل الدخول
+              {t('errors.activationGoToLogin')}
             </ArchitecturalButton>
           </div>
         </div>
@@ -249,7 +251,7 @@ export default function ActivateTenantPage() {
           </div>
           {isTooShort && (
             <span className="text-[11.5px] text-amber-400 mt-1 block text-right">
-              يجب أن تكون كلمة المرور 8 خانات على الأقل.
+              {t('errors.activationPasswordTooShort')}
             </span>
           )}
         </div>
@@ -274,7 +276,7 @@ export default function ActivateTenantPage() {
           </div>
           {isMismatch && (
             <span className="text-[11.5px] text-red-400 mt-1 block text-right">
-              كلمتا المرور غير متطابقتين.
+              {t('errors.activationPasswordMismatch')}
             </span>
           )}
         </div>

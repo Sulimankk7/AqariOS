@@ -15,7 +15,13 @@ import { Plus, FilePlus, DollarSign, Wrench, Download } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
 import { ROUTES } from "@/config/routes";
 
-export function QuickActions() {
+export interface QuickActionsProps {
+  routePrefix?: string;
+  excludedActionIds?: readonly string[];
+  onAction?: (actionId: string) => void;
+}
+
+export function QuickActions({ routePrefix = "", excludedActionIds = [], onAction }: QuickActionsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -63,13 +69,13 @@ export function QuickActions() {
         {t("dashboard.quickOperations")}
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-        {actions.map((act) => {
+        {actions.filter((action) => !excludedActionIds.includes(action.id)).map((act) => {
           const Icon = act.icon;
           return (
             <button
               key={act.id}
               id={`quick-action-${act.id}`}
-              onClick={() => navigate(act.path)}
+              onClick={() => onAction ? onAction(act.id) : navigate(`${routePrefix}${act.path}`)}
               aria-label={act.label}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border type-label-medium transition-all duration-150 cursor-pointer space-y-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 act.isPrimary

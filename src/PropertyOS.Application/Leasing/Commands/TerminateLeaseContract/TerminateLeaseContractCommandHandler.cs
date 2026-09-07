@@ -4,6 +4,7 @@ using PropertyOS.Application.Common.Exceptions;
 using PropertyOS.Application.Common.Interfaces;
 using PropertyOS.Domain.Leasing;
 using PropertyOS.Domain.Leasing.Enums;
+using PropertyOS.Application.Properties;
 
 namespace PropertyOS.Application.Leasing.Commands.TerminateLeaseContract;
 
@@ -12,11 +13,12 @@ public class TerminateLeaseContractCommandHandler : IRequestHandler<TerminateLea
     private readonly ILeaseContractRepository _leaseContractRepository;
     private readonly ITenantContext? _tenantContext;
     private readonly ICurrentUserContext _currentUserContext;
+    private readonly IParkingAssignmentRepository? _parkingAssignments;
 
     public TerminateLeaseContractCommandHandler(
         ILeaseContractRepository leaseContractRepository,
         ICurrentUserContext currentUserContext)
-        : this(leaseContractRepository, null, currentUserContext)
+        : this(leaseContractRepository, null, currentUserContext, null)
     {
     }
 
@@ -24,15 +26,27 @@ public class TerminateLeaseContractCommandHandler : IRequestHandler<TerminateLea
         ILeaseContractRepository leaseContractRepository,
         ITenantContext? tenantContext,
         ICurrentUserContext currentUserContext)
+        : this(leaseContractRepository, tenantContext, currentUserContext, null)
+    {
+    }
+
+    public TerminateLeaseContractCommandHandler(
+        ILeaseContractRepository leaseContractRepository,
+        ITenantContext? tenantContext,
+        ICurrentUserContext currentUserContext,
+        IParkingAssignmentRepository? parkingAssignments)
     {
         _leaseContractRepository = leaseContractRepository;
         _tenantContext = tenantContext;
         _currentUserContext = currentUserContext;
+        _parkingAssignments = parkingAssignments;
     }
 
     public async Task<Unit> Handle(TerminateLeaseContractCommand request, CancellationToken cancellationToken)
     {
-        var contract = await _leaseContractRepository.GetByIdAsync(request.ContractId, cancellationToken);
+        var contract = _tenantContext?.CompanyId is Guid companyId
+            ? await _leaseContractRepository.GetByIdForUpdateAsync(request.ContractId, companyId, cancellationToken)
+            : await _leaseContractRepository.GetByIdAsync(request.ContractId, cancellationToken);
         if (contract == null)
             throw new NotFoundException($"LeaseContract with ID {request.ContractId} was not found.");
 
@@ -86,6 +100,10 @@ public class TerminateLeaseContractCommandHandler : IRequestHandler<TerminateLea
         );
 
         await _leaseContractRepository.AddStatusHistoryAsync(history, cancellationToken);
+
+        if (_parkingAssignments != null)
+            await _parkingAssignments.EndActiveByLeaseAsync(contract.Id, contract.CompanyId, terminationDate,
+                contract.UpdatedAt, _currentUserContext.UserId, cancellationToken);
 
         // SaveChangesAsync is owned by TransactionBehavior
 

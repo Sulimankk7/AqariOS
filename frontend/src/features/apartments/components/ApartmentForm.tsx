@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
@@ -9,10 +10,12 @@ import {
 import { ApartmentDto } from '../types/apartments.types';
 import { OwnershipStatus, OWNERSHIP_STATUS_OPTIONS } from '../constants/apartmentEnums';
 import { getApartmentTranslation } from '../constants/translations';
+import { getFloorTranslation } from '@/features/floors/constants/translations';
 import { toApartmentForm } from '../utils/apartmentMappers';
 import { useFloors, useFloor } from '@/features/floors/hooks/useFloors';
 import { useBuildings } from '@/features/buildings/hooks/useBuildings';
 import { useTranslation } from '@/shared/i18n';
+import { extractUserFriendlyError } from '@/shared/utils';
 import { apartmentsApi } from '../api/apartments.api';
 import { 
   Form, 
@@ -24,6 +27,7 @@ import {
 } from '@/app/components/ui/form';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
+import { AlertCircle, Plus } from 'lucide-react';
 import { 
   Select, 
   SelectContent, 
@@ -42,6 +46,7 @@ interface ApartmentFormProps {
   initialData?: ApartmentDto;
   defaultFloorId?: string;
   buildingId?: string;
+  buildingName?: string;
   isEditMode?: boolean;
   onSubmit: (data: ApartmentFormValues) => void;
   isLoading?: boolean;
@@ -51,15 +56,18 @@ export function ApartmentForm({
   initialData, 
   defaultFloorId, 
   buildingId: initialBuildingId,
+  buildingName,
   isEditMode = false,
   onSubmit, 
   isLoading 
 }: ApartmentFormProps) {
-  const { language } = useTranslation();
+  const navigate = useNavigate();
+  const { language, t: sharedT } = useTranslation();
   const t = (key: string) => getApartmentTranslation(key, language);
+  const floorT = (key: string) => getFloorTranslation(key, language);
 
   const { data: defaultFloor } = useFloor(defaultFloorId || initialData?.floorId);
-  const { data: buildingsData } = useBuildings();
+  const { data: buildingsData, error: buildingsError, refetch: refetchBuildings } = useBuildings();
 
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>(
     initialData?.buildingId || initialBuildingId || defaultFloor?.buildingId || ''
@@ -71,7 +79,8 @@ export function ApartmentForm({
     }
   }, [defaultFloor, selectedBuildingId]);
 
-  const { data: floorsData, isLoading: isLoadingFloors } = useFloors(selectedBuildingId);
+  const { data: floorsData, isLoading: isLoadingFloors, error: floorsError, refetch: refetchFloors } = useFloors(selectedBuildingId);
+  const [unitSuggestionUnavailable, setUnitSuggestionUnavailable] = useState(false);
 
   const form = useForm<ApartmentFormValues>({
     resolver: zodResolver(apartmentSchema),
@@ -96,9 +105,13 @@ export function ApartmentForm({
 
   useEffect(() => {
     if (initialData || !selectedFloorId) return;
+    setUnitSuggestionUnavailable(false);
     apartmentsApi.getNextUnitNumber(selectedFloorId).then(({ value }) => {
       if (!form.getFieldState('unitNumber').isDirty) form.setValue('unitNumber', value);
-    }).catch(() => undefined);
+    }).catch((error) => {
+      if (import.meta.env.DEV) console.warn('[apartments] Next unit number suggestion unavailable', error);
+      setUnitSuggestionUnavailable(true);
+    });
   }, [selectedFloorId, initialData, form]);
 
   // Requirement 3: Automatically clear external owner fields when Ownership Model is not ThirdPartyOwned
@@ -130,6 +143,15 @@ export function ApartmentForm({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2 text-foreground">{t('unitInfo')}</h3>
 
+            {initialBuildingId && !initialData && (
+              <FormItem>
+                <FormLabel className="font-medium">{t('buildingId')}</FormLabel>
+                <FormControl>
+                  <Input value={buildingName || ''} readOnly aria-readonly="true" className="bg-muted/40" />
+                </FormControl>
+              </FormItem>
+            )}
+
             {/* Building Select if building is not preset */}
             {!initialData && !initialBuildingId && !defaultFloorId && (
               <FormItem>
@@ -157,6 +179,7 @@ export function ApartmentForm({
                     ))}
                   </SelectContent>
                 </Select>
+                {buildingsError && <div role="alert" className="mt-2 flex items-center justify-between gap-3 text-xs text-destructive"><span>{extractUserFriendlyError(buildingsError, sharedT('errors.generic'))}</span><Button type="button" size="sm" variant="outline" onClick={() => refetchBuildings()}>{sharedT('common.retry')}</Button></div>}
               </FormItem>
             )}
 
@@ -178,7 +201,7 @@ export function ApartmentForm({
                   >
                     <FormControl>
                       <SelectTrigger aria-required="true" className="w-full">
-                        <SelectValue placeholder={isLoadingFloors ? "Loading floors..." : t('floorIdPlaceholder')} />
+                        <SelectValue placeholder={isLoadingFloors ? sharedT('common.loading') : t('floorIdPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -198,6 +221,32 @@ export function ApartmentForm({
                 </FormItem>
               )}
             />
+
+            {selectedBuildingId && floorsError && (
+              <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                <div className="flex items-center justify-between gap-3"><span>{extractUserFriendlyError(floorsError, sharedT('errors.generic'))}</span><Button type="button" size="sm" variant="outline" onClick={() => refetchFloors()}>{sharedT('common.retry')}</Button></div>
+              </div>
+            )}
+
+            {initialBuildingId && !isLoadingFloors && !floorsError && floorOptions.length === 0 && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                  <div className="space-y-3">
+                    <p>{floorT('noFloors')}</p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/buildings/${initialBuildingId}/floors/new`)}
+                    >
+                      <Plus className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                      {floorT('addFloor')}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Unit Number - REQUIRED */}
             <FormField
@@ -220,6 +269,7 @@ export function ApartmentForm({
                     />
                   </FormControl>
                   {!isEditMode && <p className="text-xs text-muted-foreground">{language === 'ar' ? 'تم توليد الرقم تلقائيًا ويمكن تعديله.' : 'Generated automatically and can be edited.'}</p>}
+                  {unitSuggestionUnavailable && <p className="text-xs text-muted-foreground">{sharedT('errors.generic')}</p>}
                   <FormMessage />
                 </FormItem>
               )}
@@ -463,7 +513,7 @@ export function ApartmentForm({
           </Button>
           <Button 
             type="submit" 
-            disabled={isLoading}
+            disabled={isLoading || (!!initialBuildingId && !isLoadingFloors && !floorsError && floorOptions.length === 0)}
           >
             {isLoading ? t('saving') : t('save')}
           </Button>

@@ -12,7 +12,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { dashboardApi } from "../api/dashboard.api";
 import type { DashboardSummaryDto } from "../types/dashboard.types";
-import { ApiError } from "@/shared/lib/http";
+import { extractUserFriendlyError } from "@/shared/utils";
+import { translateCurrent } from "@/shared/i18n/runtime";
 
 interface UseDashboardKPIsOptions {
   staleTime?: number; // Cache validity duration in ms (default 5 min)
@@ -87,12 +88,7 @@ export function useDashboardKPIs(options: UseDashboardKPIsOptions = {}) {
       }
 
       if (isMountedRef.current) {
-        const errorMsg =
-          err instanceof ApiError
-            ? err.message
-            : err instanceof Error
-            ? err.message
-            : "Failed to load dashboard metrics from backend.";
+        const errorMsg = extractUserFriendlyError(err, translateCurrent("dashboard.loadError"));
 
         setState({
           data: null,

@@ -186,43 +186,43 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="border p-3 rounded-md">
+            <div className="min-w-0 border p-3 rounded-md">
               <span className="text-xs text-muted-foreground block">{t('name')}</span>
-              <span className="text-sm font-semibold">{tenant.name}</span>
+              <span className="block break-words text-sm font-semibold">{tenant.name}</span>
             </div>
 
-            <div className="border p-3 rounded-md">
+            <div className="min-w-0 border p-3 rounded-md">
               <span className="text-xs text-muted-foreground block">{t('nationalId')}</span>
-              <span className="text-sm font-semibold">{tenant.nationalId}</span>
+              <span className="block break-all text-sm font-semibold" dir="ltr">{tenant.nationalId}</span>
             </div>
 
-            <div className="border p-3 rounded-md">
+            <div className="min-w-0 border p-3 rounded-md">
               <span className="text-xs text-muted-foreground block">{t('phone')}</span>
-              <span className="text-sm font-semibold flex items-center gap-1.5" dir="ltr">
+              <span className="flex min-w-0 items-center gap-1.5 break-all text-sm font-semibold" dir="ltr">
                 <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {tenant.phone}
               </span>
             </div>
 
-            <div className="border p-3 rounded-md">
+            <div className="min-w-0 border p-3 rounded-md">
               <span className="text-xs text-muted-foreground block">{t('email')}</span>
-              <span className="text-sm font-semibold flex items-center gap-1.5" dir="ltr">
+              <span className="flex min-w-0 items-center gap-1.5 break-all text-sm font-semibold" dir="ltr">
                 <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {tenant.email || '—'}
               </span>
             </div>
 
-            <div className="border p-3 rounded-md">
+            <div className="min-w-0 border p-3 rounded-md">
               <span className="text-xs text-muted-foreground block">{t('occupation')}</span>
-              <span className="text-sm font-medium flex items-center gap-1.5">
+              <span className="flex min-w-0 items-center gap-1.5 break-words text-sm font-medium">
                 <Briefcase className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {tenant.occupation || '—'}
               </span>
             </div>
 
-            <div className="border p-3 rounded-md sm:col-span-2">
+            <div className="min-w-0 border p-3 rounded-md sm:col-span-2">
               <span className="text-xs text-muted-foreground block">{t('employer')}</span>
-              <span className="text-sm font-medium flex items-center gap-1.5">
+              <span className="flex min-w-0 items-center gap-1.5 break-words text-sm font-medium">
                 <Building className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {tenant.employer || '—'}
               </span>
@@ -232,8 +232,8 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
 
         {/* Tenant Portal Account Status Card */}
         <Card className="md:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <div className="space-y-1">
+          <CardHeader className="flex flex-wrap items-center justify-between gap-3 space-y-0 pb-3">
+            <div className="min-w-0 space-y-1">
               <CardTitle className="text-lg flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-primary" />
                 {t('portalAccount')}
@@ -268,7 +268,7 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Family Members */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <CardHeader className="flex flex-wrap items-center justify-between gap-3 space-y-0 pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" />
               {t('familyMembers')}
@@ -328,7 +328,7 @@ export function TenantDetails({ tenant }: TenantDetailsProps) {
 
         {/* Emergency Contacts */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <CardHeader className="flex flex-wrap items-center justify-between gap-3 space-y-0 pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-primary" />
               {t('emergencyContacts')}

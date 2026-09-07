@@ -9,6 +9,8 @@ import {
   useMarkAllNotificationsAsRead,
 } from "@/features/notifications/hooks/useNotifications";
 import type { NotificationDto } from "@/features/notifications/types/notifications.types";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
+import { canMarkRead } from '../utils/inbox';
 
 export function NotificationBell() {
   const { t, formatDate } = useTranslation();
@@ -16,8 +18,8 @@ export function NotificationBell() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: unreadCount = 0 } = useUnreadNotificationCount();
-  const { data: notifications = [], isLoading, isError, refetch } = useMyNotifications({ pageSize: 20 });
+  const { data: unreadCount = 0 } = useUnreadNotificationCount({ poll: true });
+  const { data: notifications = [], isLoading, isError, error, refetch } = useMyNotifications({ pageSize: 20 });
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 
@@ -36,9 +38,9 @@ export function NotificationBell() {
     // Toggle expand/collapse
     setExpandedId((prev) => (prev === notification.id ? null : notification.id));
 
-    // If unread (status === 0 or readAt is null), mark as read using single-item API
-    if (notification.status === 0 || !notification.readAt) {
-      markAsRead.mutate(notification.id);
+    // Read state is separate from delivery status. Only Sent is eligible.
+    if (canMarkRead(notification) && !markAsRead.isPending) {
+      markAsRead.mutate(notification.id, { onError: error => toast.error(extractUserFriendlyError(error, t('tenant.notifications.actionFailed'))) });
     }
   };
 
@@ -47,11 +49,11 @@ export function NotificationBell() {
     if (markAllAsRead.isPending || unreadCount === 0) return;
 
     markAllAsRead.mutate(undefined, {
-      onSuccess: () => {
-        toast.success(t("tenant.notifications.markAllSuccess"));
+      onSuccess: (result) => {
+        toast.success(t('mvp.marked', { count: result.markedCount }));
       },
-      onError: () => {
-        toast.error(t("tenant.notifications.actionFailed"));
+      onError: (error) => {
+        toast.error(extractUserFriendlyError(error, t("tenant.notifications.actionFailed")));
       },
     });
   };
@@ -126,7 +128,7 @@ export function NotificationBell() {
             ) : isError ? (
               <div className="py-6 text-center text-muted-foreground space-y-2">
                 <AlertCircle className="w-6 h-6 text-destructive mx-auto" />
-                <p className="text-xs">{t("errors.generic")}</p>
+                <p className="text-xs">{extractUserFriendlyError(error)}</p>
                 <button
                   onClick={() => refetch()}
                   className="text-primary hover:underline text-[11px] font-medium flex items-center gap-1 mx-auto cursor-pointer"
@@ -145,7 +147,8 @@ export function NotificationBell() {
               </div>
             ) : (
               notifications.map((n) => {
-                const isUnread = n.status === 0 || !n.readAt;
+                const isUnread = canMarkRead(n);
+                const statusLabel = t(`mvp.${n.readAt ? 'read' : ['pending', 'sent', 'failed', 'cancelled'][n.status] ?? 'pending'}`);
                 const isExpanded = expandedId === n.id;
 
                 return (
@@ -154,7 +157,7 @@ export function NotificationBell() {
                     role="button"
                     tabIndex={0}
                     aria-expanded={isExpanded}
-                    aria-label={`${n.subject} - ${isUnread ? t("tenant.notifications.unreadStatus") : t("tenant.notifications.readStatus")}`}
+                    aria-label={`${n.subject} - ${statusLabel}`}
                     onClick={() => handleNotificationClick(n)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -201,7 +204,7 @@ export function NotificationBell() {
                             <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40">
                               <span className="flex items-center gap-1 font-medium text-primary">
                                 <Check className="w-3 h-3" aria-hidden="true" />
-                                {t("tenant.notifications.readStatus")}
+                                {statusLabel}
                               </span>
                               <span className="font-mono">
                                 {formatDate(n.createdAt, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}

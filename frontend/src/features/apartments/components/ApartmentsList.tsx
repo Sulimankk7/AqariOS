@@ -35,10 +35,12 @@ import {
 import { PageHeader } from '@/shared/components/ui/Headers';
 import { ArchiveBlockedDialog } from '@/shared/components/ui/ArchiveBlockedDialog';
 import { extractArchiveBlockedPayload, ArchiveBlockedPayload } from '@/shared/lib/archiveBlocked';
+import { extractUserFriendlyError } from '@/shared/utils';
 
 interface ApartmentsListProps {
   buildingId?: string;
   floorId?: string;
+  hideCreateAction?: boolean;
 }
 
 interface BuildingGroup {
@@ -52,13 +54,13 @@ interface BuildingGroup {
   otherStatusCount: number;
 }
 
-export function ApartmentsList({ buildingId, floorId }: ApartmentsListProps) {
+export function ApartmentsList({ buildingId, floorId, hideCreateAction = false }: ApartmentsListProps) {
   const navigate = useNavigate();
   const { language } = useTranslation();
   const t = (key: string) => getApartmentTranslation(key, language);
 
   const { data: apartments, isLoading: isLoadingApartments, error: errorApartments } = useApartments({ buildingId, floorId });
-  const { data: buildings, isLoading: isLoadingBuildings } = useBuildings();
+  const { data: buildings, isLoading: isLoadingBuildings, error: buildingsError, refetch: refetchBuildings } = useBuildings();
   const deleteMutation = useDeleteApartment();
   
   const [selectedApartmentForDelete, setSelectedApartmentForDelete] = useState<ApartmentDto | null>(null);
@@ -127,7 +129,7 @@ export function ApartmentsList({ buildingId, floorId }: ApartmentsListProps) {
       }
 
       const bld = buildingMap.get(bldId);
-      const buildingName = bld ? bld.name : (bldId === 'unassigned' ? t('unassignedBuilding') : `${t('buildingId')}: ${bldId}`);
+      const buildingName = bld ? bld.name : (bldId === 'unassigned' ? t('unassignedBuilding') : buildingsError ? t('unassignedBuilding') : `${t('buildingId')}: ${bldId}`);
       const internalCode = bld?.internalCode;
 
       const totalCount = apts.length;
@@ -292,7 +294,7 @@ export function ApartmentsList({ buildingId, floorId }: ApartmentsListProps) {
         title={t('apartments')} 
         description={t('pageDescription')}
         actions={
-          floorId ? (
+          floorId && !hideCreateAction ? (
             <Button onClick={() => navigate(`/floors/${floorId}/apartments/new`)}>
               <Plus className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
               {t('addApartment')}
@@ -300,6 +302,13 @@ export function ApartmentsList({ buildingId, floorId }: ApartmentsListProps) {
           ) : undefined
         }
       />
+
+      {buildingsError && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          <span>{extractUserFriendlyError(buildingsError)}</span>
+          <Button type="button" size="sm" variant="outline" onClick={() => refetchBuildings()}>{t('retry')}</Button>
+        </div>
+      )}
 
       {/* Global Toolbar: Search & Group Toggle Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-4 rounded-lg border shadow-xs">

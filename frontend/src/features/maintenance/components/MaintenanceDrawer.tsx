@@ -14,6 +14,7 @@ import { MaintenanceStatusBadge, MaintenancePriorityBadge, maintenanceCategoryLa
 import { MaintenanceCommentsTab } from './MaintenanceCommentsTab';
 import { MaintenanceAttachmentsTab } from './MaintenanceAttachmentsTab';
 import { MaintenanceHistoryTab } from './MaintenanceHistoryTab';
+import { extractUserFriendlyError } from '@/shared/utils';
 
 interface Props { requestId: string | null; open: boolean; onOpenChange: (open: boolean) => void }
 
@@ -44,7 +45,7 @@ export const MaintenanceDrawer = ({ requestId, open, onOpenChange }: Props) => {
         </header>
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
           {query.isLoading && <div className="space-y-3"><Skeleton className="h-20 w-full" /><Skeleton className="h-28 w-full" /></div>}
-          {query.isError && <ErrorState title={t('maintenance.loadError')} onRetry={() => query.refetch()} />}
+          {query.isError && <ErrorState title={extractUserFriendlyError(query.error, t('maintenance.loadError'))} onRetry={() => query.refetch()} />}
           {request && <div className="space-y-5">
             <div><h3 className="text-lg font-bold leading-7">{request.title}</h3><div className="mt-2 flex flex-wrap gap-2"><MaintenanceStatusBadge status={request.status} /><MaintenancePriorityBadge priority={request.priority} /></div></div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-3 text-xs">

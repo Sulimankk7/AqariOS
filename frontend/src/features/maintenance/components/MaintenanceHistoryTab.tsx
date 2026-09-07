@@ -5,10 +5,12 @@ import { MaintenanceStatusBadge } from './MaintenanceStatusBadge';
 import { History } from 'lucide-react';
 import { useTranslation } from '@/shared/i18n';
 import { useMaintenanceActorName } from '../hooks/useMaintenanceActorName';
+import { ErrorState } from '@/shared/components/ui/Feedback';
+import { extractUserFriendlyError } from '@/shared/utils';
 
 export const MaintenanceHistoryTab = ({ requestId }: { requestId: string }) => {
   const { t, formatDate } = useTranslation();
-  const { data: history, isLoading } = useMaintenanceHistory(requestId);
+  const { data: history, isLoading, isError, error, refetch } = useMaintenanceHistory(requestId);
   const actorName = useMaintenanceActorName();
 
   if (isLoading) {
@@ -19,6 +21,8 @@ export const MaintenanceHistoryTab = ({ requestId }: { requestId: string }) => {
       </div>
     );
   }
+
+  if (isError) return <ErrorState title={extractUserFriendlyError(error, t('maintenance.loadError'))} onRetry={() => refetch()} />;
 
   if (!history?.length) {
     return (

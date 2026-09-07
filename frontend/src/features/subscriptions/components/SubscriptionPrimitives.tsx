@@ -5,8 +5,13 @@ import { useTranslation } from "@/shared/i18n";
 
 export function SubscriptionStatusBadge({ value }: { value: string }) {
   const { t } = useTranslation();
+  const labels: Record<string, string> = {
+    Active: 'subscriptions.status.Active', Approved: 'subscriptions.status.Approved', Pending: 'subscriptions.status.Pending',
+    Trialing: 'subscriptions.status.Trialing', PastDue: 'subscriptions.status.PastDue', Rejected: 'subscriptions.status.Rejected',
+    Cancelled: 'subscriptions.status.Cancelled', Expired: 'subscriptions.status.Expired', Inactive: 'subscriptions.inactive',
+  };
   const tone = value === "Active" || value === "Approved" ? "bg-emerald-500/10 text-emerald-700" : value === "Pending" || value === "Trialing" || value === "PastDue" ? "bg-amber-500/10 text-amber-700" : value === "Rejected" || value === "Cancelled" || value === "Expired" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground";
-  return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>{value === "Inactive" ? t("subscriptions.inactive") : t(`subscriptions.status.${value}`)}</span>;
+  return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>{labels[value] ? t(labels[value]) : t('common.unknown')}</span>;
 }
 
 export function DetailsDrawer({ open, title, onClose, children, footer }: { open: boolean; title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode }) {

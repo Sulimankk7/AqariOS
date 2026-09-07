@@ -6,7 +6,10 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "i18n:audit": "node scripts/audit-i18n.mjs"
+    "test:mvp": "vitest run --config vitest.mvp.config.ts",
+    "typecheck:mvp": "tsc -p tsconfig.mvp.json",
+    "i18n:audit": "node scripts/audit-i18n.mjs",
+    "verify:error-handling": "node scripts/verify-error-handling.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -73,9 +76,17 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^26.4.1",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "4.7.0",
+    "jsdom": "^30.0.1",
     "tailwindcss": "4.1.12",
-    "vite": "6.3.5"
+    "typescript": "^7.0.2",
+    "vite": "6.3.5",
+    "vitest": "^3.2.7"
   },
   "peerDependencies": {
     "react": "^18.3.1",

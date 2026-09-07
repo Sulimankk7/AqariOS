@@ -8,6 +8,7 @@ import { buildingKeys } from '@/features/buildings/hooks/buildingKeys';
 import { isArchiveBlockedError } from '@/shared/lib/archiveBlocked';
 import { getRuntimeLanguage } from '@/shared/i18n';
 import { extractUserFriendlyError } from '@/shared/utils/errorHandling';
+import { ApiError } from '@/shared/lib/http';
 
 const t = (key: string) => getFloorTranslation(key, getRuntimeLanguage());
 
@@ -44,8 +45,11 @@ export const useCreateFloor = () => {
       queryClient.invalidateQueries({ queryKey: buildingKeys.detail(variables.buildingId) });
       toast.success(t('createSuccess'));
     },
-    onError: (error: any) => {
-      toast.error(extractUserFriendlyError(error, t('loadError')));
+    onError: (error: unknown, variables) => {
+      const message = error instanceof ApiError && error.status === 409
+        ? t('numberExists').replace('{number}', String(variables.data.floorNumber))
+        : extractUserFriendlyError(error, t('loadError'));
+      toast.error(message);
     },
   });
 };

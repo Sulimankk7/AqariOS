@@ -7,6 +7,9 @@ namespace PropertyOS.Application.Leasing;
 public interface ILeaseContractRepository
 {
     Task<LeaseContract?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <summary>Locks an owned lease until the command commits; prevents assignment validation racing a status change.</summary>
+    Task<LeaseContract?> GetByIdForUpdateAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This repository does not support transactional lease locking.");
     Task<LeaseContract?> GetWithHistoryByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddAsync(LeaseContract leaseContract, CancellationToken cancellationToken = default);
     Task<bool> HasActiveContractForApartmentAsync(Guid apartmentId, CancellationToken cancellationToken = default);

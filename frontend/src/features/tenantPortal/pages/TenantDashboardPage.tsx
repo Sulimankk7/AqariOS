@@ -61,7 +61,7 @@ export function TenantDashboardPage() {
 
   const handleNotificationClick = (n: { id: string; status: number; readAt?: string | null }) => {
     setExpandedId((prev) => (prev === n.id ? null : n.id));
-    if (n.status === 0 || !n.readAt) {
+    if (n.status === 1 && !n.readAt && !markAsRead.isPending) {
       markAsRead.mutate(n.id);
     }
   };
@@ -277,7 +277,7 @@ export function TenantDashboardPage() {
           ) : (
             <div className="space-y-2">
               {recentNotifications.map((n) => {
-                const isUnread = n.status === 0 || !n.readAt;
+                const isUnread = n.status === 1 && !n.readAt;
                 const isExpanded = expandedId === n.id;
 
                 return (

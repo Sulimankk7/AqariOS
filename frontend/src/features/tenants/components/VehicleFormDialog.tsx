@@ -18,7 +18,7 @@ import { vehicleSchema, VehicleFormData } from '../schemas/vehicles.schema';
 import { useCreateVehicle, useUpdateVehicle } from '../hooks/useVehicles';
 import { getTenantTranslation } from '../constants/translations';
 import { useTranslation } from '@/shared/i18n';
-import { extractUserFriendlyError } from '@/shared/utils';
+import { extractUserFriendlyError, localizeValidationMessage } from '@/shared/utils';
 
 interface VehicleFormDialogProps {
   tenantId: string;
@@ -35,6 +35,10 @@ export function VehicleFormDialog({
 }: VehicleFormDialogProps) {
   const { language } = useTranslation();
   const t = (key: string) => getTenantTranslation(key, language);
+  const fieldError = (message: string | undefined, fallbackKey: string) => {
+    const value = message || fallbackKey;
+    return /^[A-Za-z][A-Za-z0-9]*$/.test(value) ? t(value) : localizeValidationMessage(value);
+  };
 
   const isEditing = !!initialData;
   const createMutation = useCreateVehicle(tenantId);
@@ -95,7 +99,7 @@ export function VehicleFormDialog({
           onError: (err: any) => {
             if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
               Object.entries(err.validationErrors).forEach(([field, messages]) => {
-                const fieldName = field.toLowerCase() as keyof VehicleFormData;
+                const fieldName = `${field.charAt(0).toLowerCase()}${field.slice(1)}` as keyof VehicleFormData;
                 const messageList = messages as string[];
                 if (fieldName in data && messageList.length > 0) {
                   setError(fieldName, { message: messageList[0] });
@@ -115,7 +119,7 @@ export function VehicleFormDialog({
         onError: (err: any) => {
           if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
             Object.entries(err.validationErrors).forEach(([field, messages]) => {
-              const fieldName = field.toLowerCase() as keyof VehicleFormData;
+              const fieldName = `${field.charAt(0).toLowerCase()}${field.slice(1)}` as keyof VehicleFormData;
               const messageList = messages as string[];
               if (fieldName in data && messageList.length > 0) {
                 setError(fieldName, { message: messageList[0] });
@@ -161,7 +165,7 @@ export function VehicleFormDialog({
             />
             {errors.plateNumber && (
               <p id="vehiclePlateNumber-error" className="text-xs text-destructive">
-                {t(errors.plateNumber.message || 'plateNumberRequired')}
+                {fieldError(errors.plateNumber.message, 'plateNumberRequired')}
               </p>
             )}
           </div>
@@ -181,7 +185,7 @@ export function VehicleFormDialog({
             />
             {errors.makeModel && (
               <p id="vehicleMakeModel-error" className="text-xs text-destructive">
-                {t(errors.makeModel.message || 'makeModelRequired')}
+                {fieldError(errors.makeModel.message, 'makeModelRequired')}
               </p>
             )}
           </div>
@@ -201,7 +205,7 @@ export function VehicleFormDialog({
             />
             {errors.color && (
               <p id="vehicleColor-error" className="text-xs text-destructive">
-                {t(errors.color.message || 'colorRequired')}
+                {fieldError(errors.color.message, 'colorRequired')}
               </p>
             )}
           </div>

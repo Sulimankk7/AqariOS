@@ -20,6 +20,14 @@ const apiErrorCodeKeys: Record<string, string> = {
   PASSWORD_RESET_OTP_EXPIRED: 'errors.codes.PASSWORD_RESET_OTP_EXPIRED',
   PASSWORD_RESET_OTP_ATTEMPTS_EXCEEDED: 'errors.codes.PASSWORD_RESET_OTP_ATTEMPTS_EXCEEDED',
   PASSWORD_RESET_AUTHORIZATION_EXPIRED: 'errors.codes.PASSWORD_RESET_AUTHORIZATION_EXPIRED',
+  EMAIL_ALREADY_EXISTS: 'errors.codes.EMAIL_ALREADY_EXISTS',
+  PHONE_ALREADY_EXISTS: 'errors.codes.PHONE_ALREADY_EXISTS',
+  TENANT_NATIONAL_ID_ALREADY_EXISTS: 'errors.codes.TENANT_NATIONAL_ID_ALREADY_EXISTS',
+  UTILITY_ACCOUNT_ALREADY_LINKED: 'errors.codes.UTILITY_ACCOUNT_ALREADY_LINKED',
+  RESOURCE_ALREADY_EXISTS: 'errors.codes.RESOURCE_ALREADY_EXISTS',
+  USED_PLAN_IMMUTABLE: 'errors.codes.USED_PLAN_IMMUTABLE',
+  PLAN_CHANGE_REQUEST_IMMUTABLE: 'errors.codes.PLAN_CHANGE_REQUEST_IMMUTABLE',
+  INTERNAL_ERROR: 'errors.serverError',
 };
 
 const statusErrorKeys: Record<number, string> = {
@@ -33,8 +41,42 @@ const statusErrorKeys: Record<number, string> = {
   500: 'errors.serverError',
   502: 'errors.serviceUnavailable',
   503: 'errors.serviceUnavailable',
-  504: 'errors.serviceUnavailable',
+  504: 'errors.timeout',
 };
+
+function isTimeoutMessage(message: string): boolean {
+  return message.includes('timeout') || message.includes('timed out') || message.includes('aborted');
+}
+
+function isNetworkMessage(message: string): boolean {
+  return message.includes('failed to fetch')
+    || message.includes('network error')
+    || message.includes('networkerror')
+    || message === 'load failed'
+    || message.includes('connection failed');
+}
+
+export type UserFacingErrorKind = 'validation' | 'unauthorized' | 'forbidden' | 'notFound' | 'conflict' | 'rateLimited' | 'server' | 'network' | 'timeout' | 'unknown';
+
+/** Classifies errors for page state selection without exposing server details. */
+export function getUserFacingErrorKind(error: unknown): UserFacingErrorKind {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && !navigator.onLine) return 'network';
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  if (error instanceof ApiError) {
+    if (isTimeoutMessage(message)) return 'timeout';
+    if (isNetworkMessage(message)) return 'network';
+    if (error.status === 400 || error.status === 422) return 'validation';
+    if (error.status === 401) return 'unauthorized';
+    if (error.status === 403) return 'forbidden';
+    if (error.status === 404) return 'notFound';
+    if (error.status === 409) return 'conflict';
+    if (error.status === 429) return 'rateLimited';
+    if (error.status >= 500) return 'server';
+  }
+  if (error instanceof Error && (error.name === 'AbortError' || isTimeoutMessage(message))) return 'timeout';
+  if (error instanceof Error && isNetworkMessage(message)) return 'network';
+  return 'unknown';
+}
 
 function backendTranslationKey(value: string | undefined): string | undefined {
   if (!value) return undefined;
@@ -55,11 +97,34 @@ function safeFallback(fallbackMessage: string): string {
     return generic;
   }
 
-  if (getRuntimeLanguage() === 'ar' && !/[\u0600-\u06ff]/.test(fallback)) {
+  const language = getRuntimeLanguage();
+  const hasArabic = /[\u0600-\u06ff]/.test(fallback);
+  if ((language === 'ar' && !hasArabic) || (language === 'en' && hasArabic)) {
     return generic;
   }
 
   return fallback;
+}
+
+const userSafeDetailStatuses = new Set([400, 404, 409, 422]);
+const nonActionableProblemDetails = new Set([
+  'one or more validation errors occurred.',
+  'an unexpected error occurred.',
+  'a database error occurred while processing the request.',
+]);
+
+/**
+ * The API contract uses detail for domain/validation messages on these statuses.
+ * Authentication, authorization, rate-limit and server failures stay localized.
+ */
+export function getSafeBackendDetail(error: ApiError): string | undefined {
+  if (!userSafeDetailStatuses.has(error.status) || !error.detail) return undefined;
+  if (error.code === 'INTERNAL_ERROR') return undefined;
+
+  const detail = error.detail.trim();
+  if (!detail || detail.length > 500 || nonActionableProblemDetails.has(detail.toLowerCase())) return undefined;
+  if (isRawTechnicalMessage(detail)) return undefined;
+  return detail;
 }
 
 /**
@@ -83,10 +148,10 @@ export function extractUserFriendlyError(
   // 2. ApiError (RFC 7807 ProblemDetails from http.ts)
   if (error instanceof ApiError) {
     const normalizedMessage = error.message.toLowerCase();
-    if (normalizedMessage.includes('timeout') || normalizedMessage.includes('aborted')) {
+    if (isTimeoutMessage(normalizedMessage)) {
       return translateCurrent('errors.timeout');
     }
-    if (normalizedMessage.includes('failed to fetch') || normalizedMessage.includes('network')) {
+    if (isNetworkMessage(normalizedMessage)) {
       return translateCurrent('errors.network');
     }
     const codeKey = error.code ? apiErrorCodeKeys[error.code] : undefined;
@@ -98,16 +163,21 @@ export function extractUserFriendlyError(
     if (error.status === 429 && error.retryAfterSeconds) {
       return translateCurrent('errors.tooManyRequestsRetryAfter', { seconds: error.retryAfterSeconds });
     }
+    // An unrecognized stable code must not fall through to an English backend
+    // sentence. Feature callers can supply a localized contextual fallback.
+    if (error.code) return safeFallback(fallbackMessage);
+    const safeDetail = getSafeBackendDetail(error);
+    if (safeDetail) return safeDetail;
     const statusKey = statusErrorKeys[error.status];
     if (statusKey) return translateCurrent(statusKey);
   }
 
   // 3. Native Error object
   if (error instanceof Error) {
-    if (error.name === 'AbortError' || error.message.toLowerCase().includes('timeout')) {
+    if (error.name === 'AbortError' || isTimeoutMessage(error.message.toLowerCase())) {
       return translateCurrent('errors.timeout');
     }
-    if (error.message.toLowerCase().includes('failed to fetch') || error.message.toLowerCase().includes('network error')) {
+    if (isNetworkMessage(error.message.toLowerCase())) {
       return translateCurrent('errors.network');
     }
   }
@@ -208,21 +278,5 @@ export function localizeValidationMessage(message: unknown): string {
  */
 export function isRawTechnicalMessage(msg: string): boolean {
   if (!msg) return true;
-  const technicalIndicators = [
-    'System.',
-    'Exception',
-    'NullReferenceException',
-    'InvalidOperationException',
-    'AxiosError',
-    'TypeError:',
-    'ReferenceError:',
-    'at ',
-    'http://',
-    'https://',
-    'POST ',
-    'GET ',
-    'PUT ',
-    'DELETE ',
-  ];
-  return technicalIndicators.some((indicator) => msg.includes(indicator));
+  return /(?:\b(?:system|microsoft|npgsql|dbcontext|stack\s*trace|innerexception|exception|axioserror)\b|(?:type|reference)error:|\bsqlstate\b|\bconnection\s*string\b|https?:\/\/|[a-z]:\\|\/(?:src|app|home|var)\/|(?:^|\n)\s*at\s+\S+|\b(?:post|get|put|patch|delete)\s+\/)/i.test(msg);
 }

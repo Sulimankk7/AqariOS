@@ -8,12 +8,13 @@ import { filesApi } from '@/shared/services/files.api';
 import { extractUserFriendlyError } from '@/shared/utils';
 import { useMaintenanceAttachments, useAddMaintenanceAttachment, useRemoveMaintenanceAttachment } from '../hooks/useMaintenance';
 import type { MaintenanceAttachmentDto } from '../types/maintenance.types';
+import { ErrorState } from '@/shared/components/ui/Feedback';
 
 type UploadState = { file: File; phase: 'request' | 'upload' | 'confirm' | 'attach' | 'failed'; progress: number; error?: string };
 
 export const MaintenanceAttachmentsTab = ({ requestId }: { requestId: string }) => {
   const { t } = useTranslation();
-  const { data: attachments, isLoading } = useMaintenanceAttachments(requestId);
+  const { data: attachments, isLoading, isError, error, refetch } = useMaintenanceAttachments(requestId);
   const addAttachment = useAddMaintenanceAttachment(requestId);
   const removeAttachment = useRemoveMaintenanceAttachment(requestId);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -39,6 +40,7 @@ export const MaintenanceAttachmentsTab = ({ requestId }: { requestId: string }) 
   };
 
   if (isLoading) return <div className="space-y-2 py-3"><Skeleton className="h-14 w-full" /><Skeleton className="h-14 w-full" /></div>;
+  if (isError) return <ErrorState title={extractUserFriendlyError(error, t('maintenance.loadError'))} onRetry={() => refetch()} />;
   const busy = !!upload && upload.phase !== 'failed';
 
   return <div className="space-y-3 py-3">
@@ -64,7 +66,7 @@ function AttachmentRow({ attachment, onRemove, removing }: { attachment: Mainten
   React.useEffect(() => {
     if (!attachment.fileId) return;
     let active = true;
-    filesApi.getFileDownloadUrl(attachment.fileId, true).then((result) => { if (active) setFile({ url: result.downloadUrl, mimeType: result.mimeType, name: result.originalFilename }); }).catch(() => undefined);
+    filesApi.getFileDownloadUrl(attachment.fileId, true).then((result) => { if (active) setFile({ url: result.downloadUrl, mimeType: result.mimeType, name: result.originalFilename }); }).catch((error) => { if (import.meta.env.DEV) console.warn('[maintenance] Attachment preview unavailable', error); });
     return () => { active = false; };
   }, [attachment.fileId]);
   const open = async () => {

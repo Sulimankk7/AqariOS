@@ -26,6 +26,15 @@ public class LeaseContractRepository : ILeaseContractRepository
         return _dbContext.LeaseContracts.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
+    public Task<LeaseContract?> GetByIdForUpdateAsync(Guid id, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        if (_dbContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("A command transaction is required.");
+        return _dbContext.LeaseContracts.FromSqlInterpolated(
+            $"SELECT *, xmin FROM lease_contracts WHERE id = {id} AND company_id = {companyId} AND deleted_at IS NULL FOR UPDATE")
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public async Task AddAsync(LeaseContract leaseContract, CancellationToken cancellationToken = default)
     {
         await _dbContext.LeaseContracts.AddAsync(leaseContract, cancellationToken);

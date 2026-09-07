@@ -59,12 +59,22 @@ function pluralSuffix(count: number, language: Language): string {
   return "_other";
 }
 
-export function reportMissingTranslation(path: string, language: Language): void {
-  const fingerprint = `${language}:${path}`;
+export function reportMissingTranslation(
+  path: string,
+  language: Language,
+  context: { source?: string; kind?: "shared" | "legacy"; dynamic?: boolean } = {},
+): void {
+  const fingerprint = `${context.kind ?? "shared"}:${language}:${path}`;
   if (reportedMissingKeys.has(fingerprint)) return;
   reportedMissingKeys.add(fingerprint);
   if (import.meta.env.DEV) {
-    console.warn(`[i18n] Missing translation: ${path} (locale: ${language})`);
+    console.warn("[i18n] Missing translation", {
+      key: path,
+      language,
+      source: context.source ?? "shared runtime",
+      lookup: context.kind ?? "shared",
+      dynamic: context.dynamic ?? false,
+    });
   }
 }
 
@@ -88,7 +98,7 @@ export function translate(
   if (value === undefined && pluralPath !== key) value = resolveValue(language, key);
 
   if (value === undefined) {
-    reportMissingTranslation(key, language);
+    reportMissingTranslation(key, language, { source: "translate", kind: "shared" });
     if (callerFallback && (language === "en" || /[\u0600-\u06ff]/.test(callerFallback))) {
       value = callerFallback;
     } else {
@@ -120,6 +130,11 @@ export function translateLegacy(
 ): string {
   const value = lookup(dictionaries[language], key);
   if (value !== undefined) return value;
-  reportMissingTranslation(`${namespace}.${key}`, language);
+  reportMissingTranslation(`${namespace}.${key}`, language, {
+    source: namespace,
+    kind: "legacy",
+    dynamic: key.includes("${") || key.includes("["),
+  });
+  // A missing legacy key is a translation defect, not an unknown business value.
   return translate(language, "common.missingTranslation");
 }

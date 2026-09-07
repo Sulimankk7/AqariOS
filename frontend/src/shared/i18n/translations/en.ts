@@ -3,7 +3,9 @@
  * Complete Coverage across all Namespaces & Pluralization Rules.
  */
 
+import { mvpEn } from '../../../features/mvp/copy';
 export const en = {
+  mvp: mvpEn,
   common: {
     appName: "AqariOS",
     tagline: "Enterprise Property Management System",
@@ -330,7 +332,7 @@ export const en = {
     buildingCommercial: "Commercial",
     buildingMixedUse: "Mixed-use",
     internalCode: "Internal Code",
-    totalFloors: "Floors",
+    totalFloors: "Licensed Floors",
     unitsCount: "Units",
     constructionYear: "Construction Year",
     address: "Address",
@@ -624,6 +626,21 @@ export const en = {
   },
   errors: {
     generic: "Unable to complete the operation. Please try again.",
+    imageLoad: "Unable to load image",
+    activationInvalidLink: "The activation link is invalid or missing.",
+    activationStatusFailed: "The activation link could not be verified. Try again later or contact property management.",
+    activationPasswordTooShort: "The password must be at least 8 characters.",
+    activationPasswordMismatch: "The passwords do not match.",
+    activationFailed: "Account activation failed. The link may have expired or already been used.",
+    activationExpiredTitle: "The activation link has expired",
+    activationExpiredDescription: "This activation link has expired (links are valid for 48 hours after issuance).",
+    activationExpiredHelp: "Contact property management to request a new account activation link.",
+    activationAlreadyUsedTitle: "This activation link has already been used",
+    activationInvalidTitle: "Invalid activation link",
+    activationAlreadyUsedDescription: "This link was already used to create a password and activate the account. It cannot be used again.",
+    activationAlreadyUsedHelp: "If your account is already active, sign in directly using your email address or phone number and password.",
+    activationBackToLogin: "Back to sign in",
+    activationGoToLogin: "Go to sign in",
     network: "Network connection failed. Check your internet connection.",
     unauthorized: "Session expired. Please log in again.",
     forbidden: "You do not have permission to perform this action.",
@@ -654,6 +671,13 @@ export const en = {
       PASSWORD_RESET_OTP_EXPIRED: "The password reset code has expired.",
       PASSWORD_RESET_OTP_ATTEMPTS_EXCEEDED: "Too many verification attempts were made.",
       PASSWORD_RESET_AUTHORIZATION_EXPIRED: "The password reset authorization has expired.",
+      EMAIL_ALREADY_EXISTS: "This email address is already in use.",
+      PHONE_ALREADY_EXISTS: "This phone number is already in use.",
+      TENANT_NATIONAL_ID_ALREADY_EXISTS: "A tenant with this national ID already exists.",
+      UTILITY_ACCOUNT_ALREADY_LINKED: "This utility account is already linked.",
+      RESOURCE_ALREADY_EXISTS: "A matching record already exists.",
+      USED_PLAN_IMMUTABLE: "A plan in use cannot have its commercial definition changed.",
+      PLAN_CHANGE_REQUEST_IMMUTABLE: "The requested plan change can no longer be modified.",
     },
   },
   utilityManagement: {

@@ -1,4 +1,16 @@
-import { http } from '@/shared/lib/http';
+import { http, ApiError } from '@/shared/lib/http';
+import { apiUrl } from '@/config/api';
+
+/** Physical storage returns API-relative capabilities; cloud storage returns absolute URLs. */
+export function resolveSignedFileUrl(value: string): string {
+  const resolved = /^\/(?!\/)/.test(value) ? apiUrl(value) : value;
+  const url = new URL(resolved, window.location.origin);
+  if ((!/^https?:\/\//i.test(value) && !/^\/(?!\/)/.test(value)) ||
+      !['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+    throw new Error('Invalid file URL');
+  }
+  return url.href;
+}
 
 export interface UploadFileRequestPayload {
   moduleName: string;
@@ -63,7 +75,7 @@ export const filesApi = {
   ): Promise<void> => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('PUT', uploadUrl, true);
+      xhr.open('PUT', resolveSignedFileUrl(uploadUrl), true);
       xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
 
       // Azure Blob Storage requires x-ms-blob-type: BlockBlob header for Put Blob operations
@@ -86,11 +98,11 @@ export const filesApi = {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
         } else if (xhr.status === 411) {
-          reject(new Error('File upload rejected: Content-Length required.'));
+          reject(new ApiError(411, 'File upload rejected: Content-Length required.'));
         } else if (xhr.status === 413) {
-          reject(new Error(`File too large — maximum allowed size exceeded.`));
+          reject(new ApiError(413, 'File too large — maximum allowed size exceeded.'));
         } else {
-          reject(new Error(`File upload failed (HTTP ${xhr.status}).`));
+          reject(new ApiError(xhr.status, 'File upload failed.'));
         }
       };
 

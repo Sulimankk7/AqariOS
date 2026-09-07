@@ -55,7 +55,7 @@ export function AuthLayout() {
 
       {/* RIGHT PANEL — Route content container (60% width) */}
       <div
-        className="flex-1 lg:w-[60%] flex flex-col min-h-screen bg-surface transition-colors duration-350"
+        className="flex min-w-0 flex-1 flex-col min-h-screen bg-surface transition-colors duration-350 lg:w-[60%]"
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         {/* Fixed Top Bar */}
@@ -67,8 +67,8 @@ export function AuthLayout() {
         />
 
         {/* Dynamic Form Area with Framer Motion slide & fade transition */}
-        <div className="flex-1 flex flex-col justify-center items-center px-6 py-8 overflow-y-auto">
-          <div className={`w-full ${isWideFormPage ? "max-w-[540px]" : "max-w-[420px]"}`}>
+        <div className="flex min-w-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
+          <div className={`w-full min-w-0 ${isWideFormPage ? "max-w-[540px]" : "max-w-[420px]"}`}>
             {/* Feedback Alert Toast Banner */}
             {feedbackMessage && (
               <motion.div

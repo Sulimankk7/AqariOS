@@ -325,6 +325,7 @@ public static class DependencyInjection
         services.AddScoped<IFloorRepository, FloorRepository>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IParkingSpotRepository, ParkingSpotRepository>();
+        services.AddScoped<IParkingAssignmentRepository, ParkingAssignmentRepository>();
 
         // Module 4 - Safe Archive Policy: dependency checkers
         services.AddScoped<IBuildingArchiveDependencyChecker, BuildingArchiveDependencyChecker>();
@@ -511,3 +512,4 @@ public static class DependencyInjection
         public Guid? UserId => null;
     }
 }
+

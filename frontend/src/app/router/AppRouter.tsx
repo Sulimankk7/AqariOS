@@ -23,6 +23,10 @@ import { AppLayout } from "@/app/layouts/AppLayout";
 import { PlatformAdminLayout } from "@/app/layouts/PlatformAdminLayout";
 import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { ModulePlaceholder } from "@/shared/components/layout/ModulePlaceholder";
+import ParkingPage from '@/features/parking/ParkingPage';
+import DocumentsPage from '@/features/documents/DocumentsPage';
+import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
+import SettingsPage from '@/features/settings/SettingsPage';
 import { ROUTES } from "@/config/routes";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useTranslation } from "@/shared/i18n";
@@ -98,6 +102,8 @@ import { CompanySubscriptionsPage } from "@/features/subscriptions/pages/Company
 import { PlatformPlansPage } from "@/features/subscriptions/pages/PlatformPlansPage";
 import { PlatformSubscriptionsPage } from "@/features/subscriptions/pages/PlatformSubscriptionsPage";
 import { PlatformPlanChangeRequestsPage } from "@/features/subscriptions/pages/PlatformPlanChangeRequestsPage";
+import LandingPage from "@/features/landing/pages/LandingPage";
+import { DemoExperience } from "@/features/demo/pages/DemoExperience";
 
 /** Root redirect — sends authenticated users to their respective dashboard, others to /auth/login */
 function RootRedirect() {
@@ -132,8 +138,9 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Root: auth-aware redirect */}
-        <Route path="/" element={<RootRedirect />} />
+        {/* Public landing page — intentionally limited to the navbar for Section 01 */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/demo/*" element={<DemoExperience />} />
 
         {/* ── Public Auth Routes ──────────────────────────────────────────── */}
         <Route path="/auth" element={<AuthLayout />}>
@@ -182,11 +189,7 @@ export function AppRouter() {
             <Route
               path={ROUTES.parking.root}
               element={
-                <ModulePlaceholder
-                  title={t("placeholders.parking.title")}
-                  description={t("placeholders.parking.description")}
-                  icon={Car}
-                />
+                <ParkingPage />
               }
             />
 
@@ -234,11 +237,7 @@ export function AppRouter() {
             <Route
               path={ROUTES.documents.root}
               element={
-                <ModulePlaceholder
-                  title={t("placeholders.documents.title")}
-                  description={t("placeholders.documents.description")}
-                  icon={FolderOpen}
-                />
+                <DocumentsPage />
               }
             />
 
@@ -246,21 +245,13 @@ export function AppRouter() {
             <Route
               path={ROUTES.notifications.root}
               element={
-                <ModulePlaceholder
-                  title={t("placeholders.notifications.title")}
-                  description={t("placeholders.notifications.description")}
-                  icon={Bell}
-                />
+                <NotificationsPage />
               }
             />
             <Route
               path={ROUTES.settings.root}
               element={
-                <ModulePlaceholder
-                  title={t("placeholders.settings.title")}
-                  description={t("placeholders.settings.description")}
-                  icon={Settings}
-                />
+                <SettingsPage />
               }
             />
             <Route

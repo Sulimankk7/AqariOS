@@ -122,6 +122,9 @@ export const useTerminateLease = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: leaseKeys.all });
       queryClient.invalidateQueries({ queryKey: leaseKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ['parking'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-assignment'] });
+      queryClient.invalidateQueries({ queryKey: ['lease-parking', variables.id] });
       toast.success(t('terminateSuccess'));
     },
     onError: (error: any) => {
@@ -208,4 +211,3 @@ export const useDeleteContractDocument = () => {
     },
   });
 };
-

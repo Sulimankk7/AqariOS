@@ -1,4 +1,5 @@
 import { ApiError } from "@/shared/lib/http";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
 import type {
   TenantUtilityAccountDto,
   TenantUtilityBillDto,
@@ -134,5 +135,6 @@ export function utilityBillsErrorMessage(error: unknown, t: Translate): string {
     504: "server",
   };
 
-  return t(`tenant.utilityBills.errors.${statusKeys[error.status] ?? "generic"}`);
+  const fallback = t(`tenant.utilityBills.errors.${statusKeys[error.status] ?? "generic"}`);
+  return extractUserFriendlyError(error, fallback);
 }

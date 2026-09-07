@@ -180,6 +180,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                         problemDetails.Detail = "The company already has a pending Plan change request.";
                         problemDetails.Extensions["code"] = "PENDING_PLAN_CHANGE_ALREADY_EXISTS";
                     }
+                    else if (pgEx.ConstraintName == "uq_parking_assignments_active_spot")
+                    {
+                        problemDetails.Detail = "Parking spot already has an active assignment.";
+                        problemDetails.Extensions["code"] = "PARKING_ALREADY_ASSIGNED";
+                    }
                     else if (pgEx.ConstraintName == "uq_subscription_plans_code")
                     {
                         problemDetails.Detail = "A subscription Plan with this code already exists.";

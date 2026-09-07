@@ -196,11 +196,11 @@ export function CommandMenu() {
     {
       id: "documents",
       label: t("nav.documents") !== "nav.documents" ? t("nav.documents") : "Documents",
-      description: "Document repository",
+      description: "Building documents",
       icon: FolderOpen,
       group: "Operations",
       action: () => handleNavigate(ROUTES.documents.root),
-      keywords: ["files", "contracts", "repository"],
+      keywords: ["building", "documents", "files"],
     },
     // System
     {
