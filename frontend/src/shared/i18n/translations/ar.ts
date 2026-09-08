@@ -1105,7 +1105,7 @@ export const ar = {
   platformAdmin: {
     title: "إدارة منصة عقاري",
     comingSoon: "قريباً",
-    nav: { dashboard: "لوحة المنصة", registrations: "طلبات الملاك", plans: "الخطط", subscriptions: "الاشتراكات", future: "ميزات مستقبلية", open: "فتح قائمة التنقل" },
+    nav: { dashboard: "لوحة المنصة", registrations: "طلبات الملاك", contactRequests: "طلبات التواصل", plans: "الخطط", subscriptions: "الاشتراكات", future: "ميزات مستقبلية", open: "فتح قائمة التنقل" },
     dashboard: {
       title: "إدارة منصة عقاري",
       subtitle: "إدارة الوصول إلى منصة عقاري على مستوى النظام",
@@ -1127,6 +1127,10 @@ export const ar = {
       viewSubscriptions: "عرض الاشتراكات",
     },
     registrations: { title: "طلبات تسجيل الملاك", subtitle: "راجع الطلبات المعلقة قبل تفعيل حساب المالك والشركة.", empty: "لا توجد طلبات تسجيل معلقة", total: "إجمالي الطلبات: {count}" },
+    contactRequests: {
+      title: "طلبات التواصل", subtitle: "طلبات التواصل والمكالمات التعريفية الواردة من صفحة AqariOS العامة.", empty: "لا توجد طلبات تواصل حاليًا.", allStatuses: "كل الحالات", detailsTitle: "تفاصيل طلب التواصل", name: "الاسم", company: "الشركة / المكتب", phone: "رقم الهاتف", buildings: "عدد العمارات", notes: "الملاحظات", statusLabel: "الحالة", createdAt: "تاريخ الطلب", changeStatus: "تحديث الحالة", updated: "تم تحديث حالة الطلب.", updateError: "تعذر تحديث حالة الطلب.", loadError: "تعذر تحميل طلبات التواصل.",
+      status: { New: "جديد", Contacted: "تم التواصل", TrialStarted: "بدأ التجربة", Converted: "تم التحويل", Rejected: "مرفوض" },
+    },
     fields: { applicant: "مقدم الطلب", company: "الشركة", email: "البريد الإلكتروني", phone: "رقم الهاتف", submittedAt: "تاريخ التقديم", country: "الدولة", companyDisplayName: "اسم العرض", companyType: "نوع الشركة" },
     status: { pending: "معلق" },
     actions: { approve: "موافقة", reject: "رفض" },

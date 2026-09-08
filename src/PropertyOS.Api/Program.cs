@@ -167,6 +167,8 @@ builder.Services.AddAuthorization(options =>
     AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformSubscriptionsManage);
     AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformPlanChangeRequestsRead);
     AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.PlatformPlanChangeRequestsReview);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.ContactRequestsRead);
+    AddPlatformSubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.ContactRequestsManage);
     AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.SubscriptionPlansView);
     AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.OwnSubscriptionView);
     AddCompanySubscriptionPolicy(PropertyOS.Application.Common.Security.PlatformPermissions.OwnPlanChangeRequestsRead);
@@ -378,6 +380,17 @@ builder.Services.AddRateLimiter(options =>
                 PermitLimit = otpPermitLimit,
                 QueueLimit  = otpQueueLimit,
                 Window      = TimeSpan.FromSeconds(otpWindowSecs)
+            }));
+
+    options.AddPolicy("ContactRequestLimit", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 3,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
             }));
 
     var otpVerifyPermitLimit = builder.Configuration.GetValue<int>("RateLimiting:OtpVerify:PermitLimit", 10);

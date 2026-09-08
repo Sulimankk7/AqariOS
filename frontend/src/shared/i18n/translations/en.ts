@@ -1085,7 +1085,7 @@ export const en = {
   platformAdmin: {
     title: "AqariOS Platform Administration",
     comingSoon: "Coming soon",
-    nav: { dashboard: "Platform dashboard", registrations: "Landlord registrations", plans: "Plans", subscriptions: "Subscriptions", future: "Future capabilities", open: "Open navigation" },
+    nav: { dashboard: "Platform dashboard", registrations: "Landlord registrations", contactRequests: "Contact requests", plans: "Plans", subscriptions: "Subscriptions", future: "Future capabilities", open: "Open navigation" },
     dashboard: {
       title: "Platform Administration",
       subtitle: "Manage access to the AqariOS platform at system level",
@@ -1107,6 +1107,10 @@ export const en = {
       viewSubscriptions: "View subscriptions",
     },
     registrations: { title: "Landlord registrations", subtitle: "Review pending requests before activating the landlord and company accounts.", empty: "There are no pending registration requests", total: "Total requests: {count}" },
+    contactRequests: {
+      title: "Contact requests", subtitle: "Contact and introductory-call requests submitted through the public AqariOS landing page.", empty: "There are no contact requests right now.", allStatuses: "All statuses", detailsTitle: "Contact request details", name: "Name", company: "Company / office", phone: "Phone", buildings: "Buildings", notes: "Notes", statusLabel: "Status", createdAt: "Requested", changeStatus: "Update status", updated: "Request status updated.", updateError: "Request status could not be updated.", loadError: "Contact requests could not be loaded.",
+      status: { New: "New", Contacted: "Contacted", TrialStarted: "Trial started", Converted: "Converted", Rejected: "Rejected" },
+    },
     fields: { applicant: "Applicant", company: "Company", email: "Email", phone: "Phone", submittedAt: "Submitted", country: "Country", companyDisplayName: "Display name", companyType: "Company type" },
     status: { pending: "Pending" },
     actions: { approve: "Approve", reject: "Reject" },

@@ -21,6 +21,8 @@ public static class PlatformPermissions
     public const string LandlordRegistrationsRead = "platform.landlord_registrations.read";
     public const string LandlordRegistrationsApprove = "platform.landlord_registrations.approve";
     public const string LandlordRegistrationsReject = "platform.landlord_registrations.reject";
+    public const string ContactRequestsRead = "platform.contact_requests.read";
+    public const string ContactRequestsManage = "platform.contact_requests.manage";
 
     public const string PlatformPlansRead = "platform.plans.read";
     public const string PlatformPlansCreate = "platform.plans.create";
@@ -91,6 +93,8 @@ public static class PlatformPermissions
         new(LandlordRegistrationsRead, "PlatformAdministration", "View landlord registration applications", "عرض طلبات تسجيل الملاك"),
         new(LandlordRegistrationsApprove, "PlatformAdministration", "Approve landlord registration applications", "الموافقة على طلبات تسجيل الملاك"),
         new(LandlordRegistrationsReject, "PlatformAdministration", "Reject landlord registration applications", "رفض طلبات تسجيل الملاك"),
+        new(ContactRequestsRead, "PlatformAdministration", "View public contact requests", "عرض طلبات التواصل العامة"),
+        new(ContactRequestsManage, "PlatformAdministration", "Update public contact request status", "تحديث حالة طلبات التواصل العامة"),
         new(PlatformPlansRead, "Subscriptions", "View the platform Plan catalog", "عرض كتالوج خطط المنصة"),
         new(PlatformPlansCreate, "Subscriptions", "Create commercial Plans", "إنشاء خطط تجارية"),
         new(PlatformPlansLifecycle, "Subscriptions", "Activate and deactivate Plans", "تفعيل وتعطيل الخطط"),

@@ -1,0 +1,21 @@
+.landing-contact { scroll-margin-top: 5rem; border-top: 1px solid var(--border); background: var(--background); padding: clamp(4rem, 8vw, 7rem) 1.25rem; }
+.landing-contact__container { width: min(100%, 72rem); margin-inline: auto; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(2.5rem, 7vw, 6rem); align-items: start; }
+.landing-contact__intro { max-width: 30rem; }
+.landing-contact__eyebrow { margin: 0 0 .9rem; color: var(--primary); font-size: .78rem; font-weight: 700; letter-spacing: .08em; }
+.landing-contact__intro h2 { margin: 0; color: var(--foreground); font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.16; letter-spacing: -.035em; }
+.landing-contact__intro > p:last-child { margin: 1rem 0 0; color: var(--muted-foreground); font-size: 1rem; line-height: 1.8; }
+.landing-contact__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); box-shadow: var(--shadow-e1); }
+.landing-contact__field { min-width: 0; display: flex; flex-direction: column; gap: .45rem; }
+.landing-contact__field--wide, .landing-contact__submit { grid-column: 1 / -1; }
+.landing-contact__field label { color: var(--foreground); font-size: .86rem; font-weight: 650; }
+.landing-contact__field > span, .landing-contact__submit p { margin: 0; color: var(--destructive); font-size: .76rem; }
+.landing-contact__field input, .landing-contact__field textarea { border-color: var(--outline); background: var(--input-background); }
+.landing-contact__field textarea { min-height: 7rem; }
+.landing-contact__submit { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .35rem; }
+.landing-contact__submit button { min-width: 12.5rem; }
+.landing-contact__success { min-height: 20rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
+.landing-contact__success svg { width: 2rem; height: 2rem; color: var(--primary); }
+.landing-contact__success h3 { margin: 1rem 0 .35rem; color: var(--foreground); font-size: 1.35rem; }
+.landing-contact__success p { margin: 0; color: var(--muted-foreground); line-height: 1.8; }
+@media (max-width: 760px) { .landing-contact__container { grid-template-columns: 1fr; gap: 2rem; } .landing-contact__form { grid-template-columns: 1fr; } .landing-contact__field--wide, .landing-contact__submit { grid-column: auto; } .landing-contact__submit { align-items: stretch; flex-direction: column; } .landing-contact__submit button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .landing-contact { scroll-behavior: auto; } }

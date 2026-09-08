@@ -1,0 +1,226 @@
+.landing-final-cta {
+  position: relative;
+  overflow: clip;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-arabic);
+}
+
+.landing-final-cta::before {
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 1px;
+  height: clamp(2.75rem, 5vw, 4.5rem);
+  background: var(--border);
+  content: "";
+  pointer-events: none;
+}
+
+.landing-final-cta__container {
+  position: relative;
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding: clamp(5.75rem, 9vw, 8rem) 32px clamp(4.5rem, 8vw, 7rem);
+}
+
+.landing-final-cta__logo-stage {
+  display: grid;
+  width: clamp(15rem, 28vw, 22rem);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  place-items: center;
+}
+
+.aqarios-logo-draw {
+  display: block;
+  width: 88%;
+  height: 88%;
+  overflow: hidden;
+}
+
+.aqarios-logo-draw__mask-paths,
+.aqarios-logo-draw__stroke {
+  fill: none;
+  stroke: white;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.aqarios-logo-draw__stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation-name: aqarios-logo-draw-stroke;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+
+.aqarios-logo-draw__stroke--outer-left {
+  stroke-width: 112;
+  animation-duration: 0.78s;
+}
+
+.aqarios-logo-draw__stroke--outer-right {
+  stroke-width: 112;
+  animation-duration: 0.75s;
+  animation-delay: 120ms;
+}
+
+.aqarios-logo-draw__stroke--connectors {
+  stroke-width: 104;
+  animation-duration: 0.58s;
+  animation-delay: 550ms;
+}
+
+.aqarios-logo-draw__stroke--q {
+  stroke-width: 118;
+  animation-duration: 0.88s;
+  animation-delay: 900ms;
+}
+
+.aqarios-logo-draw__stroke--q-tail {
+  stroke-width: 112;
+  animation-duration: 0.58s;
+  animation-delay: 1.48s;
+}
+
+.aqarios-logo-draw__stroke--accent {
+  stroke-width: 92;
+  animation-duration: 0.46s;
+  animation-delay: 1.95s;
+}
+
+.landing-final-cta__header {
+  max-width: 53rem;
+  margin: clamp(2rem, 4vw, 3rem) auto 0;
+  text-align: center;
+}
+
+.landing-final-cta__eyebrow {
+  margin: 0 0 0.875rem;
+  color: var(--primary);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.landing-final-cta__header h2 {
+  max-width: 15ch;
+  margin: 0 auto;
+  color: var(--foreground);
+  font-size: clamp(2.5rem, 5.5vw, 4.75rem);
+  font-weight: 700;
+  line-height: 1.18;
+}
+
+.landing-final-cta__lead {
+  max-width: 48rem;
+  margin: 1.5rem auto 0;
+  color: var(--muted-foreground);
+  font-size: clamp(1rem, 1.4vw, 1.125rem);
+  line-height: 1.9;
+}
+
+.landing-final-cta__lead strong {
+  color: var(--foreground);
+  font-size: 1.08em;
+  font-weight: 700;
+}
+
+.landing-final-cta__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: clamp(2rem, 4vw, 3rem);
+  text-align: center;
+}
+
+.landing-final-cta__primary {
+  min-width: min(100%, 22rem);
+  min-height: 3.25rem;
+  padding-inline: 1.5rem;
+  font-family: var(--font-arabic);
+  font-size: 1rem;
+}
+
+.landing-final-cta__primary:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.landing-final-cta__secondary {
+  margin-top: 1rem;
+  border-bottom: 1px solid transparent;
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.landing-final-cta__secondary:hover,
+.landing-final-cta__secondary:focus-visible {
+  border-color: currentColor;
+  color: var(--primary);
+}
+
+.landing-final-cta__actions > p {
+  margin: 0.875rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.landing-final-cta__contact-anchor {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  scroll-margin-top: 5rem;
+  outline: 0;
+}
+
+@keyframes aqarios-logo-draw-stroke {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .landing-final-cta__container {
+    padding: 5.5rem 20px 4rem;
+  }
+
+  .landing-final-cta__logo-stage {
+    width: min(70vw, 15rem);
+  }
+
+  .landing-final-cta__header {
+    margin-top: 2rem;
+    text-align: right;
+  }
+
+  .landing-final-cta__header h2 {
+    margin-inline: 0;
+    font-size: clamp(2.35rem, 12vw, 3.5rem);
+  }
+
+  .landing-final-cta__lead {
+    margin-inline: 0;
+  }
+
+  .landing-final-cta__primary {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-final-cta__secondary {
+    transition: none;
+  }
+}

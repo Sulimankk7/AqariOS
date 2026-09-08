@@ -5,28 +5,28 @@ import { HeroProductVisual } from "./HeroProductVisual";
 import "./LandingHero.css";
 
 function HeroActions() {
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="landing-hero__actions">
       <Button
         className="rounded-sm"
         size="lg"
         type="button"
-        onClick={() => {
-          window.location.hash = "demo";
-        }}
+        onClick={() => scrollToSection("contact")}
       >
-        احجز Demo الآن
+        اطلب تجربة النظام
       </Button>
       <Button
         className="rounded-sm"
         variant="outlined"
         size="lg"
         type="button"
-        onClick={() => {
-          window.location.hash = "interactive-experience";
-        }}
+        onClick={() => scrollToSection("features")}
       >
-        جرّب AqariOS تفاعليًا
+        استكشف الإمكانيات
         <ArrowLeft aria-hidden="true" />
       </Button>
     </div>
@@ -39,7 +39,7 @@ function HeroContent() {
       <p className="landing-hero__eyebrow" lang="en">
         AqariOS
       </p>
-      <h1 id="landing-hero-title " className="landing-hero__title" lang="ar" >
+      <h1 id="landing-hero-title" className="landing-hero__title" lang="ar">
         إدارة عقاراتك من مكان واحد
         
       </h1>
@@ -53,7 +53,7 @@ function HeroContent() {
 
 export function LandingHero() {
   return (
-    <section className="landing-hero" aria-labelledby="landing-hero-title">
+    <section id="top" className="landing-hero" aria-labelledby="landing-hero-title">
       <HeroArchitectureBackground />
       <div className="landing-hero__container">
         <HeroContent />

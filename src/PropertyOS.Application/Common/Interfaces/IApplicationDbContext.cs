@@ -26,6 +26,7 @@ public interface IApplicationDbContext
     DbSet<LoginHistory> LoginHistory { get; }
     DbSet<UserSystemRole> UserSystemRoles { get; }
     DbSet<LandlordRegistration> LandlordRegistrations { get; }
+    DbSet<PropertyOS.Domain.PlatformAdministration.ContactRequest> ContactRequests { get; }
     DbSet<PasswordResetChallenge> PasswordResetChallenges => throw new NotSupportedException();
     DbSet<AuditLog> AuditLogs => throw new NotSupportedException();
     DbSet<SubscriptionPlan> SubscriptionPlans { get; }

@@ -6,11 +6,16 @@ import { Button } from "@/shared/ui/button";
 import "./LandingNavbar.css";
 
 const navigationItems = [
-  { label: "التجربة التفاعلية", href: "#interactive-experience" },
-  { label: "المزايا", href: "#features" },
+  { label: "الإمكانيات", href: "#features" },
+  { label: "السوق الأردني", href: "#jordan" },
   { label: "لماذا AqariOS؟", href: "#why-aqarios" },
-  { label: "لماذا الأردن؟", href: "#jordan" },
+  { label: "الأسعار", href: "#pricing" },
+  { label: "تواصل معنا", href: "#contact" },
 ];
+
+function scrollToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export function LandingNavbar() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -35,7 +40,7 @@ export function LandingNavbar() {
     };
 
     const closeAtDesktop = () => {
-      if (window.innerWidth > 768) setIsMenuOpen(false);
+      if (window.innerWidth > 1024) setIsMenuOpen(false);
     };
 
     window.addEventListener("keydown", closeOnEscape);
@@ -58,7 +63,7 @@ export function LandingNavbar() {
   return (
     <header ref={headerRef} className="landing-header" dir="rtl">
       <nav className="landing-nav" aria-label="التنقل الرئيسي">
-        <a className="landing-brand" href="/" aria-label="AqariOS — الصفحة الرئيسية">
+        <a className="landing-brand" href="#top" aria-label="AqariOS — بداية الصفحة">
           <AqariOSLogo size={38} />
           <span lang="en">AqariOS</span>
         </a>
@@ -84,11 +89,9 @@ export function LandingNavbar() {
           <Button
             className="landing-nav__cta rounded-sm"
             type="button"
-            onClick={() => {
-              window.location.hash = "demo";
-            }}
+            onClick={() => scrollToSection("contact")}
           >
-            احجز Demo الآن
+            اطلب تجربة النظام
           </Button>
           <button
             ref={toggleButtonRef}
@@ -114,6 +117,14 @@ export function LandingNavbar() {
               {item.label}
             </a>
           ))}
+          <a
+            className="landing-nav__mobile-cta"
+            href="#contact"
+            tabIndex={isMenuOpen ? 0 : -1}
+            onClick={closeMenu}
+          >
+            اطلب تجربة النظام
+          </a>
           <button
             className="landing-nav__theme-toggle landing-nav__theme-toggle--mobile"
             type="button"

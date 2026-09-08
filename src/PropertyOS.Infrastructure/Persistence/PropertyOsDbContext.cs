@@ -144,6 +144,7 @@ public class PropertyOsDbContext : DbContext, IApplicationDbContext
     public DbSet<PropertyOS.Domain.Identity.Entities.LoginHistory> LoginHistory => Set<PropertyOS.Domain.Identity.Entities.LoginHistory>();
     public DbSet<PropertyOS.Domain.Identity.Entities.UserSystemRole> UserSystemRoles => Set<PropertyOS.Domain.Identity.Entities.UserSystemRole>();
     public DbSet<PropertyOS.Domain.Identity.Entities.LandlordRegistration> LandlordRegistrations => Set<PropertyOS.Domain.Identity.Entities.LandlordRegistration>();
+    public DbSet<PropertyOS.Domain.PlatformAdministration.ContactRequest> ContactRequests => Set<PropertyOS.Domain.PlatformAdministration.ContactRequest>();
     public DbSet<PropertyOS.Domain.Identity.Entities.OtpChallenge> OtpChallenges => Set<PropertyOS.Domain.Identity.Entities.OtpChallenge>();
     public DbSet<PropertyOS.Domain.Identity.Entities.PasswordResetChallenge> PasswordResetChallenges => Set<PropertyOS.Domain.Identity.Entities.PasswordResetChallenge>();
     public DbSet<PropertyOS.Domain.Audit.Entities.AuditLog> AuditLogs => Set<PropertyOS.Domain.Audit.Entities.AuditLog>();
