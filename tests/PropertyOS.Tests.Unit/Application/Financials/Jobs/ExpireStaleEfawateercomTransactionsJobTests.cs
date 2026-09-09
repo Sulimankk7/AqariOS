@@ -174,6 +174,7 @@ public class ExpireStaleEfawateercomTransactionsJobTests
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.LoginHistory> LoginHistory => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.UserSystemRole> UserSystemRoles => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Identity.Entities.LandlordRegistration> LandlordRegistrations => throw new NotImplementedException();
+        public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.PlatformAdministration.ContactRequest> ContactRequests => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Subscriptions.SubscriptionPlan> SubscriptionPlans => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Subscriptions.CompanySubscription> CompanySubscriptions => throw new NotImplementedException();
         public Microsoft.EntityFrameworkCore.DbSet<PropertyOS.Domain.Subscriptions.PlanChangeRequest> PlanChangeRequests => throw new NotImplementedException();

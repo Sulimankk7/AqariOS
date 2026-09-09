@@ -9,6 +9,7 @@ const responses429 = new Counter('responses_429');
 const unexpected = new Counter('responses_unexpected');
 
 export const options = {
+  summaryTrendStats: ['avg', 'med', 'min', 'max', 'p(90)', 'p(95)', 'p(99)'],
   scenarios: {
     rate_limit_probe: {
       executor: 'constant-vus',

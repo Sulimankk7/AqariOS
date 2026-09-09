@@ -1,0 +1,18 @@
+{
+  "run_id": "20260908133601",
+  "base_url": "http://localhost:5235",
+  "created_at_utc": "2026-09-08T13:36:03.208742+00:00",
+  "config": {
+    "owners": 2,
+    "buildings_per_owner": 2,
+    "floors_per_building": 3,
+    "apartments_per_floor": 5,
+    "tenants_per_owner": 10,
+    "leases_per_owner": 10,
+    "tenant_accounts_per_owner": 2,
+    "maintenance_per_owner": 10,
+    "expenses_per_owner": 5,
+    "marketplace_per_owner": 5
+  },
+  "owners": []
+}

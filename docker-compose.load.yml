@@ -1,0 +1,5 @@
+services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: LoadTesting
+      RateLimiting__Global__PermitLimit: ${LOAD_TEST_GLOBAL_PERMIT_LIMIT:-100000}

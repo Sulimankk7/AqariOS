@@ -42,10 +42,15 @@ artifacts/
 # Caches
 .cache/
 .sass-cache/
+__pycache__/
+*.py[cod]
 
 # Test artifacts
 TestResults/
 *.trx
+load-tests/output/
+load-tests/reports/
+load-tests/**/*.tmp
 
 # Logs
 *.log

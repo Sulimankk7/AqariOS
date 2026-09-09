@@ -523,8 +523,10 @@ app.UseRateLimiter();
 
 app.MapControllers();
 
-// Schedule recurring background jobs (only when Hangfire storage is configured)
-if (!string.IsNullOrEmpty(connectionString))
+// Integration hosts override persistence after Program has registered services.
+// Never resolve Hangfire storage or mutate recurring schedules in Testing; doing
+// so can connect to the base appsettings database instead of the test container.
+if (!string.IsNullOrEmpty(connectionString) && !app.Environment.IsEnvironment("Testing"))
 {
     var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
     recurringJobs.AddOrUpdate<PropertyOS.Infrastructure.Leasing.Jobs.ExpireLeaseContractsJob>(

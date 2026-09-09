@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-AqariOS API Seeder - Runtime Verified v6
+AqariOS API Seeder - Runtime Verified v7
 
 Verified runtime behavior:
-- POST /api/v1/auth/register returns top-level:
-    userId, companyId, accessToken, refreshToken, tokenType, expiresIn, user
-- The token returned by register may NOT contain permission claims.
-- Therefore the seeder immediately performs POST /api/v1/auth/login
-  and uses the login accessToken for all permission-protected endpoints.
+- POST /api/v1/auth/register creates a pending landlord registration and
+  returns registrationId/status/submittedAt/message; it issues no token.
+- A separately configured SYSTEM_ADMIN must approve the application through
+  the platform API before the owner can log in.
+- The seeder then performs POST /api/v1/auth/login and uses that access token
+  for all permission-protected endpoints.
 - The runtime role is COMPANY_ADMIN and /api/v1/auth/me returns the effective
   permissions such as properties.read/properties.create/contracts.create/etc.
 
@@ -22,6 +23,7 @@ import hashlib
 from pathlib import Path
 from datetime import date, timedelta, datetime, timezone
 from urllib.parse import urljoin
+from email.utils import parsedate_to_datetime
 
 try:
     import requests
@@ -56,6 +58,8 @@ MARKETPLACE_PER_OWNER = int(os.getenv("AQARIOS_MARKETPLACE_PER_OWNER", "5"))
 
 OWNER_PASSWORD = os.getenv("AQARIOS_OWNER_PASSWORD", "OwnerTest123!")
 TENANT_PASSWORD = os.getenv("AQARIOS_TENANT_PASSWORD", "TenantTest123!")
+PLATFORM_ADMIN_EMAIL = os.getenv("AQARIOS_PLATFORM_ADMIN_EMAIL", "").strip()
+PLATFORM_ADMIN_PASSWORD = os.getenv("AQARIOS_PLATFORM_ADMIN_PASSWORD", "")
 
 REQUEST_TIMEOUT = float(os.getenv("AQARIOS_TIMEOUT", "30"))
 
@@ -86,6 +90,7 @@ OUT_DIR = Path(os.getenv("AQARIOS_OUTPUT_DIR", "load-tests/output"))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 OUT_FILE = OUT_DIR / f"aqarios_seed_{RUN_ID}.json"
+RESUME_FILE = os.getenv("AQARIOS_RESUME_FILE", "").strip()
 
 # IMPORTANT:
 # The Windows host may already be on the next calendar day (e.g. Jordan UTC+3)
@@ -164,9 +169,13 @@ def call(
             try:
                 wait_seconds = float(retry_after) if retry_after else 15.0
             except ValueError:
-                wait_seconds = 15.0
+                try:
+                    retry_at = parsedate_to_datetime(retry_after)
+                    wait_seconds = (retry_at - datetime.now(timezone.utc)).total_seconds()
+                except (TypeError, ValueError):
+                    wait_seconds = 15.0
 
-            wait_seconds = max(wait_seconds, 15.0)
+            wait_seconds = max(wait_seconds, min(15.0 * (2 ** attempt), 60.0))
 
             print(
                 f"[RATE LIMIT] {method} {path} -> 429. "
@@ -207,10 +216,25 @@ def scalar_guid(value):
 
 
 def save_progress(result):
-    OUT_FILE.write_text(
+    temporary = OUT_FILE.with_suffix(OUT_FILE.suffix + ".tmp")
+    temporary.write_text(
         json.dumps(result, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+    temporary.replace(OUT_FILE)
+
+
+def login_existing_account(session, email, password):
+    login = call(
+        session,
+        "POST",
+        "/api/v1/auth/login",
+        body={"emailOrPhone": email, "password": password},
+        expected=(200,),
+    )
+    if not isinstance(login, dict) or not login.get("accessToken"):
+        raise SeederError(f"Login response for {email} has no accessToken.")
+    return login["accessToken"]
 
 
 # ============================================================
@@ -219,18 +243,41 @@ def save_progress(result):
 
 def register_and_login_owner(session, owner_index):
     """
-    Runtime-verified flow:
-
-        register
-          -> returns top-level userId + companyId
-          -> register JWT may be missing permission claims
-
-        login
-          -> returns JWT with permissions
-          -> this token is used by the seeder
+    Public registration creates a pending landlord application. A configured
+    platform administrator approves it through the public administration API,
+    after which the owner can log in and obtain effective permissions.
     """
     suffix = f"{RUN_ID}-{owner_index:02d}"
     email = f"owner-{suffix}@aqarios-test.local"
+
+    if not PLATFORM_ADMIN_EMAIL or not PLATFORM_ADMIN_PASSWORD:
+        raise SeederError(
+            "Public owner registration requires approval. Before seeding, "
+            "configure an existing test SYSTEM_ADMIN with "
+            "AQARIOS_PLATFORM_ADMIN_EMAIL and "
+            "AQARIOS_PLATFORM_ADMIN_PASSWORD. No registration was submitted."
+        )
+
+    admin_token = login_existing_account(
+        session, PLATFORM_ADMIN_EMAIL, PLATFORM_ADMIN_PASSWORD
+    )
+    admin_profile = call(
+        session,
+        "GET",
+        "/api/v1/auth/me",
+        token=admin_token,
+        expected=(200,),
+    )
+    system_roles = set((admin_profile or {}).get("systemRoles") or [])
+    admin_permissions = set((admin_profile or {}).get("permissions") or [])
+    if (
+        "SYSTEM_ADMIN" not in system_roles
+        or "platform.landlord_registrations.approve" not in admin_permissions
+    ):
+        raise SeederError(
+            "Configured platform account lacks SYSTEM_ADMIN and landlord "
+            "registration approval permission. No registration was submitted."
+        )
 
     register_body = {
         "fullName": f"AqariOS Load Owner {owner_index:02d}",
@@ -257,15 +304,20 @@ def register_and_login_owner(session, owner_index):
             f"Unexpected register response type: {type(reg).__name__}"
         )
 
-    user_id = reg.get("userId")
-    company_id = reg.get("companyId")
-
-    if not user_id or not company_id:
+    registration_id = reg.get("registrationId")
+    if not registration_id:
         raise SeederError(
-            "Register succeeded but runtime-verified top-level "
-            "`userId` / `companyId` are missing.\n"
+            "Register response does not contain registrationId. "
             f"Returned keys: {list(reg.keys())}"
         )
+
+    call(
+        session,
+        "POST",
+        f"/api/v1/platform/landlord-registrations/{registration_id}/approve",
+        token=admin_token,
+        expected=(200,),
+    )
 
     login_body = {
         "emailOrPhone": email,
@@ -287,11 +339,16 @@ def register_and_login_owner(session, owner_index):
 
     access_token = login.get("accessToken")
     user = login.get("user") or {}
+    user_id = user.get("id")
+    company_id = user.get("activeCompanyId")
     permissions = user.get("permissions") or []
     roles = user.get("companyRoles") or []
 
-    if not access_token:
-        raise SeederError("Login succeeded but accessToken is missing.")
+    if not access_token or not user_id or not company_id:
+        raise SeederError(
+            "Approved owner login is missing accessToken, user.id, or "
+            "user.activeCompanyId."
+        )
 
     required = {
         "properties.read",
@@ -328,6 +385,7 @@ def register_and_login_owner(session, owner_index):
         "access_token": access_token,
         "role_code": role_code,
         "permissions": permissions,
+        "registration_id": registration_id,
         "buildings": [],
         "tenants": [],
         "tenant_accounts": [],
@@ -1189,11 +1247,29 @@ def create_marketplace_listing(
 # Per-owner Seeder
 # ============================================================
 
-def seed_owner(session, owner_index):
+def seed_owner(
+    session, owner_index, owner=None, checkpoint=None, refresh_tokens=False
+):
     print(f"\n=== Owner {owner_index}/{OWNERS} ===")
 
-    owner = register_and_login_owner(session, owner_index)
+    if owner is None:
+        owner = register_and_login_owner(session, owner_index)
+    elif refresh_tokens:
+        owner["access_token"] = login_existing_account(
+            session, owner["email"], owner["password"]
+        )
+        for account in owner.get("tenant_accounts", []):
+            account["access_token"] = login_existing_account(
+                session, account["email"], account["password"]
+            )
+
     token = owner["access_token"]
+
+    def persist():
+        if checkpoint:
+            checkpoint()
+
+    persist()
 
     print(
         f"[OK] Registered + logged in: {owner['email']} "
@@ -1204,42 +1280,41 @@ def seed_owner(session, owner_index):
 
     # Buildings -> Floors -> Apartments
     for building_index in range(1, BUILDINGS_PER_OWNER + 1):
-        building = create_building(
-            session,
-            token,
-            owner_index,
-            building_index,
-        )
-
-        owner["buildings"].append(building)
+        if building_index <= len(owner["buildings"]):
+            building = owner["buildings"][building_index - 1]
+        else:
+            building = create_building(
+                session, token, owner_index, building_index
+            )
+            owner["buildings"].append(building)
+            persist()
 
         for floor_index in range(FLOORS_PER_BUILDING):
-            floor = create_floor(
-                session,
-                token,
-                building["id"],
-                floor_index,
-            )
-
-            building["floors"].append(floor)
+            if floor_index < len(building["floors"]):
+                floor = building["floors"][floor_index]
+            else:
+                floor = create_floor(
+                    session, token, building["id"], floor_index
+                )
+                building["floors"].append(floor)
+                persist()
 
             for apartment_index in range(
                 1,
                 APARTMENTS_PER_FLOOR + 1,
             ):
-                apartment = create_apartment(
-                    session,
-                    token,
-                    building["id"],
-                    floor["id"],
-                    owner_index,
-                    building_index,
-                    floor_index,
-                    apartment_index,
-                )
-
-                floor["apartments"].append(apartment)
-                building["apartments"].append(apartment)
+                if apartment_index <= len(floor["apartments"]):
+                    apartment = floor["apartments"][apartment_index - 1]
+                else:
+                    apartment = create_apartment(
+                        session, token, building["id"], floor["id"],
+                        owner_index, building_index, floor_index,
+                        apartment_index,
+                    )
+                    floor["apartments"].append(apartment)
+                    if not any(item["id"] == apartment["id"] for item in building["apartments"]):
+                        building["apartments"].append(apartment)
+                    persist()
                 all_apartments.append(apartment)
 
         print(
@@ -1249,7 +1324,7 @@ def seed_owner(session, owner_index):
         )
 
     # Tenants
-    for tenant_index in range(1, TENANTS_PER_OWNER + 1):
+    for tenant_index in range(len(owner["tenants"]) + 1, TENANTS_PER_OWNER + 1):
         tenant = create_tenant(
             session,
             token,
@@ -1258,6 +1333,7 @@ def seed_owner(session, owner_index):
         )
 
         owner["tenants"].append(tenant)
+        persist()
 
     print(f"[OK] Created {len(owner['tenants'])} tenants")
 
@@ -1267,7 +1343,12 @@ def seed_owner(session, owner_index):
         len(owner["tenants"]),
     )
 
+    activated_tenant_ids = {
+        account["tenant_id"] for account in owner["tenant_accounts"]
+    }
     for tenant in owner["tenants"][:account_count]:
+        if tenant["id"] in activated_tenant_ids:
+            continue
         account = provision_and_activate_tenant(
             session,
             token,
@@ -1275,6 +1356,7 @@ def seed_owner(session, owner_index):
         )
 
         owner["tenant_accounts"].append(account)
+        persist()
 
         print(
             f"[OK] Activated tenant account: {tenant['email']}"
@@ -1287,7 +1369,7 @@ def seed_owner(session, owner_index):
         len(owner["tenants"]),
     )
 
-    for lease_index in range(lease_count):
+    for lease_index in range(len(owner["leases"]), lease_count):
         lease = create_and_activate_lease(
             session,
             token,
@@ -1298,6 +1380,7 @@ def seed_owner(session, owner_index):
         )
 
         owner["leases"].append(lease)
+        persist()
 
     print(
         f"[OK] Activated {len(owner['leases'])} leases; "
@@ -1305,7 +1388,7 @@ def seed_owner(session, owner_index):
     )
 
     # Maintenance
-    for index in range(1, MAINTENANCE_PER_OWNER + 1):
+    for index in range(len(owner["maintenance_requests"]) + 1, MAINTENANCE_PER_OWNER + 1):
         if not all_apartments or not owner["tenants"]:
             break
 
@@ -1326,6 +1409,7 @@ def seed_owner(session, owner_index):
         )
 
         owner["maintenance_requests"].append(request_id)
+        persist()
 
     print(
         f"[OK] Created "
@@ -1333,7 +1417,7 @@ def seed_owner(session, owner_index):
     )
 
     # Expenses
-    for index in range(1, EXPENSES_PER_OWNER + 1):
+    for index in range(len(owner["expenses"]) + 1, EXPENSES_PER_OWNER + 1):
         if not owner["buildings"]:
             break
 
@@ -1349,6 +1433,7 @@ def seed_owner(session, owner_index):
         )
 
         owner["expenses"].append(expense_id)
+        persist()
 
     print(
         f"[OK] Created {len(owner['expenses'])} expenses"
@@ -1362,7 +1447,7 @@ def seed_owner(session, owner_index):
         len(free_apartments),
     )
 
-    for index in range(listing_count):
+    for index in range(len(owner["marketplace_listings"]), listing_count):
         listing_id = create_marketplace_listing(
             session,
             token,
@@ -1371,6 +1456,7 @@ def seed_owner(session, owner_index):
         )
 
         owner["marketplace_listings"].append(listing_id)
+        persist()
 
     print(
         f"[OK] Created "
@@ -1385,7 +1471,20 @@ def seed_owner(session, owner_index):
 # ============================================================
 
 def main():
-    print("AqariOS API Seeder - Runtime Verified v6")
+    global RUN_ID, OUT_FILE
+
+    resumed = False
+    result = None
+    if RESUME_FILE:
+        resume_path = Path(RESUME_FILE)
+        if not resume_path.is_file():
+            raise SeederError(f"Resume file does not exist: {resume_path}")
+        result = json.loads(resume_path.read_text(encoding="utf-8"))
+        RUN_ID = result.get("run_id") or RUN_ID
+        OUT_FILE = resume_path
+        resumed = True
+
+    print("AqariOS API Seeder - Runtime Verified v7")
     print(f"Base URL: {BASE_URL}")
     print(f"Run ID: {RUN_ID}")
     print()
@@ -1422,36 +1521,55 @@ def main():
             f"Cannot reach AqariOS API at {BASE_URL}: {exc}"
         ) from exc
 
-    result = {
-        "run_id": RUN_ID,
-        "base_url": BASE_URL,
-        "created_at_utc": datetime.now(
-            timezone.utc
-        ).isoformat(),
-        "config": {
-            "owners": OWNERS,
-            "buildings_per_owner": BUILDINGS_PER_OWNER,
-            "floors_per_building": FLOORS_PER_BUILDING,
-            "apartments_per_floor": APARTMENTS_PER_FLOOR,
-            "tenants_per_owner": TENANTS_PER_OWNER,
-            "leases_per_owner": LEASES_PER_OWNER,
-            "tenant_accounts_per_owner": TENANT_ACCOUNTS_PER_OWNER,
-            "maintenance_per_owner": MAINTENANCE_PER_OWNER,
-            "expenses_per_owner": EXPENSES_PER_OWNER,
-            "marketplace_per_owner": MARKETPLACE_PER_OWNER,
-        },
-        "owners": [],
-    }
+    if result is None:
+        result = {
+            "run_id": RUN_ID,
+            "base_url": BASE_URL,
+            "created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "status": "in_progress",
+            "config": {
+                "owners": OWNERS,
+                "buildings_per_owner": BUILDINGS_PER_OWNER,
+                "floors_per_building": FLOORS_PER_BUILDING,
+                "apartments_per_floor": APARTMENTS_PER_FLOOR,
+                "tenants_per_owner": TENANTS_PER_OWNER,
+                "leases_per_owner": LEASES_PER_OWNER,
+                "tenant_accounts_per_owner": TENANT_ACCOUNTS_PER_OWNER,
+                "maintenance_per_owner": MAINTENANCE_PER_OWNER,
+                "expenses_per_owner": EXPENSES_PER_OWNER,
+                "marketplace_per_owner": MARKETPLACE_PER_OWNER,
+            },
+            "owners": [],
+        }
+    else:
+        result["status"] = "in_progress"
+        result.pop("error", None)
+
+    save_progress(result)
 
     try:
         for owner_index in range(1, OWNERS + 1):
-            owner = seed_owner(session, owner_index)
-            result["owners"].append(owner)
+            if owner_index <= len(result["owners"]):
+                owner = result["owners"][owner_index - 1]
+            else:
+                owner = register_and_login_owner(session, owner_index)
+                result["owners"].append(owner)
+                save_progress(result)
+
+            seed_owner(
+                session,
+                owner_index,
+                owner=owner,
+                checkpoint=lambda: save_progress(result),
+                refresh_tokens=resumed,
+            )
 
             # Save after every completed company.
             save_progress(result)
 
     except Exception as exc:
+        result["status"] = "failed"
+        result["error"] = str(exc)[:2000]
         save_progress(result)
         print()
         print("[FAILED]")
@@ -1459,6 +1577,11 @@ def main():
         print()
         print(f"Partial progress saved to: {OUT_FILE}")
         raise
+
+    result["status"] = "complete"
+    result["completed_at_utc"] = datetime.now(timezone.utc).isoformat()
+    result["resumed"] = resumed
+    save_progress(result)
 
     print()
     print("=== DONE ===")

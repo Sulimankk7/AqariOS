@@ -1,0 +1,1416 @@
+{
+  "run_id": "20260908162516",
+  "base_url": "http://localhost:5235",
+  "created_at_utc": "2026-09-08T16:25:18.639504+00:00",
+  "status": "complete",
+  "config": {
+    "owners": 2,
+    "buildings_per_owner": 2,
+    "floors_per_building": 3,
+    "apartments_per_floor": 5,
+    "tenants_per_owner": 10,
+    "leases_per_owner": 10,
+    "tenant_accounts_per_owner": 2,
+    "maintenance_per_owner": 10,
+    "expenses_per_owner": 5,
+    "marketplace_per_owner": 5
+  },
+  "owners": [
+    {
+      "email": "owner-20260908162516-01@aqarios-test.local",
+      "password": "OwnerTest123!",
+      "user_id": "c626cc17-6197-422e-921a-d8dd12dbfd97",
+      "company_id": "01a081d6-9f7c-7958-a6e6-b441c23f3f16",
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNjI2Y2MxNy02MTk3LTQyMmUtOTIxYS1kOGRkMTJkYmZkOTciLCJuYW1laWQiOiJjNjI2Y2MxNy02MTk3LTQyMmUtOTIxYS1kOGRkMTJkYmZkOTciLCJqdGkiOiIxNjczZWY5Mi05Yjg5LTRkZTAtOWMzNS1mYmUxODM5NDdmYTUiLCJjb21wYW55X2lkIjoiMDFhMDgxZDYtOWY3Yy03OTU4LWE2ZTYtYjQ0MWMyM2YzZjE2Iiwicm9sZSI6IkNPTVBBTllfQURNSU4iLCJyb2xlcyI6IkNPTVBBTllfQURNSU4iLCJwZXJtaXNzaW9ucyI6WyJjaGVxdWVzLnJlYWQiLCJjb21wYW55Lm1hbmFnZSIsImNvbnRyYWN0cy5hcHByb3ZlIiwiY29udHJhY3RzLmNyZWF0ZSIsImRvY3VtZW50cy5tYW5hZ2VfY2F0ZWdvcmllcyIsImRvY3VtZW50cy51cGxvYWQiLCJkb2N1bWVudHMudmlld19jb25maWRlbnRpYWwiLCJleHBlbnNlcy5hcHByb3ZlIiwiZXhwZW5zZXMuY3JlYXRlIiwibWFpbnRlbmFuY2UuY29tbWVudCIsIm1haW50ZW5hbmNlLmNyZWF0ZSIsIm1haW50ZW5hbmNlLnVwZGF0ZV9zdGF0dXMiLCJtYXJrZXRwbGFjZS5wdWJsaXNoIiwibm90aWZpY2F0aW9ucy5tYW5hZ2VfdGVtcGxhdGVzIiwibm90aWZpY2F0aW9ucy5zZW5kIiwibm90aWZpY2F0aW9ucy52aWV3X2FsbCIsInBheW1lbnRzLmFwcHJvdmUiLCJwYXltZW50cy5yZWFkIiwicHJvcGVydGllcy5jcmVhdGUiLCJwcm9wZXJ0aWVzLmRlbGV0ZSIsInByb3BlcnRpZXMubWFuYWdlIiwicHJvcGVydGllcy5yZWFkIiwicHJvcGVydGllcy51cGRhdGUiLCJyZWNlaXB0cy5pc3N1ZSIsInJlY2VpcHRzLnJlYWQiLCJyZXBvcnRzLmV4cG9ydCIsInN1YnNjcmlwdGlvbnMub3duLnJlYWQiLCJzdWJzY3JpcHRpb25zLnBsYW5fY2hhbmdlX3JlcXVlc3RzLm93bi5jYW5jZWwiLCJzdWJzY3JpcHRpb25zLnBsYW5fY2hhbmdlX3JlcXVlc3RzLm93bi5jcmVhdGUiLCJzdWJzY3JpcHRpb25zLnBsYW5fY2hhbmdlX3JlcXVlc3RzLm93bi5yZWFkIiwic3Vic2NyaXB0aW9ucy5wbGFucy52aWV3IiwidGVuYW50LnBvcnRhbC5hY2Nlc3MiXSwibmJmIjoxNzg4ODg0NzIzLCJleHAiOjE3ODg4OTE5MjMsImlhdCI6MTc4ODg4NDcyMywiaXNzIjoiUHJvcGVydHlPUyIsImF1ZCI6IlByb3BlcnR5T1MtQ2xpZW50cyJ9.RbHCw5dzm76IED8iP6WjmIfTl_5AXm5p08wWLbD8YOk",
+      "role_code": "COMPANY_ADMIN",
+      "permissions": [
+        "cheques.read",
+        "company.manage",
+        "contracts.approve",
+        "contracts.create",
+        "documents.manage_categories",
+        "documents.upload",
+        "documents.view_confidential",
+        "expenses.approve",
+        "expenses.create",
+        "maintenance.comment",
+        "maintenance.create",
+        "maintenance.update_status",
+        "marketplace.publish",
+        "notifications.manage_templates",
+        "notifications.send",
+        "notifications.view_all",
+        "payments.approve",
+        "payments.read",
+        "properties.create",
+        "properties.delete",
+        "properties.manage",
+        "properties.read",
+        "properties.update",
+        "receipts.issue",
+        "receipts.read",
+        "reports.export",
+        "subscriptions.own.read",
+        "subscriptions.plan_change_requests.own.cancel",
+        "subscriptions.plan_change_requests.own.create",
+        "subscriptions.plan_change_requests.own.read",
+        "subscriptions.plans.view",
+        "tenant.portal.access"
+      ],
+      "registration_id": "01a081d6-9fe0-7b05-8dde-24913130e025",
+      "buildings": [
+        {
+          "id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+          "name": "Load Building 01-01",
+          "internal_code": "LT-08162516-01-01",
+          "floors": [
+            {
+              "id": "01a081d6-b589-7f1c-9232-01cc80ec35c0",
+              "floor_number": 0,
+              "apartments": [
+                {
+                  "id": "01a081d6-bc49-7668-acb3-ce6bdbb7e6fd",
+                  "unit_number": "LT-01010001",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+                },
+                {
+                  "id": "01a081d6-c28d-7d5c-80d4-b2a5af9020d6",
+                  "unit_number": "LT-01010002",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+                },
+                {
+                  "id": "01a081d6-c8a0-7d9a-8d56-20a58382d6f1",
+                  "unit_number": "LT-01010003",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+                },
+                {
+                  "id": "01a081d6-ceab-7f65-a7d7-fcc38d19a86d",
+                  "unit_number": "LT-01010004",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+                },
+                {
+                  "id": "01a081d6-d4b2-750e-9020-ca4650904670",
+                  "unit_number": "LT-01010005",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+                }
+              ]
+            },
+            {
+              "id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b",
+              "floor_number": 1,
+              "apartments": [
+                {
+                  "id": "01a081d6-e0c6-7aa2-bd18-af17537bdd6f",
+                  "unit_number": "LT-01010101",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+                },
+                {
+                  "id": "01a081d6-e6cd-73d9-b4ce-ff7f0903b788",
+                  "unit_number": "LT-01010102",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+                },
+                {
+                  "id": "01a081d6-ecce-74bb-a79c-70a75bf6ae4d",
+                  "unit_number": "LT-01010103",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+                },
+                {
+                  "id": "01a081d6-f2d3-77d2-9d2c-b4cfa64ff525",
+                  "unit_number": "LT-01010104",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+                },
+                {
+                  "id": "01a081d6-f8d7-7d1f-8ec3-2ee7e9ec1ad4",
+                  "unit_number": "LT-01010105",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+                }
+              ]
+            },
+            {
+              "id": "01a081d6-fedb-7331-975e-e85bd6196742",
+              "floor_number": 2,
+              "apartments": [
+                {
+                  "id": "01a081d7-04df-7ded-927b-94a7bb535baf",
+                  "unit_number": "LT-01010201",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+                },
+                {
+                  "id": "01a081d7-0ae5-7682-a320-3ec74fdafcbb",
+                  "unit_number": "LT-01010202",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+                },
+                {
+                  "id": "01a081d7-10e5-7d40-897b-b6f299fd2397",
+                  "unit_number": "LT-01010203",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+                },
+                {
+                  "id": "01a081d7-16f1-7744-a296-063e2122a3fa",
+                  "unit_number": "LT-01010204",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+                },
+                {
+                  "id": "01a081d7-1cfd-7853-94c0-0e8908ab0608",
+                  "unit_number": "LT-01010205",
+                  "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+                  "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+                }
+              ]
+            }
+          ],
+          "apartments": [
+            {
+              "id": "01a081d6-bc49-7668-acb3-ce6bdbb7e6fd",
+              "unit_number": "LT-01010001",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+            },
+            {
+              "id": "01a081d6-c28d-7d5c-80d4-b2a5af9020d6",
+              "unit_number": "LT-01010002",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+            },
+            {
+              "id": "01a081d6-c8a0-7d9a-8d56-20a58382d6f1",
+              "unit_number": "LT-01010003",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+            },
+            {
+              "id": "01a081d6-ceab-7f65-a7d7-fcc38d19a86d",
+              "unit_number": "LT-01010004",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+            },
+            {
+              "id": "01a081d6-d4b2-750e-9020-ca4650904670",
+              "unit_number": "LT-01010005",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-b589-7f1c-9232-01cc80ec35c0"
+            },
+            {
+              "id": "01a081d6-e0c6-7aa2-bd18-af17537bdd6f",
+              "unit_number": "LT-01010101",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+            },
+            {
+              "id": "01a081d6-e6cd-73d9-b4ce-ff7f0903b788",
+              "unit_number": "LT-01010102",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+            },
+            {
+              "id": "01a081d6-ecce-74bb-a79c-70a75bf6ae4d",
+              "unit_number": "LT-01010103",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+            },
+            {
+              "id": "01a081d6-f2d3-77d2-9d2c-b4cfa64ff525",
+              "unit_number": "LT-01010104",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+            },
+            {
+              "id": "01a081d6-f8d7-7d1f-8ec3-2ee7e9ec1ad4",
+              "unit_number": "LT-01010105",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-dabe-79f3-bc19-97a022aeaf2b"
+            },
+            {
+              "id": "01a081d7-04df-7ded-927b-94a7bb535baf",
+              "unit_number": "LT-01010201",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+            },
+            {
+              "id": "01a081d7-0ae5-7682-a320-3ec74fdafcbb",
+              "unit_number": "LT-01010202",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+            },
+            {
+              "id": "01a081d7-10e5-7d40-897b-b6f299fd2397",
+              "unit_number": "LT-01010203",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+            },
+            {
+              "id": "01a081d7-16f1-7744-a296-063e2122a3fa",
+              "unit_number": "LT-01010204",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+            },
+            {
+              "id": "01a081d7-1cfd-7853-94c0-0e8908ab0608",
+              "unit_number": "LT-01010205",
+              "building_id": "01a081d6-ae75-737e-bc9c-9431bdd1c9c8",
+              "floor_id": "01a081d6-fedb-7331-975e-e85bd6196742"
+            }
+          ]
+        },
+        {
+          "id": "01a081d7-2300-7087-9412-bdc418bea71e",
+          "name": "Load Building 01-02",
+          "internal_code": "LT-08162516-01-02",
+          "floors": [
+            {
+              "id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a",
+              "floor_number": 0,
+              "apartments": [
+                {
+                  "id": "01a081d7-2f16-7ea1-982a-210cd68acdd1",
+                  "unit_number": "LT-01020001",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+                },
+                {
+                  "id": "01a081d7-351e-7976-abbb-6e4e8604f1c5",
+                  "unit_number": "LT-01020002",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+                },
+                {
+                  "id": "01a081d7-3b30-79d9-9da0-e5f23f9a3f1c",
+                  "unit_number": "LT-01020003",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+                },
+                {
+                  "id": "01a081d7-4141-7128-b4fe-141e43e1f8d3",
+                  "unit_number": "LT-01020004",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+                },
+                {
+                  "id": "01a081d7-474e-75fb-a158-03dd1f67e8ca",
+                  "unit_number": "LT-01020005",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+                }
+              ]
+            },
+            {
+              "id": "01a081d7-4d5a-776c-b6c0-52ea533727f9",
+              "floor_number": 1,
+              "apartments": [
+                {
+                  "id": "01a081d7-5367-7095-be14-afd29b7b7600",
+                  "unit_number": "LT-01020101",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+                },
+                {
+                  "id": "01a081d7-596e-7af4-91f8-df93a88ab728",
+                  "unit_number": "LT-01020102",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+                },
+                {
+                  "id": "01a081d7-5f6f-7d2a-8e41-1dd48390b955",
+                  "unit_number": "LT-01020103",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+                },
+                {
+                  "id": "01a081d7-6576-7f44-9f6b-f63d1b92835d",
+                  "unit_number": "LT-01020104",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+                },
+                {
+                  "id": "01a081d7-6b84-78eb-b332-2fe733d64094",
+                  "unit_number": "LT-01020105",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+                }
+              ]
+            },
+            {
+              "id": "01a081d7-7184-7b7a-a530-87b0cf938ffc",
+              "floor_number": 2,
+              "apartments": [
+                {
+                  "id": "01a081d7-7799-7dcc-9946-1007b578a04e",
+                  "unit_number": "LT-01020201",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+                },
+                {
+                  "id": "01a081d7-7da2-72e8-939e-f8d6c0c351cf",
+                  "unit_number": "LT-01020202",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+                },
+                {
+                  "id": "01a081d7-83af-7578-8980-6e2140903a05",
+                  "unit_number": "LT-01020203",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+                },
+                {
+                  "id": "01a081d7-89b4-7259-8d30-c1739a65acd7",
+                  "unit_number": "LT-01020204",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+                },
+                {
+                  "id": "01a081d7-8fc0-7915-85fa-9977543aa491",
+                  "unit_number": "LT-01020205",
+                  "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+                  "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+                }
+              ]
+            }
+          ],
+          "apartments": [
+            {
+              "id": "01a081d7-2f16-7ea1-982a-210cd68acdd1",
+              "unit_number": "LT-01020001",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+            },
+            {
+              "id": "01a081d7-351e-7976-abbb-6e4e8604f1c5",
+              "unit_number": "LT-01020002",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+            },
+            {
+              "id": "01a081d7-3b30-79d9-9da0-e5f23f9a3f1c",
+              "unit_number": "LT-01020003",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+            },
+            {
+              "id": "01a081d7-4141-7128-b4fe-141e43e1f8d3",
+              "unit_number": "LT-01020004",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+            },
+            {
+              "id": "01a081d7-474e-75fb-a158-03dd1f67e8ca",
+              "unit_number": "LT-01020005",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-290c-7a3a-bbc3-6bc84a95b32a"
+            },
+            {
+              "id": "01a081d7-5367-7095-be14-afd29b7b7600",
+              "unit_number": "LT-01020101",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+            },
+            {
+              "id": "01a081d7-596e-7af4-91f8-df93a88ab728",
+              "unit_number": "LT-01020102",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+            },
+            {
+              "id": "01a081d7-5f6f-7d2a-8e41-1dd48390b955",
+              "unit_number": "LT-01020103",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+            },
+            {
+              "id": "01a081d7-6576-7f44-9f6b-f63d1b92835d",
+              "unit_number": "LT-01020104",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+            },
+            {
+              "id": "01a081d7-6b84-78eb-b332-2fe733d64094",
+              "unit_number": "LT-01020105",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-4d5a-776c-b6c0-52ea533727f9"
+            },
+            {
+              "id": "01a081d7-7799-7dcc-9946-1007b578a04e",
+              "unit_number": "LT-01020201",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+            },
+            {
+              "id": "01a081d7-7da2-72e8-939e-f8d6c0c351cf",
+              "unit_number": "LT-01020202",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+            },
+            {
+              "id": "01a081d7-83af-7578-8980-6e2140903a05",
+              "unit_number": "LT-01020203",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+            },
+            {
+              "id": "01a081d7-89b4-7259-8d30-c1739a65acd7",
+              "unit_number": "LT-01020204",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+            },
+            {
+              "id": "01a081d7-8fc0-7915-85fa-9977543aa491",
+              "unit_number": "LT-01020205",
+              "building_id": "01a081d7-2300-7087-9412-bdc418bea71e",
+              "floor_id": "01a081d7-7184-7b7a-a530-87b0cf938ffc"
+            }
+          ]
+        }
+      ],
+      "tenants": [
+        {
+          "id": "01a081d7-962f-7122-9e62-f6d3aa2e052a",
+          "email": "tenant-20260908162516-01-001@aqarios-test.local",
+          "phone": "+962792315803",
+          "name": "Load Tenant 01-001"
+        },
+        {
+          "id": "01a081d7-999d-7a3e-a6ed-d8ac1e66b165",
+          "email": "tenant-20260908162516-01-002@aqarios-test.local",
+          "phone": "+962795727305",
+          "name": "Load Tenant 01-002"
+        },
+        {
+          "id": "01a081d7-9cae-7436-8039-6a12d97ae1d5",
+          "email": "tenant-20260908162516-01-003@aqarios-test.local",
+          "phone": "+962796170161",
+          "name": "Load Tenant 01-003"
+        },
+        {
+          "id": "01a081d7-9fb0-74d2-b5d9-c15df8d16a27",
+          "email": "tenant-20260908162516-01-004@aqarios-test.local",
+          "phone": "+962795799714",
+          "name": "Load Tenant 01-004"
+        },
+        {
+          "id": "01a081d7-a2b4-76ca-a1a4-9282264ffe06",
+          "email": "tenant-20260908162516-01-005@aqarios-test.local",
+          "phone": "+962792621293",
+          "name": "Load Tenant 01-005"
+        },
+        {
+          "id": "01a081d7-a5ba-76ec-98db-fb16d8780099",
+          "email": "tenant-20260908162516-01-006@aqarios-test.local",
+          "phone": "+962798793247",
+          "name": "Load Tenant 01-006"
+        },
+        {
+          "id": "01a081d7-a8c1-7560-b221-9a1e23f97c37",
+          "email": "tenant-20260908162516-01-007@aqarios-test.local",
+          "phone": "+962799111989",
+          "name": "Load Tenant 01-007"
+        },
+        {
+          "id": "01a081d7-abc5-7b9e-8222-c662950852a0",
+          "email": "tenant-20260908162516-01-008@aqarios-test.local",
+          "phone": "+962796958915",
+          "name": "Load Tenant 01-008"
+        },
+        {
+          "id": "01a081d7-aec9-72d1-8495-4910bdb5510a",
+          "email": "tenant-20260908162516-01-009@aqarios-test.local",
+          "phone": "+962797367903",
+          "name": "Load Tenant 01-009"
+        },
+        {
+          "id": "01a081d7-b1cd-7819-b142-af0ed5c35df0",
+          "email": "tenant-20260908162516-01-010@aqarios-test.local",
+          "phone": "+962798015555",
+          "name": "Load Tenant 01-010"
+        }
+      ],
+      "tenant_accounts": [
+        {
+          "tenant_id": "01a081d7-962f-7122-9e62-f6d3aa2e052a",
+          "user_id": "01a081d7-b53e-755b-bf7e-0a96b0d52109",
+          "company_id": "01a081d6-9f7c-7958-a6e6-b441c23f3f16",
+          "email": "tenant-20260908162516-01-001@aqarios-test.local",
+          "password": "TenantTest123!",
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMWEwODFkNy1iNTNlLTc1NWItYmY3ZS0wYTk2YjBkNTIxMDkiLCJuYW1laWQiOiIwMWEwODFkNy1iNTNlLTc1NWItYmY3ZS0wYTk2YjBkNTIxMDkiLCJqdGkiOiJhZWE2NWU4YS1jM2E4LTQ5MGQtYWY3MC1kNGE1YjdmYzM4Y2QiLCJjb21wYW55X2lkIjoiMDFhMDgxZDYtOWY3Yy03OTU4LWE2ZTYtYjQ0MWMyM2YzZjE2Iiwicm9sZSI6IlRFTkFOVCIsInJvbGVzIjoiVEVOQU5UIiwicGVybWlzc2lvbnMiOiJ0ZW5hbnQucG9ydGFsLmFjY2VzcyIsIm5iZiI6MTc4ODg4NDc5NCwiZXhwIjoxNzg4ODkxOTk0LCJpYXQiOjE3ODg4ODQ3OTQsImlzcyI6IlByb3BlcnR5T1MiLCJhdWQiOiJQcm9wZXJ0eU9TLUNsaWVudHMifQ.XFunvctP9crE3m-O4N4Io1ajuznMQW4T3AAvqQhk7Mg"
+        },
+        {
+          "tenant_id": "01a081d7-999d-7a3e-a6ed-d8ac1e66b165",
+          "user_id": "01a081d7-ef86-7663-959f-dbe2abca0215",
+          "company_id": "01a081d6-9f7c-7958-a6e6-b441c23f3f16",
+          "email": "tenant-20260908162516-01-002@aqarios-test.local",
+          "password": "TenantTest123!",
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMWEwODFkNy1lZjg2LTc2NjMtOTU5Zi1kYmUyYWJjYTAyMTUiLCJuYW1laWQiOiIwMWEwODFkNy1lZjg2LTc2NjMtOTU5Zi1kYmUyYWJjYTAyMTUiLCJqdGkiOiJhMTkzODYyMS02YjlhLTQ1NTctYmM3Zi1mZTFiZjc2MzZjZjIiLCJjb21wYW55X2lkIjoiMDFhMDgxZDYtOWY3Yy03OTU4LWE2ZTYtYjQ0MWMyM2YzZjE2Iiwicm9sZSI6IlRFTkFOVCIsInJvbGVzIjoiVEVOQU5UIiwicGVybWlzc2lvbnMiOiJ0ZW5hbnQucG9ydGFsLmFjY2VzcyIsIm5iZiI6MTc4ODg4NDgwOSwiZXhwIjoxNzg4ODkyMDA5LCJpYXQiOjE3ODg4ODQ4MDksImlzcyI6IlByb3BlcnR5T1MiLCJhdWQiOiJQcm9wZXJ0eU9TLUNsaWVudHMifQ.Ws49FgyrPVbPe-wbA5l4Eug-42lrMXCmuu-jx_QN1nA"
+        }
+      ],
+      "leases": [
+        {
+          "id": "01a081d8-2a24-795d-b5d1-dd314710614e",
+          "contract_number": "LT-CNT-08162516-01-0001",
+          "apartment_id": "01a081d6-bc49-7668-acb3-ce6bdbb7e6fd",
+          "tenant_id": "01a081d7-962f-7122-9e62-f6d3aa2e052a",
+          "signed_document": {
+            "file_id": "01a081d8-2e45-7699-8e90-2c55f5017a9b",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-2a24-795d-b5d1-dd314710614e/01a081d8-2e45-7699-8e90-2c55f5017a9b-signed-lease-08162516-01-0001.pdf",
+            "document_id": "01a081d8-37d0-7b8a-845a-bc07bd58aa05",
+            "filename": "signed-lease-08162516-01-0001.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-3e58-7b33-82d1-820ff35a3e9c",
+          "contract_number": "LT-CNT-08162516-01-0002",
+          "apartment_id": "01a081d6-c28d-7d5c-80d4-b2a5af9020d6",
+          "tenant_id": "01a081d7-999d-7a3e-a6ed-d8ac1e66b165",
+          "signed_document": {
+            "file_id": "01a081d8-415f-78eb-993b-0b26cafcbd3a",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-3e58-7b33-82d1-820ff35a3e9c/01a081d8-415f-78eb-993b-0b26cafcbd3a-signed-lease-08162516-01-0002.pdf",
+            "document_id": "01a081d8-4a54-7255-a183-6cd168ef7e77",
+            "filename": "signed-lease-08162516-01-0002.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-5065-77d3-a631-e981c29c2da4",
+          "contract_number": "LT-CNT-08162516-01-0003",
+          "apartment_id": "01a081d6-c8a0-7d9a-8d56-20a58382d6f1",
+          "tenant_id": "01a081d7-9cae-7436-8039-6a12d97ae1d5",
+          "signed_document": {
+            "file_id": "01a081d8-5369-7c67-acf4-0f59d1525a19",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-5065-77d3-a631-e981c29c2da4/01a081d8-5369-7c67-acf4-0f59d1525a19-signed-lease-08162516-01-0003.pdf",
+            "document_id": "01a081d8-5c65-71a2-a460-449646e43590",
+            "filename": "signed-lease-08162516-01-0003.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-6281-7d3c-88ee-d4f51bb3369c",
+          "contract_number": "LT-CNT-08162516-01-0004",
+          "apartment_id": "01a081d6-ceab-7f65-a7d7-fcc38d19a86d",
+          "tenant_id": "01a081d7-9fb0-74d2-b5d9-c15df8d16a27",
+          "signed_document": {
+            "file_id": "01a081d8-6585-7f5e-aec1-eceb4c114897",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-6281-7d3c-88ee-d4f51bb3369c/01a081d8-6585-7f5e-aec1-eceb4c114897-signed-lease-08162516-01-0004.pdf",
+            "document_id": "01a081d8-6e79-77a7-8bd7-6258c7b4e6f4",
+            "filename": "signed-lease-08162516-01-0004.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-7484-7cb4-8887-c958008ad352",
+          "contract_number": "LT-CNT-08162516-01-0005",
+          "apartment_id": "01a081d6-d4b2-750e-9020-ca4650904670",
+          "tenant_id": "01a081d7-a2b4-76ca-a1a4-9282264ffe06",
+          "signed_document": {
+            "file_id": "01a081d8-7795-7e20-a321-8848e9a18a1a",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-7484-7cb4-8887-c958008ad352/01a081d8-7795-7e20-a321-8848e9a18a1a-signed-lease-08162516-01-0005.pdf",
+            "document_id": "01a081d8-8095-7faa-a907-916d644a1959",
+            "filename": "signed-lease-08162516-01-0005.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-86b1-787c-a0c5-440b124eee60",
+          "contract_number": "LT-CNT-08162516-01-0006",
+          "apartment_id": "01a081d6-e0c6-7aa2-bd18-af17537bdd6f",
+          "tenant_id": "01a081d7-a5ba-76ec-98db-fb16d8780099",
+          "signed_document": {
+            "file_id": "01a081d8-89b3-73cf-9838-c9875e0d0e0e",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-86b1-787c-a0c5-440b124eee60/01a081d8-89b3-73cf-9838-c9875e0d0e0e-signed-lease-08162516-01-0006.pdf",
+            "document_id": "01a081d8-929f-7b9a-925b-50ad75217cb4",
+            "filename": "signed-lease-08162516-01-0006.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-98aa-7244-963f-0b2d66c7d393",
+          "contract_number": "LT-CNT-08162516-01-0007",
+          "apartment_id": "01a081d6-e6cd-73d9-b4ce-ff7f0903b788",
+          "tenant_id": "01a081d7-a8c1-7560-b221-9a1e23f97c37",
+          "signed_document": {
+            "file_id": "01a081d8-9ba8-76f1-bf14-3628b0a7aa5e",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-98aa-7244-963f-0b2d66c7d393/01a081d8-9ba8-76f1-bf14-3628b0a7aa5e-signed-lease-08162516-01-0007.pdf",
+            "document_id": "01a081d8-a493-7a0b-aab0-01bd57b1e251",
+            "filename": "signed-lease-08162516-01-0007.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-aa9e-7715-b6d4-ac5c844d43a9",
+          "contract_number": "LT-CNT-08162516-01-0008",
+          "apartment_id": "01a081d6-ecce-74bb-a79c-70a75bf6ae4d",
+          "tenant_id": "01a081d7-abc5-7b9e-8222-c662950852a0",
+          "signed_document": {
+            "file_id": "01a081d8-ada3-7609-82c6-e260758acc61",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-aa9e-7715-b6d4-ac5c844d43a9/01a081d8-ada3-7609-82c6-e260758acc61-signed-lease-08162516-01-0008.pdf",
+            "document_id": "01a081d8-b68c-73f6-abda-309d57ea2334",
+            "filename": "signed-lease-08162516-01-0008.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-bc93-7f4d-842c-8200429ef60f",
+          "contract_number": "LT-CNT-08162516-01-0009",
+          "apartment_id": "01a081d6-f2d3-77d2-9d2c-b4cfa64ff525",
+          "tenant_id": "01a081d7-aec9-72d1-8495-4910bdb5510a",
+          "signed_document": {
+            "file_id": "01a081d8-bf99-7a3b-b8a0-1252e15b452e",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-bc93-7f4d-842c-8200429ef60f/01a081d8-bf99-7a3b-b8a0-1252e15b452e-signed-lease-08162516-01-0009.pdf",
+            "document_id": "01a081d8-c885-76ea-b95e-0097bf907a9d",
+            "filename": "signed-lease-08162516-01-0009.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081d8-ce8d-7724-b596-8a3aed0594c6",
+          "contract_number": "LT-CNT-08162516-01-0010",
+          "apartment_id": "01a081d6-f8d7-7d1f-8ec3-2ee7e9ec1ad4",
+          "tenant_id": "01a081d7-b1cd-7819-b142-af0ed5c35df0",
+          "signed_document": {
+            "file_id": "01a081d8-d18c-74a4-8a26-056ebcea2526",
+            "storage_key": "01a081d6-9f7c-7958-a6e6-b441c23f3f16/Leasing/01a081d8-ce8d-7724-b596-8a3aed0594c6/01a081d8-d18c-74a4-8a26-056ebcea2526-signed-lease-08162516-01-0010.pdf",
+            "document_id": "01a081d8-daaa-7a2f-991f-7fbfb9b90edc",
+            "filename": "signed-lease-08162516-01-0010.pdf",
+            "document_type": "SignedContract"
+          }
+        }
+      ],
+      "maintenance_requests": [
+        "01a081d8-e0ec-7021-bc48-c7bc0e10f3c4",
+        "01a081d8-e471-7020-886a-bc491e059abb",
+        "01a081d8-e77d-77ab-ad6c-c98481357395",
+        "01a081d8-ea8d-70f2-befb-8fc914141a9d",
+        "01a081d8-ed98-717c-9dce-b830f7ac60fa",
+        "01a081d8-f0a5-7096-84db-2b674d097124",
+        "01a081d8-f3ab-7b59-8403-5028507897ba",
+        "01a081d8-f6b2-7e5d-8eef-c893ab9fa872",
+        "01a081d8-f9ba-7c7a-bb02-f30542aca039",
+        "01a081d8-fcbf-72d0-811d-264e891755fa"
+      ],
+      "expenses": [
+        "01a081d8-ffeb-7798-a403-5686991e5827",
+        "01a081d9-0348-7f5c-a076-e19327293865",
+        "01a081d9-0653-7452-bcff-383aa325080d",
+        "01a081d9-0957-7563-806f-4007a92837c0",
+        "01a081d9-0c5e-7315-b19b-afde85fd3a28"
+      ],
+      "marketplace_listings": [
+        "01a081d9-0f92-7e64-b3e4-258612810ea5",
+        "01a081d9-12e9-727b-adeb-c9faebbb59c0",
+        "01a081d9-15f1-795a-ba4f-7477e307056d",
+        "01a081d9-18f7-7573-9561-917a6fe15a9e",
+        "01a081d9-1c0c-712d-ae14-749e46b6cf0b"
+      ]
+    },
+    {
+      "email": "owner-20260908162516-02@aqarios-test.local",
+      "password": "OwnerTest123!",
+      "user_id": "191c2d0e-3aa3-4ed6-aea2-1a7ff56ccb96",
+      "company_id": "01a081d9-2804-767e-b608-40c1a77f11d0",
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxOTFjMmQwZS0zYWEzLTRlZDYtYWVhMi0xYTdmZjU2Y2NiOTYiLCJuYW1laWQiOiIxOTFjMmQwZS0zYWEzLTRlZDYtYWVhMi0xYTdmZjU2Y2NiOTYiLCJqdGkiOiIxMjg4YTk5NC03YzUxLTRiMzUtYWFiMy1hY2ZmZDA5MzFkZGYiLCJjb21wYW55X2lkIjoiMDFhMDgxZDktMjgwNC03NjdlLWI2MDgtNDBjMWE3N2YxMWQwIiwicm9sZSI6IkNPTVBBTllfQURNSU4iLCJyb2xlcyI6IkNPTVBBTllfQURNSU4iLCJwZXJtaXNzaW9ucyI6WyJjaGVxdWVzLnJlYWQiLCJjb21wYW55Lm1hbmFnZSIsImNvbnRyYWN0cy5hcHByb3ZlIiwiY29udHJhY3RzLmNyZWF0ZSIsImRvY3VtZW50cy5tYW5hZ2VfY2F0ZWdvcmllcyIsImRvY3VtZW50cy51cGxvYWQiLCJkb2N1bWVudHMudmlld19jb25maWRlbnRpYWwiLCJleHBlbnNlcy5hcHByb3ZlIiwiZXhwZW5zZXMuY3JlYXRlIiwibWFpbnRlbmFuY2UuY29tbWVudCIsIm1haW50ZW5hbmNlLmNyZWF0ZSIsIm1haW50ZW5hbmNlLnVwZGF0ZV9zdGF0dXMiLCJtYXJrZXRwbGFjZS5wdWJsaXNoIiwibm90aWZpY2F0aW9ucy5tYW5hZ2VfdGVtcGxhdGVzIiwibm90aWZpY2F0aW9ucy5zZW5kIiwibm90aWZpY2F0aW9ucy52aWV3X2FsbCIsInBheW1lbnRzLmFwcHJvdmUiLCJwYXltZW50cy5yZWFkIiwicHJvcGVydGllcy5jcmVhdGUiLCJwcm9wZXJ0aWVzLmRlbGV0ZSIsInByb3BlcnRpZXMubWFuYWdlIiwicHJvcGVydGllcy5yZWFkIiwicHJvcGVydGllcy51cGRhdGUiLCJyZWNlaXB0cy5pc3N1ZSIsInJlY2VpcHRzLnJlYWQiLCJyZXBvcnRzLmV4cG9ydCIsInN1YnNjcmlwdGlvbnMub3duLnJlYWQiLCJzdWJzY3JpcHRpb25zLnBsYW5fY2hhbmdlX3JlcXVlc3RzLm93bi5jYW5jZWwiLCJzdWJzY3JpcHRpb25zLnBsYW5fY2hhbmdlX3JlcXVlc3RzLm93bi5jcmVhdGUiLCJzdWJzY3JpcHRpb25zLnBsYW5fY2hhbmdlX3JlcXVlc3RzLm93bi5yZWFkIiwic3Vic2NyaXB0aW9ucy5wbGFucy52aWV3IiwidGVuYW50LnBvcnRhbC5hY2Nlc3MiXSwibmJmIjoxNzg4ODg0ODg5LCJleHAiOjE3ODg4OTIwODksImlhdCI6MTc4ODg4NDg4OSwiaXNzIjoiUHJvcGVydHlPUyIsImF1ZCI6IlByb3BlcnR5T1MtQ2xpZW50cyJ9.EnDjnBw52zdHHcsow2LNNzM3sYkSusMVIdGeAB2mj3U",
+      "role_code": "COMPANY_ADMIN",
+      "permissions": [
+        "cheques.read",
+        "company.manage",
+        "contracts.approve",
+        "contracts.create",
+        "documents.manage_categories",
+        "documents.upload",
+        "documents.view_confidential",
+        "expenses.approve",
+        "expenses.create",
+        "maintenance.comment",
+        "maintenance.create",
+        "maintenance.update_status",
+        "marketplace.publish",
+        "notifications.manage_templates",
+        "notifications.send",
+        "notifications.view_all",
+        "payments.approve",
+        "payments.read",
+        "properties.create",
+        "properties.delete",
+        "properties.manage",
+        "properties.read",
+        "properties.update",
+        "receipts.issue",
+        "receipts.read",
+        "reports.export",
+        "subscriptions.own.read",
+        "subscriptions.plan_change_requests.own.cancel",
+        "subscriptions.plan_change_requests.own.create",
+        "subscriptions.plan_change_requests.own.read",
+        "subscriptions.plans.view",
+        "tenant.portal.access"
+      ],
+      "registration_id": "01a081d9-2808-7f0e-bd68-59cfe9b658b4",
+      "buildings": [
+        {
+          "id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+          "name": "Load Building 02-01",
+          "internal_code": "LT-08162516-02-01",
+          "floors": [
+            {
+              "id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d",
+              "floor_number": 0,
+              "apartments": [
+                {
+                  "id": "01a081d9-41ab-79c0-af7a-20d2e95878fb",
+                  "unit_number": "LT-02010001",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+                },
+                {
+                  "id": "01a081d9-47b1-7468-92e5-6005fc6adf88",
+                  "unit_number": "LT-02010002",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+                },
+                {
+                  "id": "01a081d9-4db7-76b5-85c2-ed00796c31de",
+                  "unit_number": "LT-02010003",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+                },
+                {
+                  "id": "01a081d9-53bd-7fb6-b1e0-96713c969e86",
+                  "unit_number": "LT-02010004",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+                },
+                {
+                  "id": "01a081d9-59be-7969-b76f-8c53a50e6ada",
+                  "unit_number": "LT-02010005",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+                }
+              ]
+            },
+            {
+              "id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2",
+              "floor_number": 1,
+              "apartments": [
+                {
+                  "id": "01a081d9-65bc-7d01-a0ab-5d868bdf8d84",
+                  "unit_number": "LT-02010101",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+                },
+                {
+                  "id": "01a081d9-6bbc-7be5-b953-89c285aff848",
+                  "unit_number": "LT-02010102",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+                },
+                {
+                  "id": "01a081d9-71ba-75bb-8b51-ef444e00551e",
+                  "unit_number": "LT-02010103",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+                },
+                {
+                  "id": "01a081d9-77b7-7869-9eb0-2a01bf0ceb69",
+                  "unit_number": "LT-02010104",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+                },
+                {
+                  "id": "01a081d9-7db9-75c0-8209-1684b7e90636",
+                  "unit_number": "LT-02010105",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+                }
+              ]
+            },
+            {
+              "id": "01a081d9-83bb-7074-84f5-823268bfc7ef",
+              "floor_number": 2,
+              "apartments": [
+                {
+                  "id": "01a081d9-89b9-7980-9481-ed253b8ca8bc",
+                  "unit_number": "LT-02010201",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+                },
+                {
+                  "id": "01a081d9-8fba-7adc-a536-32a6f5b5237b",
+                  "unit_number": "LT-02010202",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+                },
+                {
+                  "id": "01a081d9-95b7-762b-b156-5aa7027af3c3",
+                  "unit_number": "LT-02010203",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+                },
+                {
+                  "id": "01a081d9-9bb9-7bba-bac8-73e26980293a",
+                  "unit_number": "LT-02010204",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+                },
+                {
+                  "id": "01a081d9-a1b8-7de1-94c7-c68ab183bafa",
+                  "unit_number": "LT-02010205",
+                  "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+                  "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+                }
+              ]
+            }
+          ],
+          "apartments": [
+            {
+              "id": "01a081d9-41ab-79c0-af7a-20d2e95878fb",
+              "unit_number": "LT-02010001",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+            },
+            {
+              "id": "01a081d9-47b1-7468-92e5-6005fc6adf88",
+              "unit_number": "LT-02010002",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+            },
+            {
+              "id": "01a081d9-4db7-76b5-85c2-ed00796c31de",
+              "unit_number": "LT-02010003",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+            },
+            {
+              "id": "01a081d9-53bd-7fb6-b1e0-96713c969e86",
+              "unit_number": "LT-02010004",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+            },
+            {
+              "id": "01a081d9-59be-7969-b76f-8c53a50e6ada",
+              "unit_number": "LT-02010005",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-3ba7-70d9-9e8c-2126cf5a433d"
+            },
+            {
+              "id": "01a081d9-65bc-7d01-a0ab-5d868bdf8d84",
+              "unit_number": "LT-02010101",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+            },
+            {
+              "id": "01a081d9-6bbc-7be5-b953-89c285aff848",
+              "unit_number": "LT-02010102",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+            },
+            {
+              "id": "01a081d9-71ba-75bb-8b51-ef444e00551e",
+              "unit_number": "LT-02010103",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+            },
+            {
+              "id": "01a081d9-77b7-7869-9eb0-2a01bf0ceb69",
+              "unit_number": "LT-02010104",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+            },
+            {
+              "id": "01a081d9-7db9-75c0-8209-1684b7e90636",
+              "unit_number": "LT-02010105",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-5fb5-7636-a766-7aa58a7aecb2"
+            },
+            {
+              "id": "01a081d9-89b9-7980-9481-ed253b8ca8bc",
+              "unit_number": "LT-02010201",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+            },
+            {
+              "id": "01a081d9-8fba-7adc-a536-32a6f5b5237b",
+              "unit_number": "LT-02010202",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+            },
+            {
+              "id": "01a081d9-95b7-762b-b156-5aa7027af3c3",
+              "unit_number": "LT-02010203",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+            },
+            {
+              "id": "01a081d9-9bb9-7bba-bac8-73e26980293a",
+              "unit_number": "LT-02010204",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+            },
+            {
+              "id": "01a081d9-a1b8-7de1-94c7-c68ab183bafa",
+              "unit_number": "LT-02010205",
+              "building_id": "01a081d9-359b-7838-9bd5-63711e725fa6",
+              "floor_id": "01a081d9-83bb-7074-84f5-823268bfc7ef"
+            }
+          ]
+        },
+        {
+          "id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+          "name": "Load Building 02-02",
+          "internal_code": "LT-08162516-02-02",
+          "floors": [
+            {
+              "id": "01a081d9-adb5-72ce-9570-d39933ed049f",
+              "floor_number": 0,
+              "apartments": [
+                {
+                  "id": "01a081d9-b3c7-7bee-ac2d-1ffd6066d9cf",
+                  "unit_number": "LT-02020001",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+                },
+                {
+                  "id": "01a081d9-b9c5-7da6-8f47-7af1a27445db",
+                  "unit_number": "LT-02020002",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+                },
+                {
+                  "id": "01a081d9-bfc7-77de-9239-c16fa0147842",
+                  "unit_number": "LT-02020003",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+                },
+                {
+                  "id": "01a081d9-c5cf-7c12-b41e-6b1e7beb3da7",
+                  "unit_number": "LT-02020004",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+                },
+                {
+                  "id": "01a081d9-cbcd-72a5-b0bf-2777ace83148",
+                  "unit_number": "LT-02020005",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+                }
+              ]
+            },
+            {
+              "id": "01a081d9-d1c7-7e35-8d48-60c966c86183",
+              "floor_number": 1,
+              "apartments": [
+                {
+                  "id": "01a081d9-d7c8-709f-8790-31b73421fbbe",
+                  "unit_number": "LT-02020101",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+                },
+                {
+                  "id": "01a081d9-ddd2-7c36-b014-48e321fda1f3",
+                  "unit_number": "LT-02020102",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+                },
+                {
+                  "id": "01a081d9-e3cf-79dc-89e9-3490fb6ba574",
+                  "unit_number": "LT-02020103",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+                },
+                {
+                  "id": "01a081d9-e9cf-75cb-9ac3-db91463ab9ae",
+                  "unit_number": "LT-02020104",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+                },
+                {
+                  "id": "01a081d9-efd6-7dc1-8f7b-964d4a39fb93",
+                  "unit_number": "LT-02020105",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+                }
+              ]
+            },
+            {
+              "id": "01a081d9-f5d8-77bf-943e-ecf94115a003",
+              "floor_number": 2,
+              "apartments": [
+                {
+                  "id": "01a081d9-fbdb-74e0-a01d-fa7bcab0c557",
+                  "unit_number": "LT-02020201",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+                },
+                {
+                  "id": "01a081da-01dc-7fbe-b77f-79a9301f892c",
+                  "unit_number": "LT-02020202",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+                },
+                {
+                  "id": "01a081da-07dd-7f65-9841-fb9d40545a36",
+                  "unit_number": "LT-02020203",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+                },
+                {
+                  "id": "01a081da-0ddd-795b-a575-566f12531641",
+                  "unit_number": "LT-02020204",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+                },
+                {
+                  "id": "01a081da-13df-7865-bb89-48d3a03eed8a",
+                  "unit_number": "LT-02020205",
+                  "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+                  "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+                }
+              ]
+            }
+          ],
+          "apartments": [
+            {
+              "id": "01a081d9-b3c7-7bee-ac2d-1ffd6066d9cf",
+              "unit_number": "LT-02020001",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+            },
+            {
+              "id": "01a081d9-b9c5-7da6-8f47-7af1a27445db",
+              "unit_number": "LT-02020002",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+            },
+            {
+              "id": "01a081d9-bfc7-77de-9239-c16fa0147842",
+              "unit_number": "LT-02020003",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+            },
+            {
+              "id": "01a081d9-c5cf-7c12-b41e-6b1e7beb3da7",
+              "unit_number": "LT-02020004",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+            },
+            {
+              "id": "01a081d9-cbcd-72a5-b0bf-2777ace83148",
+              "unit_number": "LT-02020005",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-adb5-72ce-9570-d39933ed049f"
+            },
+            {
+              "id": "01a081d9-d7c8-709f-8790-31b73421fbbe",
+              "unit_number": "LT-02020101",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+            },
+            {
+              "id": "01a081d9-ddd2-7c36-b014-48e321fda1f3",
+              "unit_number": "LT-02020102",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+            },
+            {
+              "id": "01a081d9-e3cf-79dc-89e9-3490fb6ba574",
+              "unit_number": "LT-02020103",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+            },
+            {
+              "id": "01a081d9-e9cf-75cb-9ac3-db91463ab9ae",
+              "unit_number": "LT-02020104",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+            },
+            {
+              "id": "01a081d9-efd6-7dc1-8f7b-964d4a39fb93",
+              "unit_number": "LT-02020105",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-d1c7-7e35-8d48-60c966c86183"
+            },
+            {
+              "id": "01a081d9-fbdb-74e0-a01d-fa7bcab0c557",
+              "unit_number": "LT-02020201",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+            },
+            {
+              "id": "01a081da-01dc-7fbe-b77f-79a9301f892c",
+              "unit_number": "LT-02020202",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+            },
+            {
+              "id": "01a081da-07dd-7f65-9841-fb9d40545a36",
+              "unit_number": "LT-02020203",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+            },
+            {
+              "id": "01a081da-0ddd-795b-a575-566f12531641",
+              "unit_number": "LT-02020204",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+            },
+            {
+              "id": "01a081da-13df-7865-bb89-48d3a03eed8a",
+              "unit_number": "LT-02020205",
+              "building_id": "01a081d9-a7b4-71a4-ae79-54813db18f69",
+              "floor_id": "01a081d9-f5d8-77bf-943e-ecf94115a003"
+            }
+          ]
+        }
+      ],
+      "tenants": [
+        {
+          "id": "01a081da-19df-7833-9a36-cde392f27842",
+          "email": "tenant-20260908162516-02-001@aqarios-test.local",
+          "phone": "+962790879805",
+          "name": "Load Tenant 02-001"
+        },
+        {
+          "id": "01a081da-1ce2-714a-a5bf-5b2026746e62",
+          "email": "tenant-20260908162516-02-002@aqarios-test.local",
+          "phone": "+962797342361",
+          "name": "Load Tenant 02-002"
+        },
+        {
+          "id": "01a081da-1fea-7904-9f5c-c0087a930bb8",
+          "email": "tenant-20260908162516-02-003@aqarios-test.local",
+          "phone": "+962792410595",
+          "name": "Load Tenant 02-003"
+        },
+        {
+          "id": "01a081da-22f7-783e-8bb6-0724c27dcdbe",
+          "email": "tenant-20260908162516-02-004@aqarios-test.local",
+          "phone": "+962799757277",
+          "name": "Load Tenant 02-004"
+        },
+        {
+          "id": "01a081da-25fc-73b3-a2be-67c37f198d0e",
+          "email": "tenant-20260908162516-02-005@aqarios-test.local",
+          "phone": "+962790964354",
+          "name": "Load Tenant 02-005"
+        },
+        {
+          "id": "01a081da-28fe-7c5e-b0c5-4345ba08db99",
+          "email": "tenant-20260908162516-02-006@aqarios-test.local",
+          "phone": "+962794432408",
+          "name": "Load Tenant 02-006"
+        },
+        {
+          "id": "01a081da-2bff-79b9-bafa-84135000a3ec",
+          "email": "tenant-20260908162516-02-007@aqarios-test.local",
+          "phone": "+962796785834",
+          "name": "Load Tenant 02-007"
+        },
+        {
+          "id": "01a081da-2f05-73a2-81d4-e698281fd305",
+          "email": "tenant-20260908162516-02-008@aqarios-test.local",
+          "phone": "+962790319863",
+          "name": "Load Tenant 02-008"
+        },
+        {
+          "id": "01a081da-3208-7bbf-a142-da4a01994539",
+          "email": "tenant-20260908162516-02-009@aqarios-test.local",
+          "phone": "+962790704808",
+          "name": "Load Tenant 02-009"
+        },
+        {
+          "id": "01a081da-350a-70fa-b500-d7465f768fc8",
+          "email": "tenant-20260908162516-02-010@aqarios-test.local",
+          "phone": "+962791841904",
+          "name": "Load Tenant 02-010"
+        }
+      ],
+      "tenant_accounts": [
+        {
+          "tenant_id": "01a081da-19df-7833-9a36-cde392f27842",
+          "user_id": "01a081da-3814-7cc4-ab7d-de3101aecb3d",
+          "company_id": "01a081d9-2804-767e-b608-40c1a77f11d0",
+          "email": "tenant-20260908162516-02-001@aqarios-test.local",
+          "password": "TenantTest123!",
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMWEwODFkYS0zODE0LTdjYzQtYWI3ZC1kZTMxMDFhZWNiM2QiLCJuYW1laWQiOiIwMWEwODFkYS0zODE0LTdjYzQtYWI3ZC1kZTMxMDFhZWNiM2QiLCJqdGkiOiIxN2U1Zjc1ZC00YmU3LTRmOWMtYWQzZC0yN2E2ODA4MmJmOWUiLCJjb21wYW55X2lkIjoiMDFhMDgxZDktMjgwNC03NjdlLWI2MDgtNDBjMWE3N2YxMWQwIiwicm9sZSI6IlRFTkFOVCIsInJvbGVzIjoiVEVOQU5UIiwicGVybWlzc2lvbnMiOiJ0ZW5hbnQucG9ydGFsLmFjY2VzcyIsIm5iZiI6MTc4ODg4NDk1OCwiZXhwIjoxNzg4ODkyMTU4LCJpYXQiOjE3ODg4ODQ5NTgsImlzcyI6IlByb3BlcnR5T1MiLCJhdWQiOiJQcm9wZXJ0eU9TLUNsaWVudHMifQ.qSuuJCo-Ej9wNaD5aMQREm2eBZeKwCWWbGREnAv6R0A"
+        },
+        {
+          "tenant_id": "01a081da-1ce2-714a-a5bf-5b2026746e62",
+          "user_id": "01a081da-721b-71f5-9293-c18a2816733e",
+          "company_id": "01a081d9-2804-767e-b608-40c1a77f11d0",
+          "email": "tenant-20260908162516-02-002@aqarios-test.local",
+          "password": "TenantTest123!",
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMWEwODFkYS03MjFiLTcxZjUtOTI5My1jMThhMjgxNjczM2UiLCJuYW1laWQiOiIwMWEwODFkYS03MjFiLTcxZjUtOTI5My1jMThhMjgxNjczM2UiLCJqdGkiOiJhN2YwNDdlNi1iNTQxLTRmYjEtOWU4Mi02ZTUxYWRiNzliNjkiLCJjb21wYW55X2lkIjoiMDFhMDgxZDktMjgwNC03NjdlLWI2MDgtNDBjMWE3N2YxMWQwIiwicm9sZSI6IlRFTkFOVCIsInJvbGVzIjoiVEVOQU5UIiwicGVybWlzc2lvbnMiOiJ0ZW5hbnQucG9ydGFsLmFjY2VzcyIsIm5iZiI6MTc4ODg4NDk3MywiZXhwIjoxNzg4ODkyMTczLCJpYXQiOjE3ODg4ODQ5NzMsImlzcyI6IlByb3BlcnR5T1MiLCJhdWQiOiJQcm9wZXJ0eU9TLUNsaWVudHMifQ.VNYrI7m5Y7-pooldx8V7tF3kty69lHNUjwxJohBlFvo"
+        }
+      ],
+      "leases": [
+        {
+          "id": "01a081da-ac22-7042-ace9-f7cbb2a19ae9",
+          "contract_number": "LT-CNT-08162516-02-0001",
+          "apartment_id": "01a081d9-41ab-79c0-af7a-20d2e95878fb",
+          "tenant_id": "01a081da-19df-7833-9a36-cde392f27842",
+          "signed_document": {
+            "file_id": "01a081da-af26-7a5b-a6cd-640b5e7cc0c2",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081da-ac22-7042-ace9-f7cbb2a19ae9/01a081da-af26-7a5b-a6cd-640b5e7cc0c2-signed-lease-08162516-02-0001.pdf",
+            "document_id": "01a081da-b845-7166-89ba-76bff224d4f7",
+            "filename": "signed-lease-08162516-02-0001.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081da-be47-713d-ac1d-e0835d59aa1c",
+          "contract_number": "LT-CNT-08162516-02-0002",
+          "apartment_id": "01a081d9-47b1-7468-92e5-6005fc6adf88",
+          "tenant_id": "01a081da-1ce2-714a-a5bf-5b2026746e62",
+          "signed_document": {
+            "file_id": "01a081da-c14a-72c3-a2de-76956c2c7321",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081da-be47-713d-ac1d-e0835d59aa1c/01a081da-c14a-72c3-a2de-76956c2c7321-signed-lease-08162516-02-0002.pdf",
+            "document_id": "01a081da-ca35-78ad-bb39-523ab49dac7b",
+            "filename": "signed-lease-08162516-02-0002.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081da-d03f-7784-8a7e-362409849835",
+          "contract_number": "LT-CNT-08162516-02-0003",
+          "apartment_id": "01a081d9-4db7-76b5-85c2-ed00796c31de",
+          "tenant_id": "01a081da-1fea-7904-9f5c-c0087a930bb8",
+          "signed_document": {
+            "file_id": "01a081da-d342-7efa-bfaa-b3beb3bb2808",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081da-d03f-7784-8a7e-362409849835/01a081da-d342-7efa-bfaa-b3beb3bb2808-signed-lease-08162516-02-0003.pdf",
+            "document_id": "01a081da-dc2f-7ac3-a07c-b36b30ffa22d",
+            "filename": "signed-lease-08162516-02-0003.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081da-e23a-7c78-bcff-9957a1939e19",
+          "contract_number": "LT-CNT-08162516-02-0004",
+          "apartment_id": "01a081d9-53bd-7fb6-b1e0-96713c969e86",
+          "tenant_id": "01a081da-22f7-783e-8bb6-0724c27dcdbe",
+          "signed_document": {
+            "file_id": "01a081da-e539-7f01-b390-4c2c795ad9ae",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081da-e23a-7c78-bcff-9957a1939e19/01a081da-e539-7f01-b390-4c2c795ad9ae-signed-lease-08162516-02-0004.pdf",
+            "document_id": "01a081da-ee25-7fab-a92a-246dd53f043e",
+            "filename": "signed-lease-08162516-02-0004.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081da-f428-7076-9601-ab8a30ec611e",
+          "contract_number": "LT-CNT-08162516-02-0005",
+          "apartment_id": "01a081d9-59be-7969-b76f-8c53a50e6ada",
+          "tenant_id": "01a081da-25fc-73b3-a2be-67c37f198d0e",
+          "signed_document": {
+            "file_id": "01a081da-f72d-76c5-b67a-0f4d0fbe7165",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081da-f428-7076-9601-ab8a30ec611e/01a081da-f72d-76c5-b67a-0f4d0fbe7165-signed-lease-08162516-02-0005.pdf",
+            "document_id": "01a081db-0019-7af3-bfc8-897147f1db80",
+            "filename": "signed-lease-08162516-02-0005.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081db-0624-75c5-aa6d-22138a2f186d",
+          "contract_number": "LT-CNT-08162516-02-0006",
+          "apartment_id": "01a081d9-65bc-7d01-a0ab-5d868bdf8d84",
+          "tenant_id": "01a081da-28fe-7c5e-b0c5-4345ba08db99",
+          "signed_document": {
+            "file_id": "01a081db-0925-7c17-a14f-7c9b79e1933e",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081db-0624-75c5-aa6d-22138a2f186d/01a081db-0925-7c17-a14f-7c9b79e1933e-signed-lease-08162516-02-0006.pdf",
+            "document_id": "01a081db-1210-7b1d-a311-596cf0259425",
+            "filename": "signed-lease-08162516-02-0006.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081db-1818-73fd-8de2-596a158f99d7",
+          "contract_number": "LT-CNT-08162516-02-0007",
+          "apartment_id": "01a081d9-6bbc-7be5-b953-89c285aff848",
+          "tenant_id": "01a081da-2bff-79b9-bafa-84135000a3ec",
+          "signed_document": {
+            "file_id": "01a081db-1b17-77f5-9a36-e5a8014875d0",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081db-1818-73fd-8de2-596a158f99d7/01a081db-1b17-77f5-9a36-e5a8014875d0-signed-lease-08162516-02-0007.pdf",
+            "document_id": "01a081db-2408-7a70-921a-06567ff5e447",
+            "filename": "signed-lease-08162516-02-0007.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081db-2a13-73a5-8349-fc146d513036",
+          "contract_number": "LT-CNT-08162516-02-0008",
+          "apartment_id": "01a081d9-71ba-75bb-8b51-ef444e00551e",
+          "tenant_id": "01a081da-2f05-73a2-81d4-e698281fd305",
+          "signed_document": {
+            "file_id": "01a081db-2d16-78a8-83c8-0b2345b411c3",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081db-2a13-73a5-8349-fc146d513036/01a081db-2d16-78a8-83c8-0b2345b411c3-signed-lease-08162516-02-0008.pdf",
+            "document_id": "01a081db-3602-7161-8fce-bb3b91787575",
+            "filename": "signed-lease-08162516-02-0008.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081db-3c06-77fc-8ff0-816065f6b7d7",
+          "contract_number": "LT-CNT-08162516-02-0009",
+          "apartment_id": "01a081d9-77b7-7869-9eb0-2a01bf0ceb69",
+          "tenant_id": "01a081da-3208-7bbf-a142-da4a01994539",
+          "signed_document": {
+            "file_id": "01a081db-3f08-74e3-a020-837a361ffe8f",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081db-3c06-77fc-8ff0-816065f6b7d7/01a081db-3f08-74e3-a020-837a361ffe8f-signed-lease-08162516-02-0009.pdf",
+            "document_id": "01a081db-47f4-723f-b1dc-914280f38e18",
+            "filename": "signed-lease-08162516-02-0009.pdf",
+            "document_type": "SignedContract"
+          }
+        },
+        {
+          "id": "01a081db-4dfd-78ae-aad6-44f83e97a4f9",
+          "contract_number": "LT-CNT-08162516-02-0010",
+          "apartment_id": "01a081d9-7db9-75c0-8209-1684b7e90636",
+          "tenant_id": "01a081da-350a-70fa-b500-d7465f768fc8",
+          "signed_document": {
+            "file_id": "01a081db-50fc-798a-95fc-38fd9a6b7075",
+            "storage_key": "01a081d9-2804-767e-b608-40c1a77f11d0/Leasing/01a081db-4dfd-78ae-aad6-44f83e97a4f9/01a081db-50fc-798a-95fc-38fd9a6b7075-signed-lease-08162516-02-0010.pdf",
+            "document_id": "01a081db-59ff-7d52-b71f-16c1178a2e86",
+            "filename": "signed-lease-08162516-02-0010.pdf",
+            "document_type": "SignedContract"
+          }
+        }
+      ],
+      "maintenance_requests": [
+        "01a081db-600b-7e7e-9e0f-8b54337de30d",
+        "01a081db-6314-76d4-b0c7-68933c86cc37",
+        "01a081db-661a-7ea0-b868-ba068d77ab2d",
+        "01a081db-6926-7b99-a933-8bfa9741c6b5",
+        "01a081db-6c2b-7f60-a3d9-a808f6c42129",
+        "01a081db-6f32-7031-9475-f22f09889042",
+        "01a081db-723e-76ae-8421-576783c6ddc4",
+        "01a081db-7547-7952-9b72-e72373ba4bc7",
+        "01a081db-7850-7f9c-af69-b2615e939972",
+        "01a081db-7b56-7866-95a6-386fb0a83dd3"
+      ],
+      "expenses": [
+        "01a081db-7e5e-7435-ba8d-2f864e2fde9c",
+        "01a081db-8162-7d7d-9405-1e9392e6c53d",
+        "01a081db-8461-7223-b9aa-215cb741e517",
+        "01a081db-8763-7439-b50e-7313143fedcc",
+        "01a081db-8a65-7737-bda0-3e535edebc5a"
+      ],
+      "marketplace_listings": [
+        "01a081db-8d6a-71df-849a-7cc18f66a918",
+        "01a081db-906c-79ea-9b05-09c40c8bb8f1",
+        "01a081db-936f-70df-a7d3-cadc0173bb8a",
+        "01a081db-9677-7f8e-b870-84e54b9b1841",
+        "01a081db-9982-7592-becd-e9abd795535b"
+      ]
+    }
+  ],
+  "completed_at_utc": "2026-09-08T16:30:48.451166+00:00",
+  "resumed": false
+}
