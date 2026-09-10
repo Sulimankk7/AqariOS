@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   apartmentSchema, 
+  ApartmentFormInput,
   ApartmentFormValues, 
   SUPPORTED_CURRENCIES 
 } from '../schemas/apartments.schema';
@@ -82,7 +83,7 @@ export function ApartmentForm({
   const { data: floorsData, isLoading: isLoadingFloors, error: floorsError, refetch: refetchFloors } = useFloors(selectedBuildingId);
   const [unitSuggestionUnavailable, setUnitSuggestionUnavailable] = useState(false);
 
-  const form = useForm<ApartmentFormValues>({
+  const form = useForm<ApartmentFormInput, unknown, ApartmentFormValues>({
     resolver: zodResolver(apartmentSchema),
     defaultValues: initialData 
       ? toApartmentForm(initialData) 

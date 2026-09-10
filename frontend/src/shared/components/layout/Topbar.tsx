@@ -39,9 +39,9 @@ export function Topbar({ onOpenMobileNav, portal = "company", showSearch = porta
   const displayEmail = isTenant && tenantProfile?.email ? tenantProfile.email : (user?.email ?? "");
   const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
   const companyInfo = portal === "company" && user && !contextLabelOverride ? {
-    name: user.companyName || t("common.organizationName", { name: user.name }),
+    name: t("common.organizationName", { name: user.name }),
     code: "AQ-ORG",
-    avatar: (user.companyName || user.name || "A").slice(0, 1).toUpperCase(),
+    avatar: (user.name || "A").slice(0, 1).toUpperCase(),
   } : null;
 
   useEffect(() => {

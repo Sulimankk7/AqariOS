@@ -22,6 +22,7 @@ import {
 import { Textarea } from '@/app/components/ui/textarea';
 import {
   renewLeaseContractSchema,
+  RenewLeaseContractFormInput,
   RenewLeaseContractFormValues,
 } from '../schemas/leasing.schema';
 import {
@@ -67,7 +68,7 @@ export function RenewLeaseDialog({
     watch,
     reset,
     formState: { errors },
-  } = useForm<RenewLeaseContractFormValues>({
+  } = useForm<RenewLeaseContractFormInput, unknown, RenewLeaseContractFormValues>({
     resolver: zodResolver(renewLeaseContractSchema),
     defaultValues: {
       contractNumber: '',

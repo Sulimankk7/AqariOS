@@ -15,7 +15,7 @@ import { TRANSLATIONS } from "@/features/auth/constants/translations";
 import { authApi } from "@/features/auth/api/auth.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ROUTES } from "@/config/routes";
-import { extractUserFriendlyError, mapApiValidationErrors } from "@/shared/utils/errorHandling";
+import { extractUserFriendlyError } from "@/shared/utils/errorHandling";
 
 interface LoginFormProps {
   lang: "en" | "ar";
@@ -79,7 +79,7 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
       if (err?.code === "ACCOUNT_NOT_ACTIVE") {
         setErrorMessage(t.pendingApproval);
       } else if (err?.validationErrors && Object.keys(err.validationErrors).length > 0) {
-        setFieldErrors(mapApiValidationErrors(err.validationErrors));
+        setFieldErrors(err.validationErrors as Record<string, string[]>);
       } else {
         setErrorMessage(extractUserFriendlyError(err, t.loginError));
       }

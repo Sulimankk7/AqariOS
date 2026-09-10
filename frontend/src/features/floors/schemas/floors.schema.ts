@@ -3,7 +3,7 @@ import { FloorType } from '../constants/floorEnums';
 
 export const floorSchema = z.object({
   floorNumber: z
-    .number({ invalid_type_error: 'Floor number is required' })
+    .number({ error: 'Floor number is required' })
     .int('Floor number must be an integer')
     .min(-5, 'Floor number min -5')
     .max(200, 'Floor number max 200'),

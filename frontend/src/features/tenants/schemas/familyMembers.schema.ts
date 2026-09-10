@@ -18,3 +18,4 @@ export const familyMemberSchema = z.object({
 });
 
 export type FamilyMemberFormData = z.infer<typeof familyMemberSchema>;
+export type FamilyMemberFormInput = z.input<typeof familyMemberSchema>;

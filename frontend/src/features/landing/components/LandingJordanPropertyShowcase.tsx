@@ -8,6 +8,8 @@ interface PropertyScene {
   image: string;
   alt: string;
   objectPosition: string;
+  width: number;
+  height: number;
 }
 
 type StoryKind = "property" | "units" | "payments" | "connected";
@@ -27,6 +29,8 @@ const PROPERTY_SCENES: readonly PropertyScene[] = [
     image: "/branding/landing/jordan-property-yasmeen.jpg",
     alt: "مبنى الياسمين في عبدون، عمّان، ضمن مثال توضيحي",
     objectPosition: "50% 52%",
+    width: 2500,
+    height: 1669,
   },
   {
     id: "nakheel",
@@ -35,6 +39,8 @@ const PROPERTY_SCENES: readonly PropertyScene[] = [
     image: "/branding/landing/jordan-property-nakheel.jpg",
     alt: "مبنى النخيل في دابوق، عمّان، ضمن مثال توضيحي",
     objectPosition: "50% 50%",
+    width: 835,
+    height: 467,
   },
 ];
 
@@ -140,6 +146,8 @@ export function LandingJordanPropertyShowcase() {
                   key={scene.id}
                   src={scene.image}
                   alt={scene.alt}
+                  width={scene.width}
+                  height={scene.height}
                   loading="lazy"
                   decoding="async"
                   aria-hidden={!isActive}

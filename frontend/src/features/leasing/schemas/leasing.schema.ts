@@ -68,7 +68,10 @@ export const attachContractDocumentSchema = z.object({
 });
 
 export type CreateLeaseContractFormValues = z.infer<typeof createLeaseContractSchema>;
+export type CreateLeaseContractFormInput = z.input<typeof createLeaseContractSchema>;
 export type UpdateDraftLeaseContractFormValues = z.infer<typeof updateDraftLeaseContractSchema>;
 export type RenewLeaseContractFormValues = z.infer<typeof renewLeaseContractSchema>;
+export type RenewLeaseContractFormInput = z.input<typeof renewLeaseContractSchema>;
 export type TerminateLeaseContractFormValues = z.infer<typeof terminateLeaseContractSchema>;
+export type TerminateLeaseContractFormInput = z.input<typeof terminateLeaseContractSchema>;
 export type AttachContractDocumentFormValues = z.infer<typeof attachContractDocumentSchema>;

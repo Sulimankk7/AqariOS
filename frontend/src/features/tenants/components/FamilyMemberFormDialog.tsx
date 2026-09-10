@@ -14,7 +14,7 @@ import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
 import { TenantFamilyMemberDto } from '../types/tenants.types';
-import { familyMemberSchema, FamilyMemberFormData } from '../schemas/familyMembers.schema';
+import { familyMemberSchema, FamilyMemberFormData, FamilyMemberFormInput } from '../schemas/familyMembers.schema';
 import { useCreateFamilyMember, useUpdateFamilyMember } from '../hooks/useFamilyMembers';
 import { getTenantTranslation } from '../constants/translations';
 import { useTranslation } from '@/shared/i18n';
@@ -51,7 +51,7 @@ export function FamilyMemberFormDialog({
     reset,
     setError,
     formState: { errors },
-  } = useForm<FamilyMemberFormData>({
+  } = useForm<FamilyMemberFormInput, unknown, FamilyMemberFormData>({
     resolver: zodResolver(familyMemberSchema),
     defaultValues: {
       name: '',

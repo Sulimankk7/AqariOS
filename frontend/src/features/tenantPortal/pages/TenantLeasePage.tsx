@@ -47,7 +47,7 @@ function formatStatus(status: unknown, t: (key: string, fallback?: string) => st
       };
     default:
       return {
-        label: status,
+        label: String(status ?? ""),
         className: "bg-secondary text-foreground border-border",
       };
   }

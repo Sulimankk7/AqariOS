@@ -3,7 +3,7 @@ import { BuildingType, Governorate } from '../constants/buildingEnums';
 
 const addressSchema = z.object({
   governorate: z.nativeEnum(Governorate, {
-    errorMap: () => ({ message: 'Please select a valid governorate' }),
+    error: 'Please select a valid governorate',
   }),
   district: z.string().trim().min(1, 'City is required').max(100, 'City is too long'),
   area: z.string().trim().min(1, 'Area is required').max(100, 'Area is too long'),
@@ -15,10 +15,10 @@ export const buildingSchema = z.object({
   name: z.string().min(1, 'Building name is required').max(100, 'Building name is too long'),
   internalCode: z.string().max(50, 'Internal code is too long').optional().or(z.literal('')),
   buildingType: z.nativeEnum(BuildingType, {
-    errorMap: () => ({ message: 'Please select a valid building type' }),
+    error: 'Please select a valid building type',
   }),
   totalFloors: z
-    .number({ invalid_type_error: 'Total floors is required' })
+    .number({ error: 'Total floors is required' })
     .int('Total floors must be a whole number')
     .min(1, 'Building must have at least 1 floor')
     .max(200, 'Too many floors'),

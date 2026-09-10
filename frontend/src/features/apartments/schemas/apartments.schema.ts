@@ -8,7 +8,7 @@ export const apartmentSchema = z.object({
   floorId: z.string().min(1, 'Floor selection is required'),
   unitNumber: z.string().min(1, 'Unit number is required').max(20, 'Unit number max 20 chars'),
   areaSqm: z
-    .number({ invalid_type_error: 'Area is required' })
+    .number({ error: 'Area is required' })
     .min(0.01, 'Area must be greater than 0')
     .max(10000, 'Area max 10000 m²'),
   ownershipStatus: z.nativeEnum(OwnershipStatus),
@@ -29,3 +29,4 @@ export const apartmentSchema = z.object({
 });
 
 export type ApartmentFormValues = z.infer<typeof apartmentSchema>;
+export type ApartmentFormInput = z.input<typeof apartmentSchema>;

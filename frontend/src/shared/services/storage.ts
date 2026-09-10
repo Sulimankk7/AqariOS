@@ -115,7 +115,7 @@ export const sessionStorage_ = {
   },
 
   set<T>(key: string, value: T): void {
-    safeSet(sessionStorage, key, value);
+    safeSet(sessionStorage, key, JSON.stringify(value));
   },
 
   remove(key: string): void {

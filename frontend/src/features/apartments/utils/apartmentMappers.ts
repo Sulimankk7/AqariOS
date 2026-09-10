@@ -4,7 +4,17 @@ import {
   UpdateApartmentRequest 
 } from '../types/apartments.types';
 import { OwnershipStatus } from '../constants/apartmentEnums';
-import { ApartmentFormValues } from '../schemas/apartments.schema';
+import {
+  ApartmentFormValues,
+  SUPPORTED_CURRENCIES,
+  type SupportedCurrency,
+} from '../schemas/apartments.schema';
+
+function supportedCurrency(value: string | null | undefined): SupportedCurrency {
+  return SUPPORTED_CURRENCIES.includes(value as SupportedCurrency)
+    ? value as SupportedCurrency
+    : 'JOD';
+}
 
 /**
  * Maps frontend UI form values to backend POST /api/v1/floors/{floorId}/apartments request payload.
@@ -49,6 +59,6 @@ export function toApartmentForm(dto: ApartmentDto): ApartmentFormValues {
     bedrooms: dto.bedrooms ?? 0,
     bathrooms: dto.bathrooms ?? 0,
     baseRentAmount: dto.baseRentAmount !== null && dto.baseRentAmount !== undefined ? dto.baseRentAmount : undefined,
-    baseRentCurrency: dto.baseRentCurrency || 'JOD',
+    baseRentCurrency: supportedCurrency(dto.baseRentCurrency),
   };
 }

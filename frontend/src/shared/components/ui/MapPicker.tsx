@@ -20,17 +20,18 @@ export interface MapPickerProps {
   instruction?: string;
 }
 
-const hasCoordinates = (lat?: number, lng?: number): lat is number =>
-  lat !== null && lat !== undefined && lng !== null && lng !== undefined;
+const coordinates = (lat?: number, lng?: number): [number, number] | null =>
+  typeof lat === 'number' && typeof lng === 'number' ? [lat, lng] : null;
 
 function LocationMarker({ lat, lng, onLocationSelect, readOnly }: MapPickerProps) {
   const map = useMap();
+  const position = coordinates(lat, lng);
 
   useEffect(() => {
-    if (hasCoordinates(lat, lng)) {
-      map.setView([lat, lng], map.getZoom() || 14);
+    if (position) {
+      map.setView(position, map.getZoom() || 14);
     }
-  }, [lat, lng, map]);
+  }, [position?.[0], position?.[1], map]);
 
   useMapEvents({
     click(e) {
@@ -40,9 +41,9 @@ function LocationMarker({ lat, lng, onLocationSelect, readOnly }: MapPickerProps
     },
   });
 
-  return hasCoordinates(lat, lng) ? (
+  return position ? (
     <Marker
-      position={[lat, lng]}
+      position={position}
       draggable={!readOnly}
       eventHandlers={{
         dragend(e) {
@@ -59,8 +60,9 @@ function LocationMarker({ lat, lng, onLocationSelect, readOnly }: MapPickerProps
 
 export function MapPicker({ lat, lng, onLocationSelect, readOnly = false, height = "280px", instruction }: MapPickerProps) {
   // Default center: Amman, Jordan (31.9539, 35.9106)
-  const selected = hasCoordinates(lat, lng);
-  const defaultCenter: [number, number] = [lat ?? 31.9539, lng ?? 35.9106];
+  const selectedPosition = coordinates(lat, lng);
+  const selected = selectedPosition !== null;
+  const defaultCenter: [number, number] = selectedPosition ?? [31.9539, 35.9106];
 
   return (
     <div className="w-full rounded-lg overflow-hidden border border-border shadow-xs relative" style={{ height }}>

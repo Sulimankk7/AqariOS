@@ -54,12 +54,15 @@ export interface DataTableProps<T> {
   isLoading?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
+  /** @deprecated Prefer emptyTitle. Retained for existing screens. */
+  emptyMessage?: string;
   onRowClick?: (row: T) => void;
   className?: string;
 
   // Backward-Compatible Flat Props (Used by client-side tables)
   searchable?: boolean;
   searchPlaceholder?: string;
+  onSearchChange?: (searchTerm: string) => void;
   pageSize?: number;
 
   // Grouped Enterprise Configuration Objects (Optional Server-Driven Mode)
@@ -75,9 +78,11 @@ export function DataTable<T extends Record<string, any>>({
   isLoading = false,
   searchable = true,
   searchPlaceholder,
+  onSearchChange,
   pageSize = 10,
   emptyTitle,
   emptyDescription,
+  emptyMessage,
   onRowClick,
   className = "",
   paginationConfig,
@@ -180,6 +185,7 @@ export function DataTable<T extends Record<string, any>>({
               } else {
                 setSearchQuery(val);
                 setCurrentPage(1);
+                onSearchChange?.(val);
               }
             }}
             placeholder={searchConfig?.placeholder || searchPlaceholder}
@@ -260,7 +266,7 @@ export function DataTable<T extends Record<string, any>>({
               ) : displayRows.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-8">
-                    <EmptyState title={emptyTitle} description={emptyDescription} />
+                    <EmptyState title={emptyTitle ?? emptyMessage} description={emptyDescription} />
                   </td>
                 </tr>
               ) : (

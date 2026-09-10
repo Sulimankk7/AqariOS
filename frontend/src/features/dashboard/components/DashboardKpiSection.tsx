@@ -13,6 +13,7 @@ import React from "react";
 import { useDashboardKPIs } from "../hooks/useDashboardKPIs";
 import { KpiCard } from "./KpiCard";
 import { useTranslation } from "@/shared/i18n";
+import { Building2, Home, FileText, Users, Wallet, Receipt } from "lucide-react";
 
 export function DashboardKpiSection() {
   const { t, formatCurrency } = useTranslation();
@@ -40,79 +41,61 @@ export function DashboardKpiSection() {
         {/* 1. Buildings */}
         <KpiCard
           title={t("properties.totalBuildings")}
-          value={data ? data.property.totalBuildings : undefined}
-          subtitle={t("dashboard.registeredProperties")}
-          iconType="building"
-          isLoading={isLoading}
-          isError={isError}
-          errorMessage={isError ? t("dashboard.loadError") : undefined}
+          value={data?.property.totalBuildings ?? "—"}
+          description={t("dashboard.registeredProperties")}
+          icon={Building2}
         />
 
         {/* 2. Apartments */}
         <KpiCard
           title={t("properties.totalApartments")}
-          value={data ? data.property.totalApartments : undefined}
-          subtitle={
+          value={data?.property.totalApartments ?? "—"}
+          description={
             data
               ? t("dashboard.occupiedSummary", { count: data.property.occupiedApartments, rate: data.property.occupancyRate })
               : t("dashboard.totalResidentialUnits")
           }
-          iconType="apartments"
-          isLoading={isLoading}
-          isError={isError}
-          errorMessage={isError ? t("dashboard.loadError") : undefined}
+          icon={Home}
         />
 
         {/* 3. Lease Contracts */}
         <KpiCard
           title={t("leasing.activeLeases")}
-          value={data ? data.leasing.activeLeases : undefined}
-          subtitle={
+          value={data?.leasing.activeLeases ?? "—"}
+          description={
             data && data.leasing.expiringIn30Days > 0
               ? t("dashboard.expiringSoon", { count: data.leasing.expiringIn30Days })
               : t("dashboard.activeAgreements")
           }
-          iconType="leases"
-          isLoading={isLoading}
-          isError={isError}
-          errorMessage={isError ? t("dashboard.loadError") : undefined}
+          icon={FileText}
         />
 
         {/* 4. Tenants */}
         <KpiCard
           title={t("leasing.tenant", { count: 2 })}
-          value={data ? data.leasing.activeLeases : undefined}
-          subtitle={t("dashboard.occupyingTenants")}
-          iconType="tenants"
-          isLoading={isLoading}
-          isError={isError}
-          errorMessage={isError ? t("dashboard.loadError") : undefined}
+          value={data?.leasing.activeLeases ?? "—"}
+          description={t("dashboard.occupyingTenants")}
+          icon={Users}
         />
 
         {/* 5. Rent Collection */}
         <KpiCard
           title={t("financials.collectedThisMonth")}
-          value={data ? formatCurrency(data.payments.collectedThisMonth) : undefined}
-          subtitle={
+          value={data ? formatCurrency(data.payments.collectedThisMonth) : "—"}
+          description={
             data && data.payments.overduePayments > 0
               ? t("dashboard.overduePaymentsCount", { count: data.payments.overduePayments })
               : t("dashboard.collectedThisMonthDescription")
           }
-          iconType="rent"
-          isLoading={isLoading}
-          isError={isError}
-          errorMessage={isError ? t("dashboard.loadError") : undefined}
+          icon={Wallet}
         />
 
         {/* 6. Expenses */}
         <KpiCard
           title={t("financials.expensesThisMonth")}
-          value={data ? formatCurrency(data.financials.expensesThisMonth) : undefined}
-          subtitle={t("dashboard.expensesThisMonthDescription")}
-          iconType="expenses"
-          isLoading={isLoading}
-          isError={isError}
-          errorMessage={isError ? t("dashboard.loadError") : undefined}
+          value={data ? formatCurrency(data.financials.expensesThisMonth) : "—"}
+          description={t("dashboard.expensesThisMonthDescription")}
+          icon={Receipt}
         />
       </div>
     </section>

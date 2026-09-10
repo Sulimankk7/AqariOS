@@ -8,6 +8,7 @@
     "dev": "vite",
     "test:mvp": "vitest run --config vitest.mvp.config.ts",
     "test:platform-admin": "vitest run --config vitest.platform-admin.config.ts",
+    "typecheck": "tsc -p tsconfig.json",
     "typecheck:platform-admin": "tsc -p tsconfig.platform-admin.json",
     "typecheck:mvp": "tsc -p tsconfig.mvp.json",
     "i18n:audit": "node scripts/audit-i18n.mjs",

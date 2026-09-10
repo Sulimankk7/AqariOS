@@ -145,7 +145,7 @@ type RequestInterceptor = (config: RequestConfig) => RequestConfig | Promise<Req
 type ResponseInterceptor = (response: Response) => Response | Promise<Response>;
 type ErrorInterceptor = (error: ApiError) => Promise<never>;
 
-class InterceptorManager<T> {
+class InterceptorManager<T extends (value: any) => any> {
   private handlers: Array<T | null> = [];
 
   use(handler: T): number {

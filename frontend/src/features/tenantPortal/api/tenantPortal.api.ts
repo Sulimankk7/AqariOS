@@ -53,11 +53,14 @@ export const tenantPortalApi = {
     const GUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (!cleanId || !GUID_REGEX.test(cleanId)) {
       return Promise.reject(
-        new ApiError({
-          status: 400,
+        new ApiError(
+          400,
+          "The provided payment ID is not a valid GUID.",
+          {
           title: "Invalid Payment ID",
           detail: "The provided payment ID is not a valid GUID.",
-        })
+          },
+        )
       );
     }
 
@@ -116,4 +119,3 @@ export const tenantPortalApi = {
     return await response.blob();
   },
 };
-

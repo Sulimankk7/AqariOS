@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from '@/app/components/ui/alert';
 import { extractUserFriendlyError, mapApiValidationErrors } from '@/shared/utils';
 import {
   createLeaseContractSchema,
+  CreateLeaseContractFormInput,
   CreateLeaseContractFormValues,
 } from '../schemas/leasing.schema';
 import {
@@ -110,7 +111,7 @@ export function LeaseContractForm({
     watch,
     reset,
     formState: { errors },
-  } = useForm<CreateLeaseContractFormValues>({
+  } = useForm<CreateLeaseContractFormInput, unknown, CreateLeaseContractFormValues>({
     resolver: zodResolver(createLeaseContractSchema),
     defaultValues: {
       apartmentId: initialValues?.apartmentId || '',

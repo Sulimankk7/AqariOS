@@ -4,16 +4,16 @@
 
 import { colors } from "./colors";
 
-export type ThemeMode = "light" | "dark";
+export type ColorThemeMode = "light" | "dark";
 
 export function getSemanticColor(
   token: keyof typeof colors.light,
-  mode: ThemeMode = "light"
+  mode: ColorThemeMode = "light"
 ): string {
   return colors[mode][token];
 }
 
-export function getCurrentThemeMode(): ThemeMode {
+export function getCurrentThemeMode(): ColorThemeMode {
   if (typeof window === "undefined") return "light";
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }

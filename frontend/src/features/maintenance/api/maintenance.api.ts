@@ -18,7 +18,12 @@ const BASE_PATH = '/api/v1.0/maintenance-requests';
 
 export const maintenanceApi = {
   getRequests: (params?: MaintenanceRequestFilterOptions): Promise<MaintenanceRequestSummaryDto[]> => {
-    return http.get<MaintenanceRequestSummaryDto[]>(BASE_PATH, { params });
+    const query = new URLSearchParams();
+    Object.entries(params ?? {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') query.set(key, String(value));
+    });
+    const queryString = query.toString();
+    return http.get<MaintenanceRequestSummaryDto[]>(queryString ? `${BASE_PATH}?${queryString}` : BASE_PATH);
   },
 
   getById: (id: string): Promise<MaintenanceRequestDetailDto> => {

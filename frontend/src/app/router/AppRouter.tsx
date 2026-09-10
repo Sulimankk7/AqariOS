@@ -17,95 +17,83 @@
  *       /apartments/:id (Canonical Apartment Details)
  */
 
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
-import { AuthLayout } from "@/app/layouts/AuthLayout";
-import { AppLayout } from "@/app/layouts/AppLayout";
-import { PlatformAdminLayout } from "@/app/layouts/PlatformAdminLayout";
+import { SeoManager } from "@/shared/seo/SeoManager";
 import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { ModulePlaceholder } from "@/shared/components/layout/ModulePlaceholder";
-import ParkingPage from '@/features/parking/ParkingPage';
-import DocumentsPage from '@/features/documents/DocumentsPage';
-import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
-import SettingsPage from '@/features/settings/SettingsPage';
 import { ROUTES } from "@/config/routes";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useTranslation } from "@/shared/i18n";
 
-import { TenantLayout } from "@/app/layouts/TenantLayout";
-import { TenantDashboardPage } from "@/features/tenantPortal/pages/TenantDashboardPage";
-import { TenantProfilePage } from "@/features/tenantPortal/pages/TenantProfilePage";
-import { TenantLeasePage } from "@/features/tenantPortal/pages/TenantLeasePage";
-import { TenantPaymentsPage } from "@/features/tenantPortal/pages/TenantPaymentsPage";
-import { TenantBillsPage } from "@/features/tenantPortal/pages/TenantBillsPage";
-
 // Lucide icons for placeholders
 import {
-  Car,
-  FileText,
-  Users,
-  Wallet,
-  Calculator,
-  Wrench,
   Store,
-  FolderOpen,
-  Bell,
-  Settings,
   UserCircle,
   SlidersHorizontal,
 } from "lucide-react";
 
-// Auth pages
-import LoginPage from "@/features/auth/pages/Login";
-import RegisterPage from "@/features/auth/pages/Register";
-import PhoneOtpPage from "@/features/auth/pages/PhoneOtp";
-import VerifyOtpPage from "@/features/auth/pages/VerifyOtp";
-import ForgotPasswordPage from "@/features/auth/pages/ForgotPassword";
-import ResetPasswordPage from "@/features/auth/pages/ResetPassword";
-import PasswordResetVerifyPage from "@/features/auth/pages/PasswordResetVerify";
-import ActivateTenantPage from "@/features/auth/pages/ActivateTenant";
-
-// Real page implementations
-import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
-import BuildingsPage from "@/features/buildings/pages/BuildingsPage";
-import CreateBuildingPage from "@/features/buildings/pages/CreateBuildingPage";
-import EditBuildingPage from "@/features/buildings/pages/EditBuildingPage";
-import BuildingDetailsPage from "@/features/buildings/pages/BuildingDetailsPage";
-
-import CreateFloorPage from "@/features/floors/pages/CreateFloorPage";
-import FloorDetailsPage from "@/features/floors/pages/FloorDetailsPage";
-
-import ApartmentsPage from "@/features/apartments/pages/ApartmentsPage";
-import CreateApartmentPage from "@/features/apartments/pages/CreateApartmentPage";
-import EditApartmentPage from "@/features/apartments/pages/EditApartmentPage";
-import ApartmentDetailsPage from "@/features/apartments/pages/ApartmentDetailsPage";
-
-import LeasesPage from "@/features/leasing/pages/LeasesPage";
-import CreateLeasePage from "@/features/leasing/pages/CreateLeasePage";
-import EditLeasePage from "@/features/leasing/pages/EditLeasePage";
-import LeaseDetailsPage from "@/features/leasing/pages/LeaseDetailsPage";
-
-import TenantsPage from "@/features/tenants/pages/TenantsPage";
-import CreateTenantPage from "@/features/tenants/pages/CreateTenantPage";
-import EditTenantPage from "@/features/tenants/pages/EditTenantPage";
-import TenantDetailsPage from "@/features/tenants/pages/TenantDetailsPage";
-
-import { OwnerPaymentsWorkspace } from "@/features/payments";
-import { FinancialOperationsPage } from "@/features/financials";
-import { UtilityAccountsPage } from "@/features/utilityBills/pages/UtilityAccountsPage";
-import { UtilityAccountDetailsPage } from "@/features/utilityBills/pages/UtilityAccountDetailsPage";
-import { MaintenancePage } from "@/features/maintenance/pages/MaintenancePage";
-
 import { AuthLoadingScreen } from "@/features/auth/components/AuthLoadingScreen";
-import { PlatformAdminDashboardPage } from "@/features/platformAdmin/pages/PlatformAdminDashboardPage";
-import { PlatformAdministratorsPage } from "@/features/platformAdmin/pages/PlatformAdministratorsPage";
-import { LandlordRegistrationsPage } from "@/features/platformAdmin/pages/LandlordRegistrationsPage";
-import { ContactRequestsPage } from "@/features/platformAdmin/pages/ContactRequestsPage";
-import { CompanySubscriptionsPage } from "@/features/subscriptions/pages/CompanySubscriptionsPage";
-import { PlatformPlansPage } from "@/features/subscriptions/pages/PlatformPlansPage";
-import { PlatformSubscriptionsPage } from "@/features/subscriptions/pages/PlatformSubscriptionsPage";
-import { PlatformPlanChangeRequestsPage } from "@/features/subscriptions/pages/PlatformPlanChangeRequestsPage";
-import LandingPage from "@/features/landing/pages/LandingPage";
-import { DemoExperience } from "@/features/demo/pages/DemoExperience";
+
+const AuthLayout = lazy(() => import("@/app/layouts/AuthLayout").then((module) => ({ default: module.AuthLayout })));
+const AppLayout = lazy(() => import("@/app/layouts/AppLayout").then((module) => ({ default: module.AppLayout })));
+const PlatformAdminLayout = lazy(() => import("@/app/layouts/PlatformAdminLayout").then((module) => ({ default: module.PlatformAdminLayout })));
+const TenantLayout = lazy(() => import("@/app/layouts/TenantLayout").then((module) => ({ default: module.TenantLayout })));
+const LandingPage = lazy(() => import("@/features/landing/pages/LandingPage"));
+const DemoExperience = lazy(() => import("@/features/demo/pages/DemoExperience").then((module) => ({ default: module.DemoExperience })));
+
+const LoginPage = lazy(() => import("@/features/auth/pages/Login"));
+const RegisterPage = lazy(() => import("@/features/auth/pages/Register"));
+const PhoneOtpPage = lazy(() => import("@/features/auth/pages/PhoneOtp"));
+const VerifyOtpPage = lazy(() => import("@/features/auth/pages/VerifyOtp"));
+const ForgotPasswordPage = lazy(() => import("@/features/auth/pages/ForgotPassword"));
+const ResetPasswordPage = lazy(() => import("@/features/auth/pages/ResetPassword"));
+const PasswordResetVerifyPage = lazy(() => import("@/features/auth/pages/PasswordResetVerify"));
+const ActivateTenantPage = lazy(() => import("@/features/auth/pages/ActivateTenant"));
+
+const DashboardPage = lazy(() => import("@/features/dashboard/pages/DashboardPage"));
+const BuildingsPage = lazy(() => import("@/features/buildings/pages/BuildingsPage"));
+const CreateBuildingPage = lazy(() => import("@/features/buildings/pages/CreateBuildingPage"));
+const EditBuildingPage = lazy(() => import("@/features/buildings/pages/EditBuildingPage"));
+const BuildingDetailsPage = lazy(() => import("@/features/buildings/pages/BuildingDetailsPage"));
+const CreateFloorPage = lazy(() => import("@/features/floors/pages/CreateFloorPage"));
+const FloorDetailsPage = lazy(() => import("@/features/floors/pages/FloorDetailsPage"));
+const ApartmentsPage = lazy(() => import("@/features/apartments/pages/ApartmentsPage"));
+const CreateApartmentPage = lazy(() => import("@/features/apartments/pages/CreateApartmentPage"));
+const EditApartmentPage = lazy(() => import("@/features/apartments/pages/EditApartmentPage"));
+const ApartmentDetailsPage = lazy(() => import("@/features/apartments/pages/ApartmentDetailsPage"));
+const LeasesPage = lazy(() => import("@/features/leasing/pages/LeasesPage"));
+const CreateLeasePage = lazy(() => import("@/features/leasing/pages/CreateLeasePage"));
+const EditLeasePage = lazy(() => import("@/features/leasing/pages/EditLeasePage"));
+const LeaseDetailsPage = lazy(() => import("@/features/leasing/pages/LeaseDetailsPage"));
+const TenantsPage = lazy(() => import("@/features/tenants/pages/TenantsPage"));
+const CreateTenantPage = lazy(() => import("@/features/tenants/pages/CreateTenantPage"));
+const EditTenantPage = lazy(() => import("@/features/tenants/pages/EditTenantPage"));
+const TenantDetailsPage = lazy(() => import("@/features/tenants/pages/TenantDetailsPage"));
+const ParkingPage = lazy(() => import("@/features/parking/ParkingPage"));
+const DocumentsPage = lazy(() => import("@/features/documents/DocumentsPage"));
+const NotificationsPage = lazy(() => import("@/features/notifications/pages/NotificationsPage"));
+const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
+const OwnerPaymentsWorkspace = lazy(() => import("@/features/payments/pages/OwnerPaymentsWorkspace"));
+const FinancialOperationsPage = lazy(() => import("@/features/financials/pages/FinancialOperationsPage"));
+const UtilityAccountsPage = lazy(() => import("@/features/utilityBills/pages/UtilityAccountsPage").then((module) => ({ default: module.UtilityAccountsPage })));
+const UtilityAccountDetailsPage = lazy(() => import("@/features/utilityBills/pages/UtilityAccountDetailsPage").then((module) => ({ default: module.UtilityAccountDetailsPage })));
+const MaintenancePage = lazy(() => import("@/features/maintenance/pages/MaintenancePage").then((module) => ({ default: module.MaintenancePage })));
+const CompanySubscriptionsPage = lazy(() => import("@/features/subscriptions/pages/CompanySubscriptionsPage").then((module) => ({ default: module.CompanySubscriptionsPage })));
+
+const PlatformAdminDashboardPage = lazy(() => import("@/features/platformAdmin/pages/PlatformAdminDashboardPage").then((module) => ({ default: module.PlatformAdminDashboardPage })));
+const PlatformAdministratorsPage = lazy(() => import("@/features/platformAdmin/pages/PlatformAdministratorsPage").then((module) => ({ default: module.PlatformAdministratorsPage })));
+const LandlordRegistrationsPage = lazy(() => import("@/features/platformAdmin/pages/LandlordRegistrationsPage").then((module) => ({ default: module.LandlordRegistrationsPage })));
+const ContactRequestsPage = lazy(() => import("@/features/platformAdmin/pages/ContactRequestsPage").then((module) => ({ default: module.ContactRequestsPage })));
+const PlatformPlansPage = lazy(() => import("@/features/subscriptions/pages/PlatformPlansPage").then((module) => ({ default: module.PlatformPlansPage })));
+const PlatformSubscriptionsPage = lazy(() => import("@/features/subscriptions/pages/PlatformSubscriptionsPage").then((module) => ({ default: module.PlatformSubscriptionsPage })));
+const PlatformPlanChangeRequestsPage = lazy(() => import("@/features/subscriptions/pages/PlatformPlanChangeRequestsPage").then((module) => ({ default: module.PlatformPlanChangeRequestsPage })));
+
+const TenantDashboardPage = lazy(() => import("@/features/tenantPortal/pages/TenantDashboardPage").then((module) => ({ default: module.TenantDashboardPage })));
+const TenantProfilePage = lazy(() => import("@/features/tenantPortal/pages/TenantProfilePage").then((module) => ({ default: module.TenantProfilePage })));
+const TenantLeasePage = lazy(() => import("@/features/tenantPortal/pages/TenantLeasePage").then((module) => ({ default: module.TenantLeasePage })));
+const TenantPaymentsPage = lazy(() => import("@/features/tenantPortal/pages/TenantPaymentsPage").then((module) => ({ default: module.TenantPaymentsPage })));
+const TenantBillsPage = lazy(() => import("@/features/tenantPortal/pages/TenantBillsPage").then((module) => ({ default: module.TenantBillsPage })));
 
 /** Root redirect — sends authenticated users to their respective dashboard, others to /auth/login */
 function RootRedirect() {
@@ -139,7 +127,9 @@ export function AppRouter() {
   const { t } = useTranslation();
   return (
     <BrowserRouter>
-      <Routes>
+      <SeoManager />
+      <Suspense fallback={<AuthLoadingScreen />}>
+        <Routes>
         {/* Public landing page — intentionally limited to the navbar for Section 01 */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/demo/*" element={<DemoExperience />} />
@@ -317,7 +307,8 @@ export function AppRouter() {
 
         {/* Catch-all: redirect to root (which is auth-aware) */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

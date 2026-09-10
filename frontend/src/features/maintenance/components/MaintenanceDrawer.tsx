@@ -33,7 +33,7 @@ export const MaintenanceDrawer = ({ requestId, open, onOpenChange }: Props) => {
   const building = useBuilding(request?.buildingId || '');
   const apartment = useApartment(request?.apartmentId || '');
   const tenant = useTenantDetails(request?.tenantId || '');
-  const updateStatus = useUpdateMaintenanceStatus(requestId);
+  const updateStatus = useUpdateMaintenanceStatus(requestId ?? '');
   if (!open || !requestId) return null;
 
   return <>

@@ -23,6 +23,7 @@ import {
 import { Textarea } from '@/app/components/ui/textarea';
 import {
   terminateLeaseContractSchema,
+  TerminateLeaseContractFormInput,
   TerminateLeaseContractFormValues,
 } from '../schemas/leasing.schema';
 import { TerminationType } from '../types/leasing.types';
@@ -61,7 +62,7 @@ export function TerminateLeaseDialog({
     watch,
     reset,
     formState: { errors },
-  } = useForm<TerminateLeaseContractFormValues>({
+  } = useForm<TerminateLeaseContractFormInput, unknown, TerminateLeaseContractFormValues>({
     resolver: zodResolver(terminateLeaseContractSchema),
     defaultValues: {
       terminationType: TerminationType.NormalExpiration,
