@@ -36,6 +36,7 @@ export const TRANSLATIONS = {
     orDivider: "or continue with",
     noAccount: "Don't have an enterprise account?",
     signUpLink: "Create account",
+    signupEligibility: "Public registration is for property owners and property managers.",
     phoneOtpAlt: "Prefer passwordless? Sign in with Phone OTP",
 
     // Registration
@@ -125,11 +126,11 @@ export const TRANSLATIONS = {
 
   ar: {
     platformSubtitle: "منصة إدارة العقارات المؤسسية",
-    copyright: "© ٢٠٢٦ عقاري . جميع الحقوق محفوظة.",
+    copyright: "© 2026 عقاري . جميع الحقوق محفوظة.",
     privacy: "سياسة الخصوصية",
     terms: "شروط الخدمة",
     security: "الأمان",
-    version: "الإصدار ١,٠,٠",
+    version: "الإصدار 1.0",
 
     // Top navigation
     signInTab: "تسجيل الدخول",
@@ -148,10 +149,11 @@ export const TRANSLATIONS = {
     passwordPlaceholder: "أدخل كلمة المرور الخاصة بك",
     rememberMe: "تذكرني لمدة ٣٠ يوماً",
     forgotPassword: "نسيت كلمة المرور؟",
-    signInBtn: "تسجيل الدخول لمساحة العمل",
+    signInBtn: "تسجيل الدخول ",
     orDivider: "أو المتابعة عبر",
     noAccount: "ليس لديك حساب مؤسسي؟",
     signUpLink: "أنشئ حساباً جديداً",
+    signupEligibility: "إنشاء الحساب متاح لملاك العقارات ومديري العقارات.",
     phoneOtpAlt: "تفضل الدخول بدون كلمة مرور؟ استخدم رمز SMS",
 
     // Registration

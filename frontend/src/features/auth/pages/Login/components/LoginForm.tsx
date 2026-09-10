@@ -266,20 +266,21 @@ export function LoginForm({ lang, onFeedbackMessage }: LoginFormProps) {
         </ArchitecturalButton>
 
         {/* Switch to Register */}
-        <p
-          className="text-[13px] font-medium text-center pt-2 text-muted-foreground"
-        >
-          {t.noAccount}{" "}
+        <div className="rounded-lg border border-outline-variant bg-surface-container p-3 text-center">
+          <p className="text-[13px] font-semibold text-foreground">{t.noAccount}</p>
+          <p className="mt-1 text-[12px] leading-5 text-muted-foreground">
+            {t.signupEligibility}
+          </p>
           <button
             type="button"
             onClick={() => navigate(ROUTES.auth.register)}
-            className={`font-semibold hover:underline cursor-pointer ${
+            className={`mt-2 text-[13px] font-semibold hover:underline cursor-pointer ${
               isDark ? "text-[#FFD98A]" : "text-[#414833]"
             }`}
           >
             {t.signUpLink}
           </button>
-        </p>
+        </div>
       </form>
     </div>
   );

@@ -163,7 +163,15 @@ export function BuildingForm({ initialData, onSubmit, isLoading }: BuildingFormP
         lng={watchLng}
         onLocationSelect={handleLocationSelect}
         height="280px"
+        instruction={language === 'ar' ? 'انقر على الخريطة لتحديد موقع المبنى' : 'Click on the map to select the building location'}
       />
+      <p
+        className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground"
+        dir="rtl"
+        role="note"
+      >
+        قد تكون بعض تفاصيل العنوان غير دقيقة. يرجى التحقق من العنوان والموقع على الخريطة.
+      </p>
       {isGeocoding && <p role="status" className="text-sm text-muted-foreground">{t('geocodingLoading')}</p>}
       {geocodingFailed && <p role="status" className="text-sm text-amber-700">{t('geocodingFailure')}</p>}
       {addressSuggestion && (

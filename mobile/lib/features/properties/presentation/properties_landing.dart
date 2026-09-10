@@ -38,7 +38,7 @@ class PropertiesLanding extends StatelessWidget {
       padding: const EdgeInsets.all(AqariSpacing.x4),
       children: [
         PropertyIdentity(
-          title: tr(context, 'محفظة العقارات', 'Property portfolio'),
+          title: tr(context, ' العقارات', 'Property portfolio'),
           subtitle: tr(
             context,
             'المباني والوحدات والمواقف في مكان واحد.',

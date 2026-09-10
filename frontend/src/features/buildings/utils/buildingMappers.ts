@@ -59,8 +59,8 @@ export function toBuildingForm(building: BuildingDto): BuildingFormValues {
     buildingType: (building.buildingType as BuildingType) ?? BuildingType.Residential,
     totalFloors: building.totalFloors || 1,
     constructionYear: building.constructionYear || undefined,
-    gpsLatitude: building.gpsLatitude || undefined,
-    gpsLongitude: building.gpsLongitude || undefined,
+    gpsLatitude: building.gpsLatitude ?? undefined,
+    gpsLongitude: building.gpsLongitude ?? undefined,
     address: {
       governorate: (building.address?.governorate as Governorate) ?? Governorate.Amman,
       district: building.address?.district || '',

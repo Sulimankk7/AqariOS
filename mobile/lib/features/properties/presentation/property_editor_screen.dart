@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../core/design_system/design_system.dart';
 import '../../../core/network/api_problem.dart';
 import '../../auth/domain/user_profile.dart';
@@ -6,6 +7,7 @@ import '../data/properties_repository.dart';
 import '../domain/property_models.dart';
 import '../domain/property_form.dart';
 import 'property_widgets.dart';
+import 'building_location_picker.dart';
 
 class PropertyEditorScreen extends StatefulWidget {
   const PropertyEditorScreen({
@@ -29,9 +31,13 @@ class PropertyEditorScreen extends StatefulWidget {
 class _PropertyEditorScreenState extends State<PropertyEditorScreen> {
   final _inputs = <String, TextEditingController>{};
   final _errors = <String, String>{};
+  final _manuallyEditedFields = <String>{};
   int _type = 0, _governorate = 0, _ownership = 0;
   String _currency = 'JOD';
   bool _saving = false, _attempted = false;
+  bool _geocoding = false, _geocodingFailed = false;
+  int _geocodingSequence = 0;
+  String? _suggestedAddress;
   ApiProblem? _problem;
   bool get _editing => widget.record != null;
   List<PropertyField> get _fields =>
@@ -60,6 +66,153 @@ class _PropertyEditorScreenState extends State<PropertyEditorScreen> {
       ownership: 1,
     )) {
       _inputs[f.key] = TextEditingController(text: initial[f.key] ?? '');
+    }
+    if (_editing && widget.kind == PropertyKind.buildings) {
+      _manuallyEditedFields.add('addressGovernorate');
+      for (final key in const [
+        'addressCity',
+        'addressNeighborhood',
+        'addressStreet',
+        'addressPostalCode',
+      ]) {
+        if (_inputs[key]!.text.trim().isNotEmpty) {
+          _manuallyEditedFields.add(key);
+        }
+      }
+    }
+    _loadSuggestion();
+  }
+
+  double? get _latitude =>
+      double.tryParse(normalizeNumber(_inputs['gpsLatitude']?.text ?? ''));
+  double? get _longitude =>
+      double.tryParse(normalizeNumber(_inputs['gpsLongitude']?.text ?? ''));
+
+  Future<void> _selectBuildingLocation(LatLng point) async {
+    final latitude = double.parse(point.latitude.toStringAsFixed(6));
+    final longitude = double.parse(point.longitude.toStringAsFixed(6));
+    _inputs['gpsLatitude']!.text = latitude.toString();
+    _inputs['gpsLongitude']!.text = longitude.toString();
+    final sequence = ++_geocodingSequence;
+    setState(() {
+      _geocoding = true;
+      _geocodingFailed = false;
+      _suggestedAddress = null;
+    });
+    try {
+      final result = await widget.repository.reverseGeocode(
+        latitude,
+        longitude,
+        context.isArabic ? 'ar' : 'en',
+      );
+      if (!mounted ||
+          !isCurrentLocationResponse(sequence, _geocodingSequence)) {
+        return;
+      }
+      _mergeAddressSuggestion(result);
+      setState(() => _suggestedAddress = result.formattedAddress);
+    } catch (_) {
+      if (!mounted ||
+          !isCurrentLocationResponse(sequence, _geocodingSequence)) {
+        return;
+      }
+      setState(() => _geocodingFailed = true);
+    } finally {
+      if (mounted && isCurrentLocationResponse(sequence, _geocodingSequence)) {
+        setState(() => _geocoding = false);
+      }
+    }
+  }
+
+  void _mergeAddressSuggestion(ReverseGeocodingResult result) {
+    final values = <String, String?>{
+      'addressCity': result.city ?? result.district,
+      'addressNeighborhood': result.neighborhood,
+      'addressStreet': result.street,
+      'addressPostalCode': result.postalCode,
+    };
+    for (final entry in values.entries) {
+      final value = entry.value?.trim();
+      if (value != null &&
+          value.isNotEmpty &&
+          !_manuallyEditedFields.contains(entry.key)) {
+        _inputs[entry.key]!.text = value;
+      }
+    }
+    final governorate = _jordanGovernorate(result);
+    if (governorate != null &&
+        !_manuallyEditedFields.contains('addressGovernorate')) {
+      _governorate = governorate;
+    }
+  }
+
+  int? _jordanGovernorate(ReverseGeocodingResult result) {
+    if (result.countryCode?.toUpperCase() != 'JO') return null;
+    final value = result.governorate
+        ?.toLowerCase()
+        .replaceAll(RegExp(r' governorate$'), '')
+        .trim();
+    const names = {
+      'amman': 0,
+      'عمان': 0,
+      'عمّان': 0,
+      'zarqa': 1,
+      'الزرقاء': 1,
+      'irbid': 2,
+      'إربد': 2,
+      'اربد': 2,
+      'balqa': 3,
+      'البلقاء': 3,
+      'madaba': 4,
+      'مادبا': 4,
+      'مأدبا': 4,
+      'karak': 5,
+      'الكرك': 5,
+      'tafilah': 6,
+      'الطفيلة': 6,
+      "ma'an": 7,
+      'maan': 7,
+      'معان': 7,
+      'aqaba': 8,
+      'العقبة': 8,
+      'ajloun': 9,
+      'عجلون': 9,
+      'jerash': 10,
+      'جرش': 10,
+      'mafraq': 11,
+      'المفرق': 11,
+    };
+    return names[value];
+  }
+
+  Future<void> _loadSuggestion() async {
+    if (_editing) return;
+    final (field, suggestion) = switch (widget.kind) {
+      PropertyKind.buildings => (
+        'internalCode',
+        widget.repository.nextBuildingCode(),
+      ),
+      PropertyKind.floors when widget.parentId != null => (
+        'floorNumber',
+        widget.repository.nextFloorNumber(widget.parentId!),
+      ),
+      PropertyKind.apartments when widget.parentId != null => (
+        'unitNumber',
+        widget.repository.nextApartmentNumber(widget.parentId!),
+      ),
+      _ => (null, null),
+    };
+    if (field == null || suggestion == null) return;
+    try {
+      final value = await suggestion;
+      if (!mounted ||
+          _manuallyEditedFields.contains(field) ||
+          _inputs[field]!.text.isNotEmpty) {
+        return;
+      }
+      _inputs[field]!.text = value;
+    } catch (_) {
+      // Suggestions are optional convenience. Manual entry remains available.
     }
   }
 
@@ -319,6 +472,7 @@ class _PropertyEditorScreenState extends State<PropertyEditorScreen> {
                     ][v]
                   : governorateNames[v],
               (v) => _governorate = v,
+              fieldKey: 'addressGovernorate',
             ),
             ...fields([
               'addressCity',
@@ -326,6 +480,57 @@ class _PropertyEditorScreenState extends State<PropertyEditorScreen> {
               'addressStreet',
               'addressPostalCode',
             ]),
+          ],
+        ),
+        AqariFormSection(
+          title: tr(context, 'الموقع', 'Location'),
+          children: [
+            Text(
+              'قد تكون بعض تفاصيل العنوان غير دقيقة. يرجى التحقق من العنوان والموقع على الخريطة.',
+              textDirection: TextDirection.rtl,
+              semanticsLabel:
+                  'قد تكون بعض تفاصيل العنوان غير دقيقة. يرجى التحقق من العنوان والموقع على الخريطة.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: context.aqariColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AqariSpacing.x3),
+            BuildingLocationPicker(
+              latitude: _latitude,
+              longitude: _longitude,
+              onSelected: _selectBuildingLocation,
+            ),
+            if (_geocoding)
+              Padding(
+                padding: const EdgeInsets.only(top: AqariSpacing.x3),
+                child: Text(
+                  tr(
+                    context,
+                    'جارٍ اقتراح العنوان…',
+                    'Finding a suggested address…',
+                  ),
+                ),
+              ),
+            if (_geocodingFailed)
+              Padding(
+                padding: const EdgeInsets.only(top: AqariSpacing.x3),
+                child: Text(
+                  tr(
+                    context,
+                    'تعذر اقتراح العنوان. يمكنك إدخاله يدوياً.',
+                    'The address could not be suggested. You can enter it manually.',
+                  ),
+                  style: TextStyle(color: context.aqariColors.warning),
+                ),
+              ),
+            if (_suggestedAddress?.trim().isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.only(top: AqariSpacing.x3),
+                child: Text(
+                  _suggestedAddress!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
           ],
         ),
         AqariFormSection(
@@ -390,24 +595,34 @@ class _PropertyEditorScreenState extends State<PropertyEditorScreen> {
     ];
   }
 
-  Widget _field(PropertyField field) => AqariTextField(
-    key: ValueKey(field.key),
-    controller: _inputs[field.key],
-    label: context.isArabic ? field.ar : field.en,
-    errorText: _errors[field.key],
-    enabled: !_saving,
-    textDirection: field.numeric || field.ltr ? TextDirection.ltr : null,
-    keyboardType: field.numeric
-        ? TextInputType.numberWithOptions(
-            decimal: !field.integer,
-            signed: field.min! < 0,
-          )
-        : field.key == 'externalOwnerPhone'
-        ? TextInputType.phone
-        : null,
-    onChanged: (_) {
-      if (_attempted) setState(_validate);
-    },
+  Widget _field(PropertyField field) => Padding(
+    padding: const EdgeInsets.only(bottom: AqariSpacing.x3),
+    child: AqariTextField(
+      key: ValueKey(field.key),
+      controller: _inputs[field.key],
+      label: context.isArabic ? field.ar : field.en,
+      errorText: _errors[field.key],
+      enabled: !_saving,
+      textDirection: field.numeric || field.ltr ? TextDirection.ltr : null,
+      keyboardType: field.numeric
+          ? TextInputType.numberWithOptions(
+              decimal: !field.integer,
+              signed: field.min! < 0,
+            )
+          : field.key == 'externalOwnerPhone'
+          ? TextInputType.phone
+          : null,
+      onChanged: (_) {
+        _manuallyEditedFields.add(field.key);
+        if (field.key == 'gpsLatitude' || field.key == 'gpsLongitude') {
+          setState(() {
+            if (_attempted) _validate();
+          });
+        } else if (_attempted) {
+          setState(_validate);
+        }
+      },
+    ),
   );
 
   Widget _select(
@@ -415,18 +630,23 @@ class _PropertyEditorScreenState extends State<PropertyEditorScreen> {
     int value,
     List<int> options,
     String Function(int) text,
-    void Function(int) update,
-  ) => AqariSelect<int>(
-    label: label,
-    valueLabel: options.contains(value)
-        ? text(value)
-        : tr(context, 'اختر قيمة', 'Select a value'),
-    items: options,
-    itemLabel: text,
-    enabled: !_saving,
-    onChanged: (v) => setState(() {
-      update(v);
-      if (_attempted) _validate();
-    }),
+    void Function(int) update, {
+    String? fieldKey,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: AqariSpacing.x3),
+    child: AqariSelect<int>(
+      label: label,
+      valueLabel: options.contains(value)
+          ? text(value)
+          : tr(context, 'اختر قيمة', 'Select a value'),
+      items: options,
+      itemLabel: text,
+      enabled: !_saving,
+      onChanged: (v) => setState(() {
+        if (fieldKey != null) _manuallyEditedFields.add(fieldKey);
+        update(v);
+        if (_attempted) _validate();
+      }),
+    ),
   );
 }

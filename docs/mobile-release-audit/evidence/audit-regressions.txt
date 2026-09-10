@@ -1,0 +1,17 @@
+00:00 +0: loading D:/AqariOS/AqariOS/docs/mobile-release-audit/audit_regressions_test.dart
+00:00 +0: SEC-01 dashboard must refetch after authenticated identity changes
+AUDIT company B outstanding=9876.0; requests=1
+00:00 +0 -1: SEC-01 dashboard must refetch after authenticated identity changes [E]
+  Expected: <123>
+    Actual: <9876.0>
+  Company B must never receive company A cached financial data
+  
+  package:matcher                                                expect
+  package:flutter_test/src/widget_tester.dart 473:18             expect
+  ..\docs\mobile-release-audit\audit_regressions_test.dart 35:5  main.<fn>
+  
+00:00 +0 -1: PAY-01 tenant must see rejection reason from actual tenant DTO
+00:03 +1 -1: Some tests failed.
+
+Failing tests:
+  D:/AqariOS/AqariOS/docs/mobile-release-audit/audit_regressions_test.dart: SEC-01 dashboard must refetch after authenticated identity changes

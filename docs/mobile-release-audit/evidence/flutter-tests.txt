@@ -1,0 +1,146 @@
+00:00 +0: loading D:/AqariOS/AqariOS/mobile/test/api_client_web_test.dart
+00:00 +0: D:/AqariOS/AqariOS/mobile/test/app_environment_test.dart: preserves a configured LAN API origin
+00:00 +1: D:/AqariOS/AqariOS/mobile/test/api_client_web_test.dart: sends Bearer authentication and decodes a typed JSON object
+00:00 +2: D:/AqariOS/AqariOS/mobile/test/api_client_web_test.dart: sends Bearer authentication and decodes a typed JSON object
+00:00 +3: D:/AqariOS/AqariOS/mobile/test/api_client_web_test.dart: sends Bearer authentication and decodes a typed JSON object
+00:00 +4: D:/AqariOS/AqariOS/mobile/test/api_client_web_test.dart: resolves requests against the configured LAN host
+00:00 +5: D:/AqariOS/AqariOS/mobile/test/api_client_web_test.dart: translates an RFC 7807 response without exposing internals
+00:00 +6: D:/AqariOS/AqariOS/mobile/test/auth_flows_test.dart: registration preserves the existing Web contract
+00:00 +7: D:/AqariOS/AqariOS/mobile/test/attachment_source_sheet_test.dart: attachment source sheet exposes camera gallery and files
+00:00 +8: D:/AqariOS/AqariOS/mobile/test/attachment_source_sheet_test.dart: attachment source sheet exposes camera gallery and files
+00:00 +9: D:/AqariOS/AqariOS/mobile/test/attachment_source_sheet_test.dart: attachment source sheet exposes camera gallery and files
+00:02 +10: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: password login has parity controls and password visibility
+00:03 +11: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: password login has parity controls and password visibility
+00:03 +12: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: password login has parity controls and password visibility
+00:03 +13: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: password login has parity controls and password visibility
+00:03 +14: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: password login has parity controls and password visibility
+00:03 +15: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: password login has parity controls and password visibility
+00:04 +16: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: password login has parity controls and password visibility
+00:04 +17: D:/AqariOS/AqariOS/mobile/test/dashboard_rendering_test.dart: dashboard has visible body at 390x844, dark=false
+00:04 +18: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: registration exposes every Web contract field in one scrollable column
+00:04 +19: D:/AqariOS/AqariOS/mobile/test/dashboard_rendering_test.dart: dashboard has visible body at 390x844, dark=true
+00:05 +20: D:/AqariOS/AqariOS/mobile/test/auth_ui_test.dart: SMS and recovery flows use explicit segmented methods
+00:05 +21: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:05 +22: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:05 +23: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:05 +24: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:05 +25: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:05 +26: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +27: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +28: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +29: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +30: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +31: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +32: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +33: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +34: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +35: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +36: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +37: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +38: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +39: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:06 +40: D:/AqariOS/AqariOS/mobile/test/financial_operations_widgets_test.dart: financial operations shell reuses payment records and opens expenses
+00:07 +41: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:08 +42: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:08 +43: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:08 +44: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:08 +45: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:08 +46: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:08 +47: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:09 +48: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:09 +49: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:10 +50: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:10 +51: D:/AqariOS/AqariOS/mobile/test/leasing_visual_test.dart: Pixel 8 dimensions: Arabic list, dark detail, create form
+00:10 +52: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:10 +53: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:11 +54: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:11 +55: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +56: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +57: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +58: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +59: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +60: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +61: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +62: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +63: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +64: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +65: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +66: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +67: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +68: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +69: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:12 +70: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:13 +71: D:/AqariOS/AqariOS/mobile/test/parking_widgets_test.dart: archive confirms, cancel is inert, and success refreshes list
+00:13 +72: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:13 +73: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:13 +74: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:14 +75: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:14 +76: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:14 +77: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:14 +78: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:14 +79: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:15 +80: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:15 +81: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:15 +82: D:/AqariOS/AqariOS/mobile/test/payments_visual_test.dart: Pixel 8 Arabic light/dark payments and tenant form render
+00:16 +83: D:/AqariOS/AqariOS/mobile/test/payments_widgets_test.dart: server search debounces, reset clears actual request and sections show
+00:16 +84: D:/AqariOS/AqariOS/mobile/test/payments_widgets_test.dart: server search debounces, reset clears actual request and sections show
+00:16 +85: D:/AqariOS/AqariOS/mobile/test/payments_widgets_test.dart: server search debounces, reset clears actual request and sections show
+00:16 +86: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +87: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +88: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +89: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +90: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +91: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +92: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +93: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +94: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +95: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +96: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +97: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +98: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:17 +99: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:18 +100: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:18 +101: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:18 +102: D:/AqariOS/AqariOS/mobile/test/playground_smoke_test.dart: playground renders and exposes theme controls
+00:18 +103: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:19 +104: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:19 +105: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:20 +106: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:20 +107: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:20 +108: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:20 +109: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:20 +110: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:20 +111: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:20 +112: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:21 +113: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:21 +114: D:/AqariOS/AqariOS/mobile/test/properties_visual_test.dart: phone RTL list and dark unit details visual review
+00:21 +115: D:/AqariOS/AqariOS/mobile/test/properties_widgets_test.dart: floor form POST uses the existing body and returns after success
+00:22 +116: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:22 +117: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:22 +118: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:22 +119: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:22 +120: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:22 +121: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:23 +122: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:23 +123: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:23 +124: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:23 +125: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:23 +126: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:23 +127: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:24 +128: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: company profile loads, validates, updates, and hides immutable editing
+00:24 +129: D:/AqariOS/AqariOS/mobile/test/tenant_portal_widgets_test.dart: dashboard composes profile, utility and shared notification data
+00:25 +130: D:/AqariOS/AqariOS/mobile/test/tenant_portal_widgets_test.dart: dashboard composes profile, utility and shared notification data
+00:25 +131: D:/AqariOS/AqariOS/mobile/test/tenant_portal_widgets_test.dart: dashboard composes profile, utility and shared notification data
+00:25 +132: D:/AqariOS/AqariOS/mobile/test/tenant_portal_widgets_test.dart: dashboard composes profile, utility and shared notification data
+00:25 +133: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: operations shows defaults and validates every writable combination
+00:25 +134: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: operations shows defaults and validates every writable combination
+00:25 +135: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: operations shows defaults and validates every writable combination
+00:25 +136: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: operations shows defaults and validates every writable combination
+00:25 +137: D:/AqariOS/AqariOS/mobile/test/settings_widgets_test.dart: operations shows defaults and validates every writable combination
+00:26 +138: D:/AqariOS/AqariOS/mobile/test/widget_test.dart: production app requires explicit API configuration
+00:26 +139: D:/AqariOS/AqariOS/mobile/test/widget_test.dart: production app requires explicit API configuration
+00:26 +140: D:/AqariOS/AqariOS/mobile/test/widget_test.dart: production app requires explicit API configuration
+00:26 +141: D:/AqariOS/AqariOS/mobile/test/widget_test.dart: production app requires explicit API configuration
+00:26 +142: D:/AqariOS/AqariOS/mobile/test/widget_test.dart: production app requires explicit API configuration
+00:26 +143: D:/AqariOS/AqariOS/mobile/test/tenant_portal_widgets_test.dart: utilities exposes link sheet with exact electricity validation
+00:26 +144: All tests passed!

@@ -103,6 +103,7 @@ export const ROUTES = {
   platform: {
     root: "/platform",
     dashboard: "/platform/dashboard",
+    administrators: "/platform/administrators",
     landlordRegistrations: "/platform/landlord-registrations",
     contactRequests: "/platform/contact-requests",
     plans: "/platform/plans",

@@ -40,6 +40,8 @@ This session (uncommitted, on top of the prior Module 5 increment — see `docs/
 - Phase docs created: `docs/backend-progress/00-current-state-audit.md`, `03-leasing.md`.
 
 ## Current Work In Progress
+Platform Admin management (2026-09-10): implemented direct-password creation and listing through `GET/POST /api/v1/platform/administrators`, fixed server-side `SYSTEM_ADMIN` assignment, atomic command persistence, audit-compatible actor attribution, and a dedicated frontend page/dialog. Security remediation now supplies the authenticated Platform Admin user ID transaction-locally, narrows the new-user RLS state, adds only the required `roles` SELECT grant, and removes the platform ACL workaround from the integration fixture. Added focused unit, RLS integration, and frontend tests. Frontend build and 4/4 focused tests pass. .NET restore/build/tests remain blocked because this environment cannot reach NuGet; the requested migration has not been applied to the local database.
+
 Remember Me implementation (2026-08-31): password login now carries an explicit session choice; refresh-token persistence mode and optional absolute session deadline are modeled and migrated; remembered sessions are configured for an absolute 30-day maximum; session cookies, rotation metadata, startup cookie restoration, and server-backed frontend logout are implemented. Static inspection and `git diff --check` completed. Per user instruction, .NET build/tests and migration execution remain pending manual verification.
 
 Phase 06–09 progress (this session):

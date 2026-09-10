@@ -7,6 +7,8 @@
     "build": "vite build",
     "dev": "vite",
     "test:mvp": "vitest run --config vitest.mvp.config.ts",
+    "test:platform-admin": "vitest run --config vitest.platform-admin.config.ts",
+    "typecheck:platform-admin": "tsc -p tsconfig.platform-admin.json",
     "typecheck:mvp": "tsc -p tsconfig.mvp.json",
     "i18n:audit": "node scripts/audit-i18n.mjs",
     "verify:error-handling": "node scripts/verify-error-handling.mjs"

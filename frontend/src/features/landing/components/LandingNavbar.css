@@ -70,6 +70,26 @@
   white-space: nowrap;
 }
 
+.landing-nav__login {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.landing-nav__login:hover {
+  background: var(--secondary-surface);
+}
+
 .landing-nav__theme-toggle {
   display: inline-flex;
   width: 42px;
@@ -122,9 +142,14 @@
   display: none;
 }
 
+.landing-nav__mobile-login {
+  font-weight: 700;
+}
+
 .landing-brand:focus-visible,
 .landing-nav__desktop-links a:focus-visible,
 .landing-nav__mobile-menu a:focus-visible,
+.landing-nav__login:focus-visible,
 .landing-nav__cta:focus-visible,
 .landing-nav__theme-toggle:focus-visible,
 .landing-nav__menu-button:focus-visible {
@@ -155,6 +180,7 @@
 
   .landing-brand span,
   .landing-nav__cta,
+  .landing-nav__login,
   .landing-nav__theme-toggle--desktop {
     display: none;
   }
@@ -244,6 +270,7 @@
   .landing-nav__desktop-links a,
   .landing-nav__mobile-menu,
   .landing-nav__mobile-menu a,
+  .landing-nav__login,
   .landing-nav__cta,
   .landing-nav__theme-toggle,
   .landing-header {

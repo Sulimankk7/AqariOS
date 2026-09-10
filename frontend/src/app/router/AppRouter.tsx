@@ -97,6 +97,7 @@ import { MaintenancePage } from "@/features/maintenance/pages/MaintenancePage";
 
 import { AuthLoadingScreen } from "@/features/auth/components/AuthLoadingScreen";
 import { PlatformAdminDashboardPage } from "@/features/platformAdmin/pages/PlatformAdminDashboardPage";
+import { PlatformAdministratorsPage } from "@/features/platformAdmin/pages/PlatformAdministratorsPage";
 import { LandlordRegistrationsPage } from "@/features/platformAdmin/pages/LandlordRegistrationsPage";
 import { ContactRequestsPage } from "@/features/platformAdmin/pages/ContactRequestsPage";
 import { CompanySubscriptionsPage } from "@/features/subscriptions/pages/CompanySubscriptionsPage";
@@ -283,6 +284,7 @@ export function AppRouter() {
           <Route element={<PlatformAdminLayout />}>
             <Route path={ROUTES.platform.root} element={<Navigate to={ROUTES.platform.dashboard} replace />} />
             <Route path={ROUTES.platform.dashboard} element={<PlatformAdminDashboardPage />} />
+            <Route path={ROUTES.platform.administrators} element={<PlatformAdministratorsPage />} />
             <Route element={<ProtectedRoute requiredPermissions={["platform.landlord_registrations.read"]} />}>
               <Route path={ROUTES.platform.landlordRegistrations} element={<LandlordRegistrationsPage />} />
             </Route>

@@ -11,6 +11,33 @@ import 'package:http/testing.dart';
 import 'properties_fixtures.dart';
 
 void main() {
+  test('only the latest reverse-geocoding response is current', () {
+    expect(isCurrentLocationResponse(2, 2), isTrue);
+    expect(isCurrentLocationResponse(1, 2), isFalse);
+  });
+
+  test('reverse geocoding uses the authenticated backend contract', () async {
+    final h = PropertyHarness(
+      handler: (_) async => http.Response(
+        '{"countryCode":"JO","city":"Amman","language":"en"}',
+        200,
+      ),
+    );
+    addTearDown(h.client.close);
+
+    final result = await h.repository.reverseGeocode(31.95, 35.91, 'en');
+
+    expect(result.countryCode, 'JO');
+    expect(result.city, 'Amman');
+    expect(h.requests.single.url.path, '/api/v1/locations/reverse-geocode');
+    expect(h.requests.single.url.queryParameters, {
+      'latitude': '31.95',
+      'longitude': '35.91',
+      'language': 'en',
+    });
+    expect(h.requests.single.headers['Authorization'], 'Bearer test-access');
+  });
+
   test(
     'in-flight results invalidated by a mutation cannot repopulate the cache',
     () async {

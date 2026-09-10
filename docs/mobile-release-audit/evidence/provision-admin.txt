@@ -1,0 +1,2 @@
+Disposable QA database migrated. 37 migrations.
+Disposable platform admin seeded; no existing users touched.

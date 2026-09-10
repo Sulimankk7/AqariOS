@@ -4,9 +4,12 @@ import type {
   LandlordRegistrationPageDto,
   LandlordRegistrationReviewResultDto,
   RejectLandlordRegistrationRequest,
+  PlatformAdministratorDto,
+  CreatePlatformAdministratorRequest,
 } from "../types/platformAdmin.types";
 
 const base = "/api/v1/platform/landlord-registrations";
+const administratorsBase = "/api/v1/platform/administrators";
 
 export const platformAdminApi = {
   getPending(page: number, pageSize: number) {
@@ -20,5 +23,11 @@ export const platformAdminApi = {
   },
   reject(registrationId: string, request: RejectLandlordRegistrationRequest) {
     return http.post<LandlordRegistrationReviewResultDto>(`${base}/${encodeURIComponent(registrationId)}/reject`, request);
+  },
+  getAdministrators() {
+    return http.get<PlatformAdministratorDto[]>(administratorsBase);
+  },
+  createAdministrator(request: CreatePlatformAdministratorRequest) {
+    return http.post<PlatformAdministratorDto>(administratorsBase, request);
   },
 };

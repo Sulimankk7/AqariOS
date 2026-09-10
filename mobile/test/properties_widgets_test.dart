@@ -6,11 +6,14 @@ import 'package:aqarios_mobile/features/properties/presentation/properties_landi
 import 'package:aqarios_mobile/features/properties/presentation/property_collection_screen.dart';
 import 'package:aqarios_mobile/features/properties/presentation/property_editor_screen.dart';
 import 'package:aqarios_mobile/features/properties/presentation/building_details_screen.dart';
+import 'package:aqarios_mobile/features/properties/presentation/building_location_picker.dart';
 import 'package:aqarios_mobile/features/properties/presentation/property_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'properties_fixtures.dart';
 
 Widget app(Widget child, {bool arabic = false, double scale = 1}) =>
@@ -33,6 +36,342 @@ Widget app(Widget child, {bool arabic = false, double scale = 1}) =>
     );
 
 void main() {
+  testWidgets('building map preserves zero coordinates and reports map taps', (
+    tester,
+  ) async {
+    LatLng? selected;
+    await tester.pumpWidget(
+      app(
+        BuildingLocationPicker(
+          latitude: 0,
+          longitude: 0,
+          onSelected: (value) => selected = value,
+        ),
+      ),
+    );
+    final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
+    expect(map.options.initialCenter, const LatLng(0, 0));
+    expect(find.byIcon(Icons.location_pin), findsOneWidget);
+    map.options.onTap!(
+      const TapPosition(Offset.zero, Offset.zero),
+      const LatLng(31.95, 35.91),
+    );
+    expect(selected, const LatLng(31.95, 35.91));
+  });
+
+  testWidgets(
+    'building map synchronizes coordinates and enriches only untouched address fields',
+    (tester) async {
+      final h = PropertyHarness(
+        handler: (request) async {
+          if (request.url.path.endsWith('/next-code')) {
+            return http.Response('{"value":"BLD-001"}', 200);
+          }
+          return http.Response(
+            jsonEncode({
+              'countryCode': 'JO',
+              'governorate': 'Amman',
+              'city': 'Provider City',
+              'neighborhood': 'Provider Area',
+              'street': 'Provider Street',
+              'postalCode': '11118',
+              'formattedAddress': 'Provider address',
+              'language': 'en',
+            }),
+            200,
+          );
+        },
+      );
+      addTearDown(h.client.close);
+      await tester.pumpWidget(
+        app(
+          PropertyEditorScreen(
+            repository: h.repository,
+            user: propertyUser({'properties.create'}),
+            kind: PropertyKind.buildings,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('addressCity')),
+        'Manual City',
+      );
+      await tester.scrollUntilVisible(
+        find.text('Location'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(
+        find.text(
+          'قد تكون بعض تفاصيل العنوان غير دقيقة. يرجى التحقق من العنوان والموقع على الخريطة.',
+        ),
+        findsOneWidget,
+      );
+      final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
+      map.options.onTap!(
+        const TapPosition(Offset.zero, Offset.zero),
+        const LatLng(31.1234567, 35.7654321),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('gpsLatitude')),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      String value(String key) => tester
+          .widget<AqariTextField>(find.byKey(ValueKey(key)))
+          .controller!
+          .text;
+      expect(value('gpsLatitude'), '31.123457');
+      expect(value('gpsLongitude'), '35.765432');
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('addressCity')),
+        -250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(value('addressCity'), 'Manual City');
+      expect(value('addressNeighborhood'), 'Provider Area');
+      expect(value('addressStreet'), 'Provider Street');
+    },
+  );
+
+  testWidgets(
+    'reverse geocoding failure does not block selected-coordinate create payload',
+    (tester) async {
+      final h = PropertyHarness(
+        handler: (request) async {
+          if (request.url.path.endsWith('/next-code')) {
+            return http.Response('{"value":"BLD-001"}', 200);
+          }
+          if (request.url.path.endsWith('/reverse-geocode')) {
+            return http.Response('{"detail":"unavailable"}', 503);
+          }
+          return http.Response('', 204);
+        },
+      );
+      addTearDown(h.client.close);
+      await tester.pumpWidget(
+        app(
+          PropertyEditorScreen(
+            repository: h.repository,
+            user: propertyUser({'properties.create'}),
+            kind: PropertyKind.buildings,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('name')), 'Mapped');
+      await tester.enterText(find.byKey(const ValueKey('totalFloors')), '2');
+      await tester.enterText(
+        find.byKey(const ValueKey('addressCity')),
+        'Amman',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('addressNeighborhood')),
+        'West',
+      );
+      await tester.scrollUntilVisible(
+        find.text('Location'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      tester.widget<FlutterMap>(find.byType(FlutterMap)).options.onTap!(
+        const TapPosition(Offset.zero, Offset.zero),
+        const LatLng(0, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'The address could not be suggested. You can enter it manually.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      final post = h.requests.singleWhere(
+        (request) => request.method == 'POST',
+      );
+      final payload = jsonDecode(post.body) as Map<String, dynamic>;
+      expect(payload['gpsLatitude'], 0.0);
+      expect(payload['gpsLongitude'], 0.0);
+      expect(payload['addressCity'], 'Amman');
+      expect(payload['addressNeighborhood'], 'West');
+    },
+  );
+
+  testWidgets(
+    'building create loads one editable suggestion and preserves manual edits',
+    (tester) async {
+      final pending = Completer<http.Response>();
+      final h = PropertyHarness(
+        handler: (request) => request.method == 'GET'
+            ? pending.future
+            : Future.value(http.Response('', 204)),
+      );
+      addTearDown(h.client.close);
+      await tester.pumpWidget(
+        app(
+          PropertyEditorScreen(
+            repository: h.repository,
+            user: propertyUser({'properties.create'}),
+            kind: PropertyKind.buildings,
+          ),
+        ),
+      );
+      expect(h.requests.single.url.path, '/api/v1/buildings/next-code');
+      await tester.enterText(
+        find.byKey(const ValueKey('internalCode')),
+        'BLDG-MAIN',
+      );
+      await tester.enterText(find.byKey(const ValueKey('internalCode')), '');
+      pending.complete(http.Response('{"value":"BLD-012"}', 200));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<AqariTextField>(find.byKey(const ValueKey('internalCode')))
+            .controller!
+            .text,
+        isEmpty,
+      );
+      expect(
+        h.requests.where((r) => r.url.path.endsWith('/next-code')),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets('building suggestion failure keeps manual create usable', (
+    tester,
+  ) async {
+    final h = PropertyHarness(
+      handler: (request) async => request.method == 'GET'
+          ? http.Response('{"detail":"unavailable"}', 500)
+          : http.Response('', 204),
+    );
+    addTearDown(h.client.close);
+    await tester.pumpWidget(
+      app(
+        PropertyEditorScreen(
+          repository: h.repository,
+          user: propertyUser({'properties.create'}),
+          kind: PropertyKind.buildings,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('name')), 'Main');
+    await tester.enterText(
+      find.byKey(const ValueKey('internalCode')),
+      'CUSTOM',
+    );
+    await tester.enterText(find.byKey(const ValueKey('totalFloors')), '2');
+    await tester.enterText(find.byKey(const ValueKey('addressCity')), 'Amman');
+    await tester.enterText(
+      find.byKey(const ValueKey('addressNeighborhood')),
+      'West',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final post = h.requests.singleWhere((r) => r.method == 'POST');
+    expect(jsonDecode(post.body)['internalCode'], 'CUSTOM');
+  });
+
+  testWidgets(
+    'apartment and floor create use their existing suggestion endpoints',
+    (tester) async {
+      Future<http.Response> handler(http.Request request) async =>
+          http.Response(
+            jsonEncode({
+              'value': request.url.path.endsWith('/apartments/next-number')
+                  ? 'APT-201'
+                  : '3',
+            }),
+            200,
+          );
+      final floorHarness = PropertyHarness(handler: handler);
+      addTearDown(floorHarness.client.close);
+      await tester.pumpWidget(
+        app(
+          PropertyEditorScreen(
+            repository: floorHarness.repository,
+            user: propertyUser({'properties.create'}),
+            kind: PropertyKind.floors,
+            parentId: 'b1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        floorHarness.requests.single.url.path,
+        '/api/v1/buildings/b1/floors/next-number',
+      );
+      expect(
+        tester
+            .widget<AqariTextField>(find.byKey(const ValueKey('floorNumber')))
+            .controller!
+            .text,
+        '3',
+      );
+
+      final apartmentHarness = PropertyHarness(handler: handler);
+      addTearDown(apartmentHarness.client.close);
+      await tester.pumpWidget(
+        app(
+          PropertyEditorScreen(
+            key: const ValueKey('apartment-create'),
+            repository: apartmentHarness.repository,
+            user: propertyUser({'properties.create'}),
+            kind: PropertyKind.apartments,
+            parentId: 'f1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        apartmentHarness.requests.single.url.path,
+        '/api/v1/floors/f1/apartments/next-number',
+      );
+      final unit = find.byKey(const ValueKey('unitNumber'));
+      expect(tester.widget<AqariTextField>(unit).controller!.text, 'APT-201');
+      await tester.enterText(unit, 'G-2');
+      expect(tester.widget<AqariTextField>(unit).controller!.text, 'G-2');
+    },
+  );
+
+  testWidgets('building edit preserves coordinates without location requests', (
+    tester,
+  ) async {
+    final h = PropertyHarness(handler: (_) async => http.Response('', 204));
+    addTearDown(h.client.close);
+    await tester.pumpWidget(
+      app(
+        PropertyEditorScreen(
+          repository: h.repository,
+          user: propertyUser({'properties.update'}),
+          kind: PropertyKind.buildings,
+          record: Building.fromJson(buildingJson()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(h.requests, isEmpty);
+    expect(
+      tester
+          .widget<AqariTextField>(find.byKey(const ValueKey('internalCode')))
+          .controller!
+          .text,
+      'B-01',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final put = h.requests.single;
+    expect(put.method, 'PUT');
+    final payload = jsonDecode(put.body) as Map<String, dynamic>;
+    expect(payload['gpsLatitude'], 0.0);
+    expect(payload['gpsLongitude'], 0.0);
+  });
+
   testWidgets(
     'floor form POST uses the existing body and returns after success',
     (tester) async {
@@ -69,9 +408,11 @@ void main() {
       );
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
-      expect(h.requests.single.method, 'POST');
-      expect(h.requests.single.url.path, '/api/v1/buildings/b1/floors');
-      expect(jsonDecode(h.requests.single.body), {
+      final post = h.requests.singleWhere(
+        (request) => request.method == 'POST',
+      );
+      expect(post.url.path, '/api/v1/buildings/b1/floors');
+      expect(jsonDecode(post.body), {
         'floorNumber': -1,
         'floorLabel': 'Lower floor',
         'floorType': 2,
@@ -329,7 +670,9 @@ void main() {
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
       expect(find.text('This field is required.'), findsNWidgets(2));
-      expect(h.requests, isEmpty);
+      expect(h.requests.map((request) => (request.method, request.url.path)), [
+        ('GET', '/api/v1/buildings/b1/floors/next-number'),
+      ]);
       await tester.enterText(find.byKey(const ValueKey('floorNumber')), '2');
       await tester.enterText(
         find.byKey(const ValueKey('floorLabel')),

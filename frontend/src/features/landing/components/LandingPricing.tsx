@@ -24,13 +24,12 @@ export function LandingPricing() {
         <div className="landing-pricing__plans">
           <PricingPlan
             period="شهريًا"
-            price="10 د.أ ثابتة + 3 د.أ لكل مستأجر"
+            price="3 د.أ لكل مستأجر"
             description="ادفع شهريًا حسب عدد مستأجريك."
           />
           <PricingPlan
             period="سنويًا"
-            price="10 د.أ ثابتة + 2 د.أ لكل مستأجر"
-            description="نفس المزايا، بسعر أقل."
+            price="2 د.أ لكل مستأجر"
             savings="وفّر 1 د.أ لكل مستأجر شهريًا"
             savingsDetail="يعني 12 د.أ توفير لكل مستأجر سنويًا"
             badge="الأفضل قيمة"
@@ -53,7 +52,7 @@ function PricingPlan({
 }: {
   period: string;
   price: string;
-  description: string;
+  description?: string;
   savings?: string;
   savingsDetail?: string;
   badge?: string;
@@ -69,14 +68,17 @@ function PricingPlan({
         {badge && <span className="landing-pricing__badge">{badge}</span>}
       </div>
 
-      <p className="landing-pricing__formula">{price}</p>
+      <div className="landing-pricing__price">
+        <p className="landing-pricing__formula">{price}</p>
+        <p className="landing-pricing__fixed-cost">+ 10 د.أ تكاليف تشغيلية ثابتة</p>
+      </div>
       {savings && (
         <div className="landing-pricing__savings">
           <strong>{savings}</strong>
           {savingsDetail && <span>{savingsDetail}</span>}
         </div>
       )}
-      <p className="landing-pricing__description">{description}</p>
+      {description && <p className="landing-pricing__description">{description}</p>}
 
       <ul className="landing-pricing__features">
         {features.map((feature) => (

@@ -106,6 +106,9 @@ export function RegisterForm({ lang, onFeedbackMessage }: RegisterFormProps) {
         >
           {t.createAccountSubtitle}
         </p>
+        <p className="mt-1 text-[12px] font-medium text-muted-foreground">
+          {t.signupEligibility}
+        </p>
       </div>
 
       {/* Backend API Error Banner */}

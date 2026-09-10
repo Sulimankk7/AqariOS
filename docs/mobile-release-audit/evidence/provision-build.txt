@@ -1,0 +1,10 @@
+  PropertyOS.Domain -> D:\AqariOS\AqariOS\docs\mobile-release-audit\evidence\provision-bin\PropertyOS.Domain.dll
+  PropertyOS.Application -> D:\AqariOS\AqariOS\docs\mobile-release-audit\evidence\provision-bin\PropertyOS.Application.dll
+  PropertyOS.Infrastructure -> D:\AqariOS\AqariOS\docs\mobile-release-audit\evidence\provision-bin\PropertyOS.Infrastructure.dll
+  qa-provision -> D:\AqariOS\AqariOS\docs\mobile-release-audit\evidence\provision-bin\qa-provision.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.78

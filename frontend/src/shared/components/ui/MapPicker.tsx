@@ -17,13 +17,17 @@ export interface MapPickerProps {
   onLocationSelect?: (lat: number, lng: number) => void;
   readOnly?: boolean;
   height?: string;
+  instruction?: string;
 }
+
+const hasCoordinates = (lat?: number, lng?: number): lat is number =>
+  lat !== null && lat !== undefined && lng !== null && lng !== undefined;
 
 function LocationMarker({ lat, lng, onLocationSelect, readOnly }: MapPickerProps) {
   const map = useMap();
 
   useEffect(() => {
-    if (lat && lng) {
+    if (hasCoordinates(lat, lng)) {
       map.setView([lat, lng], map.getZoom() || 14);
     }
   }, [lat, lng, map]);
@@ -36,7 +40,7 @@ function LocationMarker({ lat, lng, onLocationSelect, readOnly }: MapPickerProps
     },
   });
 
-  return lat && lng ? (
+  return hasCoordinates(lat, lng) ? (
     <Marker
       position={[lat, lng]}
       draggable={!readOnly}
@@ -53,15 +57,16 @@ function LocationMarker({ lat, lng, onLocationSelect, readOnly }: MapPickerProps
   ) : null;
 }
 
-export function MapPicker({ lat, lng, onLocationSelect, readOnly = false, height = "280px" }: MapPickerProps) {
+export function MapPicker({ lat, lng, onLocationSelect, readOnly = false, height = "280px", instruction }: MapPickerProps) {
   // Default center: Amman, Jordan (31.9539, 35.9106)
-  const defaultCenter: [number, number] = [lat || 31.9539, lng || 35.9106];
+  const selected = hasCoordinates(lat, lng);
+  const defaultCenter: [number, number] = [lat ?? 31.9539, lng ?? 35.9106];
 
   return (
     <div className="w-full rounded-lg overflow-hidden border border-border shadow-xs relative" style={{ height }}>
       <MapContainer
         center={defaultCenter}
-        zoom={lat && lng ? 14 : 11}
+        zoom={selected ? 14 : 11}
         style={{ height: '100%', width: '100%', zIndex: 10 }}
       >
         <TileLayer
@@ -72,7 +77,7 @@ export function MapPicker({ lat, lng, onLocationSelect, readOnly = false, height
       </MapContainer>
       {!readOnly && (
         <div className="absolute bottom-2 start-2 z-[400] bg-background/90 backdrop-blur-xs px-2.5 py-1 rounded text-xs font-medium text-muted-foreground border border-border shadow-xs">
-          Click on map to select GPS coordinates
+          {instruction ?? 'Click on map to select GPS coordinates'}
         </div>
       )}
     </div>

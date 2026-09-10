@@ -1,185 +1,118 @@
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { DemoModulePage } from "@/features/demo/components/DemoModulePage";
-import type { DemoModuleKey } from "@/features/demo/data/demoData";
+import {
+  BarChart3,
+  Building2,
+  CreditCard,
+  FileText,
+  ShieldCheck,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import "./LandingCoreFeatures.css";
 
-type CoreFeatureId =
-  | "properties"
-  | "leasing"
-  | "payments"
-  | "financials"
-  | "documents"
-  | "notifications"
-  | "security"
-  | "arabic";
-
-interface CoreFeature {
-  id: CoreFeatureId;
+interface Capability {
   number: string;
   title: string;
   description: string;
-  visual: DemoModuleKey;
+  icon: LucideIcon;
 }
 
-const CORE_FEATURES: readonly CoreFeature[] = [
+const CAPABILITIES: readonly Capability[] = [
   {
-    id: "properties",
     number: "01",
-    title: "العقارات",
-    description: "إدارة المباني والوحدات والعقارات من مكان واحد.",
-    visual: "buildings",
+    title: "العقارات والوحدات",
+    description:
+      "أنشئ مبانيك ووحداتها ونظّم معلومات كل عقار، لتبقى تفاصيل عقاراتك واضحة وسهلة الوصول.",
+    icon: Building2,
   },
   {
-    id: "leasing",
     number: "02",
-    title: "التأجير",
-    description: "إدارة عقود الإيجار والمستأجرين ومتابعة دورة العقد.",
-    visual: "leases",
+    title: "الإيجارات والمستأجرين",
+    description:
+      "أنشئ عقود الإيجار وتابع المستأجرين وحالة العقود، مع سجل واضح للتغييرات والعمليات المرتبطة بها.",
+    icon: Users,
   },
   {
-    id: "payments",
     number: "03",
-    title: "الدفعات",
-    description: "متابعة الإيجارات والشيكات والاستحقاقات والحالات المالية.",
-    visual: "payments",
+    title: "الدفعات والشيكات",
+    description:
+      "تابع الاستحقاقات والدفعات والشيكات، واعرف ما تم تحصيله وما يزال مستحقًا لكل عقد.",
+    icon: CreditCard,
   },
   {
-    id: "financials",
     number: "04",
     title: "العمليات المالية",
-    description: "إدارة المصاريف والإيرادات والإيصالات والتقارير المالية.",
-    visual: "financial-operations",
+    description:
+      "سجّل المصروفات والإيصالات والعمليات المالية المرتبطة بإدارة العقار، مع رؤية أوضح للحركة المالية.",
+    icon: BarChart3,
   },
   {
-    id: "documents",
     number: "05",
     title: "المستندات",
-    description: "تنظيم مستندات العقارات والوحدات والعقود في مكان واحد.",
-    visual: "documents",
+    description:
+      "نظّم مستندات المباني والعقود في مكان واحد، مع إمكانية إدارة المستندات الحساسة وفق الصلاحيات.",
+    icon: FileText,
   },
   {
-    id: "notifications",
     number: "06",
-    title: "الإشعارات",
-    description: "تنبيهات مرتبطة بالعمليات والاستحقاقات المهمة.",
-    visual: "notifications",
-  },
-  {
-    id: "security",
-    number: "07",
     title: "الصلاحيات والأمان",
-    description: "تحكم كامل بالأدوار والصلاحيات والوصول إلى البيانات.",
-    visual: "documents",
-  },
-  {
-    id: "arabic",
-    number: "08",
-    title: "واجهة عربية بالكامل",
-    description: "تجربة RTL مصممة لتناسب طريقة العمل في السوق الأردني.",
-    visual: "buildings",
+    description:
+      "حدّد ما يستطيع كل مستخدم الوصول إليه وتنفيذه، مع أدوار وصلاحيات مصممة لبيئة العمل متعددة المستخدمين.",
+    icon: ShieldCheck,
   },
 ];
 
 export function LandingCoreFeatures() {
-  const [activeFeatureId, setActiveFeatureId] = useState<CoreFeatureId>("properties");
-  const activeFeature = CORE_FEATURES.find((feature) => feature.id === activeFeatureId) ?? CORE_FEATURES[0];
-
-  const selectFeatureAt = (index: number) => {
-    const feature = CORE_FEATURES[index];
-    if (!feature) return;
-
-    setActiveFeatureId(feature.id);
-    window.requestAnimationFrame(() => {
-      document.getElementById(`core-feature-tab-${feature.id}`)?.focus();
-    });
-  };
-
   return (
-    <section id="features" className="landing-core-features" aria-labelledby="landing-core-features-title">
+    <section
+      id="features"
+      className="landing-core-features"
+      aria-labelledby="landing-core-features-title"
+    >
       <div className="landing-core-features__container">
-        <header className="landing-core-features__header">
-          <p className="landing-core-features__eyebrow">إمكانيات AqariOS</p>
-          <h2 id="landing-core-features-title">
-            كل عمليات إدارة العقار،
-            <span>مترابطة في نظام واحد.</span>
-          </h2>
-          <p className="landing-core-features__intro">
-            من إدارة العقارات والعقود إلى الدفعات والعمليات المالية والمستندات، AqariOS يجمع سير العمل اليومي في مكان واحد.
-          </p>
-        </header>
+        <h2 id="landing-core-features-title" className="landing-core-features__title">
+          إمكانيات AqariOS
+        </h2>
 
-        <div className="landing-core-features__showcase">
-          <div
-            className="landing-core-features__selector"
-            role="tablist"
-            aria-label="إمكانيات AqariOS الأساسية"
-            aria-orientation="vertical"
-          >
-            {CORE_FEATURES.map((feature, index) => {
-              const isActive = feature.id === activeFeature.id;
-
-              return (
-                <button
-                  key={feature.id}
-                  id={`core-feature-tab-${feature.id}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-controls="core-feature-product-panel"
-                  tabIndex={isActive ? 0 : -1}
-                  className="landing-core-features__selector-item"
-                  onClick={() => setActiveFeatureId(feature.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "ArrowDown") {
-                      event.preventDefault();
-                      selectFeatureAt((index + 1) % CORE_FEATURES.length);
-                    } else if (event.key === "ArrowUp") {
-                      event.preventDefault();
-                      selectFeatureAt((index - 1 + CORE_FEATURES.length) % CORE_FEATURES.length);
-                    } else if (event.key === "Home") {
-                      event.preventDefault();
-                      selectFeatureAt(0);
-                    } else if (event.key === "End") {
-                      event.preventDefault();
-                      selectFeatureAt(CORE_FEATURES.length - 1);
-                    }
-                  }}
-                >
-                  <span className="landing-core-features__number">{feature.number}</span>
-                  <span className="landing-core-features__copy">
-                    <strong>{feature.title}</strong>
-                    <span>{feature.description}</span>
-                  </span>
-                  <ArrowLeft className="landing-core-features__arrow" aria-hidden="true" />
-                </button>
-              );
-            })}
+        <div className="landing-core-features__intro">
+          <div className="landing-core-features__brand" aria-label="AqariOS">
+            <img
+              src="/branding/landing/aqarios-logo.png"
+              alt="شعار AqariOS"
+              width="180"
+              height="180"
+            />
           </div>
 
-          <div className="landing-core-features__product">
-            <div className="landing-core-features__product-heading" aria-live="polite">
-              <div>
-                <span>واجهة AqariOS</span>
-                <h3>{activeFeature.title}</h3>
-              </div>
-              <p>{activeFeature.description}</p>
-            </div>
-
-            <div
-              id="core-feature-product-panel"
-              role="tabpanel"
-              aria-labelledby={`core-feature-tab-${activeFeature.id}`}
-              className="landing-core-features__product-frame"
-            >
-              <div key={activeFeature.id} className="landing-core-features__visual-stage">
-                <div className="landing-core-features__visual-canvas">
-                  <DemoModulePage moduleKey={activeFeature.visual} />
-                </div>
-              </div>
-            </div>
+          <div className="landing-core-features__summary">
+            <h3>نظام واحد لإدارة تفاصيل عقاراتك اليومية.</h3>
+            <p>
+              AqariOS مصمم ليجمع العمل الذي تحتاجه لإدارة العقارات في مكان واحد.
+              من تسجيل المباني والوحدات، وإدارة المستأجرين والعقود، إلى متابعة
+              الدفعات والشيكات، وتنظيم العمليات المالية والمستندات والصلاحيات.
+            </p>
+            <p>
+              بدل أن تنتقل بين ملفات وأدوات مختلفة، تحصل على مساحة واحدة ترى فيها
+              عقاراتك وعملياتها وتتابع ما يحتاج إلى إجراء.
+            </p>
           </div>
         </div>
+
+        <ol className="landing-core-features__timeline">
+          {CAPABILITIES.map(({ number, title, description, icon: Icon }) => (
+            <li key={number} className="landing-core-features__capability">
+              <span className="landing-core-features__number" aria-hidden="true">
+                {number}
+              </span>
+              <span className="landing-core-features__icon" aria-hidden="true">
+                <Icon strokeWidth={1.7} />
+              </span>
+              <div className="landing-core-features__copy">
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

@@ -2,6 +2,39 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_problem.dart';
 import '../domain/property_models.dart';
 
+class ReverseGeocodingResult {
+  const ReverseGeocodingResult({
+    this.countryCode,
+    this.governorate,
+    this.city,
+    this.district,
+    this.neighborhood,
+    this.street,
+    this.postalCode,
+    this.formattedAddress,
+  });
+
+  factory ReverseGeocodingResult.fromJson(Json json) => ReverseGeocodingResult(
+    countryCode: json['countryCode'] as String?,
+    governorate: json['governorate'] as String?,
+    city: json['city'] as String?,
+    district: json['district'] as String?,
+    neighborhood: json['neighborhood'] as String?,
+    street: json['street'] as String?,
+    postalCode: json['postalCode'] as String?,
+    formattedAddress: json['formattedAddress'] as String?,
+  );
+
+  final String? countryCode;
+  final String? governorate;
+  final String? city;
+  final String? district;
+  final String? neighborhood;
+  final String? street;
+  final String? postalCode;
+  final String? formattedAddress;
+}
+
 class PropertiesRepository {
   PropertiesRepository(this.client);
   final ApiClient client;
@@ -103,6 +136,39 @@ class PropertiesRepository {
       await client.getJson('/api/v1/apartments/${Uri.encodeComponent(id)}'),
     ),
     force,
+  );
+
+  Future<String> nextBuildingCode() =>
+      _suggestion('/api/v1/buildings/next-code');
+
+  Future<String> nextFloorNumber(String buildingId) => _suggestion(
+    '/api/v1/buildings/${Uri.encodeComponent(buildingId)}/floors/next-number',
+  );
+
+  Future<String> nextApartmentNumber(String floorId) => _suggestion(
+    '/api/v1/floors/${Uri.encodeComponent(floorId)}/apartments/next-number',
+  );
+
+  Future<String> _suggestion(String path) async {
+    final response = await client.getJson(path);
+    final value = response['value'];
+    if (value is! String) throw const FormatException('Invalid suggestion');
+    return value;
+  }
+
+  Future<ReverseGeocodingResult> reverseGeocode(
+    double latitude,
+    double longitude,
+    String language,
+  ) async => ReverseGeocodingResult.fromJson(
+    await client.getJson(
+      '/api/v1/locations/reverse-geocode',
+      query: {
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+        'language': language,
+      },
+    ),
   );
 
   Future<void> save(String path, Json body, {required bool editing}) async {

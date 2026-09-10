@@ -7,14 +7,15 @@
 
 .landing-pricing__container {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1040px;
   margin-inline: auto;
-  padding: clamp(5rem, 7vw, 6.75rem) 32px clamp(5.5rem, 8vw, 7rem);
+  padding: clamp(4.5rem, 6vw, 6rem) 32px clamp(4.75rem, 7vw, 6.25rem);
 }
 
 .landing-pricing__header {
   max-width: 48rem;
-  margin-bottom: clamp(2.75rem, 5vw, 4rem);
+  margin: 0 auto clamp(2.5rem, 4vw, 3.25rem);
+  text-align: center;
 }
 
 .landing-pricing__eyebrow {
@@ -28,7 +29,7 @@
 .landing-pricing__header h2 {
   margin: 0;
   color: var(--foreground);
-  font-size: clamp(2.25rem, 4vw, 3.75rem);
+  font-size: clamp(2.2rem, 3.8vw, 3.4rem);
   font-weight: 700;
   line-height: 1.25;
 }
@@ -43,24 +44,27 @@
 .landing-pricing__plans {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-block: 1px solid var(--border);
+  align-items: stretch;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  max-width: 54rem;
+  margin-inline: auto;
 }
 
 .landing-pricing__plan {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: clamp(1.75rem, 4vw, 3rem);
-  background: transparent;
-}
-
-.landing-pricing__plan + .landing-pricing__plan {
-  border-inline-start: 1px solid var(--border);
+  padding: clamp(1.5rem, 3vw, 2rem);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-md);
+  background: var(--surface-container-lowest);
+  box-shadow: var(--elevation-1);
 }
 
 .landing-pricing__plan--emphasized {
   background: var(--surface-container-low);
-  box-shadow: inset 0 0 0 1px var(--primary);
+  border-color: var(--primary);
+  box-shadow: var(--elevation-2);
 }
 
 .landing-pricing__plan-heading {
@@ -74,7 +78,7 @@
 .landing-pricing__plan-name {
   margin: 0;
   color: var(--foreground);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 700;
   line-height: 1.45;
 }
@@ -100,13 +104,24 @@
   white-space: nowrap;
 }
 
+.landing-pricing__price {
+  margin: 1.4rem 0 0;
+}
+
 .landing-pricing__formula {
-  max-width: 23ch;
-  margin: 1.75rem 0 0;
+  margin: 0;
   color: var(--foreground);
-  font-size: clamp(1.5rem, 2.35vw, 2.15rem);
-  font-weight: 700;
-  line-height: 1.55;
+  font-size: clamp(1.7rem, 2.6vw, 2.25rem);
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.landing-pricing__fixed-cost {
+  margin: 0.35rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.6;
 }
 
 .landing-pricing__description {
@@ -120,15 +135,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  margin-top: 1.25rem;
-  padding: 1rem 1.125rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
   border-inline-start: 0.1875rem solid var(--primary);
   background: var(--primary-container);
   color: var(--on-primary-container);
 }
 
 .landing-pricing__savings strong {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.55;
 }
@@ -142,7 +157,7 @@
 .landing-pricing__features {
   display: grid;
   gap: 0;
-  margin: 2rem 0;
+  margin: 1.5rem 0;
   padding: 0;
   border-top: 1px solid var(--border);
   list-style: none;
@@ -152,7 +167,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding-block: 0.8rem;
+  padding-block: 0.65rem;
   border-bottom: 1px solid var(--border);
   color: var(--foreground);
   font-size: 0.9375rem;
@@ -178,14 +193,10 @@
 
   .landing-pricing__plans {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .landing-pricing__plan + .landing-pricing__plan {
-    border-block-start: 1px solid var(--border);
-    border-inline-start: 0;
+    max-width: 27rem;
   }
 
   .landing-pricing__formula {
-    font-size: 1.5rem;
+    font-size: 1.7rem;
   }
 }

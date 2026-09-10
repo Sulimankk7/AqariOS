@@ -34,3 +34,17 @@ export interface LandlordRegistrationReviewResultDto {
 export interface RejectLandlordRegistrationRequest {
   reason: string;
 }
+
+export interface PlatformAdministratorDto {
+  id: string;
+  fullName: string;
+  email: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreatePlatformAdministratorRequest {
+  fullName: string;
+  email: string;
+  password: string;
+}

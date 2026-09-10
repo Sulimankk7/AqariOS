@@ -29,6 +29,8 @@ using PropertyOS.Application.Properties.Floors.Services;
 using PropertyOS.Application.Properties.Apartments.Services;
 using PropertyOS.Application.Properties.ParkingSpots.Services;
 using PropertyOS.Infrastructure.Properties.Services;
+using PropertyOS.Application.Locations;
+using PropertyOS.Infrastructure.Locations;
 
 
 namespace PropertyOS.Infrastructure;
@@ -43,6 +45,19 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "Connection string 'DefaultConnection' is not configured. " +
                 "Provide it via environment variables or a managed secret store.");
+
+        services.AddMemoryCache();
+        services.Configure<GeocodingOptions>(
+            configuration.GetSection(GeocodingOptions.SectionName));
+        services.AddHttpClient<IReverseGeocodingService, GeoapifyReverseGeocodingService>(
+            (serviceProvider, client) =>
+            {
+                var options = serviceProvider
+                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<GeocodingOptions>>()
+                    .Value;
+                client.BaseAddress = new Uri(options.BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            });
 
         // -----------------------------------------------------------------------
         // PostgreSQL enum mapping (Npgsql native enum support)

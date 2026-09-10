@@ -1085,7 +1085,7 @@ export const en = {
   platformAdmin: {
     title: "AqariOS Platform Administration",
     comingSoon: "Coming soon",
-    nav: { dashboard: "Platform dashboard", registrations: "Landlord registrations", contactRequests: "Contact requests", plans: "Plans", subscriptions: "Subscriptions", future: "Future capabilities", open: "Open navigation" },
+    nav: { dashboard: "Platform dashboard", administrators: "Platform administrators", registrations: "Landlord registrations", contactRequests: "Contact requests", plans: "Plans", subscriptions: "Subscriptions", future: "Future capabilities", open: "Open navigation" },
     dashboard: {
       title: "Platform Administration",
       subtitle: "Manage access to the AqariOS platform at system level",
@@ -1107,6 +1107,7 @@ export const en = {
       viewSubscriptions: "View subscriptions",
     },
     registrations: { title: "Landlord registrations", subtitle: "Review pending requests before activating the landlord and company accounts.", empty: "There are no pending registration requests", total: "Total requests: {count}" },
+    administrators: { title: "Platform administrators", subtitle: "Manage accounts authorized to access AqariOS at system level.", add: "Add platform administrator", formDescription: "Enter the new platform administrator's details and initial password.", fullName: "Full name", email: "Email", password: "Password", status: "Status", createdAt: "Created", active: "Active", inactive: "Inactive", empty: "There are no platform administrators to display.", create: "Create account", success: "Platform administrator account created.", duplicateEmail: "This email is already used by an existing account.", nameInvalid: "Full name is required and cannot exceed 100 characters.", emailInvalid: "Enter a valid email address.", passwordInvalid: "Password must be at least 8 characters." },
     contactRequests: {
       title: "Contact requests", subtitle: "Contact and introductory-call requests submitted through the public AqariOS landing page.", empty: "There are no contact requests right now.", allStatuses: "All statuses", detailsTitle: "Contact request details", name: "Name", company: "Company / office", phone: "Phone", buildings: "Buildings", notes: "Notes", statusLabel: "Status", createdAt: "Requested", changeStatus: "Update status", updated: "Request status updated.", updateError: "Request status could not be updated.", loadError: "Contact requests could not be loaded.",
       status: { New: "New", Contacted: "Contacted", TrialStarted: "Trial started", Converted: "Converted", Rejected: "Rejected" },

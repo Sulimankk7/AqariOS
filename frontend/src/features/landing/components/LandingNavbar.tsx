@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Menu, Moon, Sun, X } from "lucide-react";
+import { Link } from "react-router";
+import { ROUTES } from "@/config/routes";
 import { AqariOSLogo } from "@/shared/components/AqariOSLogo";
 import { useTheme } from "@/shared/theme";
 import { Button } from "@/shared/ui/button";
@@ -7,7 +9,6 @@ import "./LandingNavbar.css";
 
 const navigationItems = [
   { label: "الإمكانيات", href: "#features" },
-  { label: "السوق الأردني", href: "#jordan" },
   { label: "لماذا AqariOS؟", href: "#why-aqarios" },
   { label: "الأسعار", href: "#pricing" },
   { label: "تواصل معنا", href: "#contact" },
@@ -86,6 +87,9 @@ export function LandingNavbar() {
           >
             {themeIcon}
           </button>
+          <Link className="landing-nav__login" to={ROUTES.auth.login}>
+            تسجيل الدخول
+          </Link>
           <Button
             className="landing-nav__cta rounded-sm"
             type="button"
@@ -117,6 +121,14 @@ export function LandingNavbar() {
               {item.label}
             </a>
           ))}
+          <Link
+            className="landing-nav__mobile-login"
+            to={ROUTES.auth.login}
+            tabIndex={isMenuOpen ? 0 : -1}
+            onClick={closeMenu}
+          >
+            تسجيل الدخول
+          </Link>
           <a
             className="landing-nav__mobile-cta"
             href="#contact"

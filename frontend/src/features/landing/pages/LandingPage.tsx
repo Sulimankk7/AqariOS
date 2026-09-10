@@ -19,7 +19,7 @@ export default function LandingPage() {
         <LandingHero />
         <LandingProblemSolution />
         <LandingCoreFeatures />
-        <LandingJordanPropertyShowcase />
+        
         <LandingWhyAqarios />
         <LandingComingSoon />
         <LandingPricing />

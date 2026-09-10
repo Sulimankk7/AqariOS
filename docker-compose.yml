@@ -1,105 +1,110 @@
 name: aqarios
 
 services:
-  postgres:
-    image: postgres:17-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-AqariOS}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      AQARIOS_PLATFORM_ADMIN_EMAIL: ${AQARIOS_PLATFORM_ADMIN_EMAIL}
-      AQARIOS_PLATFORM_ADMIN_PASSWORD: ${AQARIOS_PLATFORM_ADMIN_PASSWORD}
-    expose:
-      - "5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/01-create-roles.sql:/docker-entrypoint-initdb.d/01-create-roles.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    networks:
-      - backend
+ postgres:
+  image: postgres:17-alpine
+  restart: unless-stopped
 
-  migrate:
-    build:
-      context: .
-      dockerfile: src/PropertyOS.Api/Dockerfile
-      target: migrations
-    restart: "no"
-    environment:
-      PROPERTYOS_DB: Host=postgres;Port=5432;Database=${POSTGRES_DB:-AqariOS};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - backend
+  environment:
+    POSTGRES_DB: ${POSTGRES_DB:-AqariOS}
+    POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    AQARIOS_PLATFORM_ADMIN_EMAIL: ${AQARIOS_PLATFORM_ADMIN_EMAIL}
+    AQARIOS_PLATFORM_ADMIN_PASSWORD: ${AQARIOS_PLATFORM_ADMIN_PASSWORD}
 
-  api:
-    build:
-      context: .
-      dockerfile: src/PropertyOS.Api/Dockerfile
-      target: runtime
-    restart: unless-stopped
-    environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ASPNETCORE_HTTP_PORTS: "8080"
+  ports:
+    - "127.0.0.1:5432:5432"
 
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-AqariOS};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+    - ./docker/postgres/01-create-roles.sql:/docker-entrypoint-initdb.d/01-create-roles.sql:ro
 
-      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
-      Jwt__Issuer: ${JWT_ISSUER:-PropertyOS}
-      Jwt__Audience: ${JWT_AUDIENCE:-PropertyOS-Clients}
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+    interval: 5s
+    timeout: 5s
+    retries: 10
+    start_period: 10s
 
-      Cors__AllowedOrigins__0: http://localhost:${FRONTEND_PORT:-5173}
-      Frontend__BaseUrl: http://localhost:${FRONTEND_PORT:-5173}
+  networks:
+    - backend
 
-      FileStorage__Provider: Physical
-      FileStorage__StorageBasePath: /app/storage
-      FileStorage__UrlSigningSecret: ${FILE_STORAGE_URL_SIGNING_SECRET:?Set FILE_STORAGE_URL_SIGNING_SECRET in .env}
-      FileStorage__ConnectionString: ""
+ migrate:
+  build:
+    context: .
+    dockerfile: src/PropertyOS.Api/Dockerfile
+    target: migrations
+  restart: "no"
+  environment:
+    PROPERTYOS_DB: Host=postgres;Port=5432;Database=${POSTGRES_DB:-AqariOS};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  depends_on:
+    postgres:
+      condition: service_healthy
+  networks:
+    - backend
 
-      Sentry__Dsn: ${SENTRY_DSN:-}
-      Brevo__ApiKey: ${BREVO_API_KEY:-}
+ api:
+  build:
+    context: .
+    dockerfile: src/PropertyOS.Api/Dockerfile
+    target: runtime
+  restart: unless-stopped
+  environment:
+    ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+    ASPNETCORE_HTTP_PORTS: "8080"
 
-      Twilio__AccountSid: ${TWILIO_ACCOUNT_SID:-}
-      Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
-      Twilio__MessagingServiceSid: ${TWILIO_MESSAGING_SERVICE_SID:-}
+    ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-AqariOS};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
 
-      Efawateercom__ApiKey: ${EFAWATEERCOM_API_KEY:-}
+    Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    Jwt__Issuer: ${JWT_ISSUER:-PropertyOS}
+    Jwt__Audience: ${JWT_AUDIENCE:-PropertyOS-Clients}
+
+    Cors__AllowedOrigins__0: http://localhost:${FRONTEND_PORT:-5173}
+    Frontend__BaseUrl: http://localhost:${FRONTEND_PORT:-5173}
+
+    FileStorage__Provider: Physical
+    FileStorage__StorageBasePath: /app/storage
+    FileStorage__UrlSigningSecret: ${FILE_STORAGE_URL_SIGNING_SECRET:?Set FILE_STORAGE_URL_SIGNING_SECRET in .env}
+    FileStorage__ConnectionString: ""
+
+    Sentry__Dsn: ${SENTRY_DSN:-}
+    Brevo__ApiKey: ${BREVO_API_KEY:-}
+
+    Twilio__AccountSid: ${TWILIO_ACCOUNT_SID:-}
+    Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
+    Twilio__MessagingServiceSid: ${TWILIO_MESSAGING_SERVICE_SID:-}
+
+    Efawateercom__ApiKey: ${EFAWATEERCOM_API_KEY:-}
 
 
-    ports:
-      - "127.0.0.1:${API_PORT:-5235}:8080"
+  ports:
+    - "127.0.0.1:${API_PORT:-5235}:8080"
 
-    volumes:
-      - api_storage:/app/storage
+  volumes:
+    - api_storage:/app/storage
 
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
 
-    networks:
-      - backend
-      - web
+  networks:
+    - backend
+    - web
 
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/}
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:${FRONTEND_PORT:-5173}:8080"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - web
+ frontend:
+  build:
+    context: .
+    dockerfile: frontend/Dockerfile
+    args:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/}
+  restart: unless-stopped
+  ports:
+    - "127.0.0.1:${FRONTEND_PORT:-5173}:8080"
+  depends_on:
+    api:
+      condition: service_healthy
+  networks:
+    - web
 
 
 networks:

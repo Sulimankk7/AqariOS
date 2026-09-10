@@ -1,0 +1,34 @@
+[
+  {
+    "email": "qa-manager-a@example.invalid",
+    "companyId": "01a0835b-c3cf-7d52-b5aa-23a6cf60ce56",
+    "userId": "fd4a07fe-2722-4344-90d5-c74f13740a1c",
+    "registrationId": "01a0835b-c5c4-79a4-81ff-cbdd0d543e58",
+    "roleCodes": [
+      {
+        "id": "55c620a6-bb0f-4ae7-b93d-1ecbd7ae5401",
+        "companyId": "01a0835b-c3cf-7d52-b5aa-23a6cf60ce56",
+        "roleId": "01a0835b-c556-7145-8c90-e17f4ef7adc7",
+        "roleCode": "COMPANY_ADMIN",
+        "roleName": "Company Administrator",
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "email": "qa-manager-b@example.invalid",
+    "companyId": "01a0835b-d57b-7a2f-be09-4b1aa17615bd",
+    "userId": "55307ee0-6440-4305-b56f-f07fe102f339",
+    "registrationId": "01a0835b-d58c-71a3-9c4a-371a5497f5db",
+    "roleCodes": [
+      {
+        "id": "a89338ec-5b99-4398-ba45-3c892e1135c8",
+        "companyId": "01a0835b-d57b-7a2f-be09-4b1aa17615bd",
+        "roleId": "01a0835b-d585-7bd7-9aaf-58027c2f2437",
+        "roleCode": "COMPANY_ADMIN",
+        "roleName": "Company Administrator",
+        "status": "active"
+      }
+    ]
+  }
+]

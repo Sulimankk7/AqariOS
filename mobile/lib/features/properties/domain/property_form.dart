@@ -10,6 +10,9 @@ String normalizeNumber(String value) {
   return result;
 }
 
+bool isCurrentLocationResponse(int requestSequence, int latestSequence) =>
+    requestSequence == latestSequence;
+
 class PropertyField {
   const PropertyField(
     this.key,

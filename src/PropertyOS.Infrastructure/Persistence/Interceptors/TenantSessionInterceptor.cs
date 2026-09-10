@@ -115,6 +115,17 @@ public sealed class TenantSessionInterceptor : DbTransactionInterceptor
             // RLS policies for platform-admin operations are defined in the migration 
             // to permit cross-tenant access when this sentinel value is detected.
             cmd.CommandText = "SELECT set_config('app.is_platform_admin', 'true', true);";
+
+            var userId = _currentUserContext.UserId;
+            if (userId.HasValue)
+            {
+                cmd.CommandText += " SELECT set_config('app.current_user_id', @userId, true);";
+                var userParam = cmd.CreateParameter();
+                userParam.ParameterName = "userId";
+                userParam.Value = userId.Value.ToString("D");
+                cmd.Parameters.Add(userParam);
+            }
+
             cmd.ExecuteNonQuery();
         }
         else
@@ -166,6 +177,17 @@ public sealed class TenantSessionInterceptor : DbTransactionInterceptor
         if (_tenantContext.IsPlatformAdmin)
         {
             cmd.CommandText = "SELECT set_config('app.is_platform_admin', 'true', true);";
+
+            var userId = _currentUserContext.UserId;
+            if (userId.HasValue)
+            {
+                cmd.CommandText += " SELECT set_config('app.current_user_id', @userId, true);";
+                var userParam = cmd.CreateParameter();
+                userParam.ParameterName = "userId";
+                userParam.Value = userId.Value.ToString("D");
+                cmd.Parameters.Add(userParam);
+            }
+
             await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
         else

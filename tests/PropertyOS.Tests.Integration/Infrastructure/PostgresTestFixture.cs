@@ -82,10 +82,12 @@ public sealed class PostgresTestFixture : IAsyncLifetime
 
             await migrationContext.Database.MigrateAsync();
 
-            // Grant missing table privileges to propertyos_app role (production privilege defect workaround)
+            // Grant legacy table privileges that are still missing from their owning migrations.
+            // Platform-administrator privileges (users, roles, user_system_roles) must come
+            // exclusively from the production migration so these tests exercise the real ACL.
             await migrationContext.Database.ExecuteSqlRawAsync(@"
-                GRANT SELECT, INSERT, UPDATE, DELETE ON roles, user_company_roles, role_permissions, refresh_tokens TO propertyos_app;
-                GRANT SELECT ON permissions, users TO propertyos_app;
+                GRANT SELECT, INSERT, UPDATE, DELETE ON user_company_roles, role_permissions, refresh_tokens TO propertyos_app;
+                GRANT SELECT ON permissions TO propertyos_app;
                 GRANT SELECT, INSERT, UPDATE, DELETE ON expenses, expense_receipts, company_receipt_sequences, rent_payment_receipts, efawateercom_transactions TO propertyos_app;
                 GRANT SELECT, INSERT, UPDATE, DELETE ON maintenance_requests, maintenance_request_attachments, maintenance_request_comments, maintenance_status_history TO propertyos_app;
             ");

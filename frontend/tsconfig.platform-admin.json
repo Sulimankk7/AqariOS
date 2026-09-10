@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.mvp.json",
+  "include": [
+    "src/features/platformAdmin"
+  ]
+}

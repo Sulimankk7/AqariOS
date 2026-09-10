@@ -1,0 +1,238 @@
+[
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/buildings",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/apartments",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/leasing/tenants",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/leasing/contracts",
+    "status": 405,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/rent-payments",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/expenses",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/notifications/me",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/tenant-portal/me",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/tenant-portal/payments",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/maintenance/requests",
+    "status": 404,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/marketplace/listings/company",
+    "status": 401,
+    "body": ""
+  },
+  {
+    "label": "No token",
+    "method": "GET",
+    "path": "/api/v1/documents/buildings/00000000-0000-4000-8000-000000000001",
+    "status": 404,
+    "body": ""
+  },
+  {
+    "label": "Wrong credentials",
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "status": 401,
+    "body": {
+      "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Invalid email/phone or password."
+    }
+  },
+  {
+    "label": "Empty credentials",
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "status": 401,
+    "body": {
+      "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Invalid email/phone or password."
+    }
+  },
+  {
+    "label": "Manager B authentication",
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "status": 200,
+    "body": "[authentication redacted]"
+  },
+  {
+    "label": "Invalid building validation",
+    "method": "POST",
+    "path": "/api/v1/buildings",
+    "status": 400,
+    "body": {
+      "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+      "title": "One or more validation errors occurred.",
+      "status": 400,
+      "errors": {
+        "Name": [
+          "The Name field is required."
+        ],
+        "AddressCity": [
+          "The AddressCity field is required."
+        ],
+        "TotalFloors": [
+          "The field TotalFloors must be between 1 and 200."
+        ],
+        "AddressNeighborhood": [
+          "The AddressNeighborhood field is required."
+        ]
+      },
+      "traceId": "00-0e66bdce97e61ee415f7833081249b9f-bfe0bd89665aa852-00"
+    }
+  },
+  {
+    "label": "Company B isolation fixture",
+    "method": "POST",
+    "path": "/api/v1/buildings",
+    "status": 204,
+    "body": ""
+  },
+  {
+    "label": "Verify created building",
+    "method": "GET",
+    "path": "/api/v1/buildings",
+    "status": 200,
+    "body": [
+      {
+        "id": "01a08360-75b8-7088-a546-b988f130490f",
+        "companyId": "01a0835b-d57b-7a2f-be09-4b1aa17615bd",
+        "name": "QA Isolation Residence B",
+        "internalCode": "QA-B-001",
+        "buildingType": 0,
+        "totalFloors": 2,
+        "constructionYear": null,
+        "gpsLatitude": null,
+        "gpsLongitude": null,
+        "totalApartmentsCount": 0,
+        "isActive": true,
+        "createdAt": "2026-09-08T23:35:32.024526+00:00",
+        "updatedAt": "2026-09-08T23:35:32.024526+00:00",
+        "address": {
+          "buildingId": "01a08360-75b8-7088-a546-b988f130490f",
+          "governorate": 0,
+          "district": "Amman",
+          "area": "QA Only",
+          "streetName": null,
+          "postalCode": null
+        }
+      }
+    ]
+  },
+  {
+    "label": "Manager A authentication",
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "status": 200,
+    "body": "[authentication redacted]"
+  },
+  {
+    "label": "A directly requests B building",
+    "method": "GET",
+    "path": "/api/v1/buildings/01a08360-75b8-7088-a546-b988f130490f",
+    "status": 404,
+    "body": {
+      "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+      "title": "Resource Not Found",
+      "status": 404,
+      "detail": "Building with ID 01a08360-75b8-7088-a546-b988f130490f was not found."
+    }
+  },
+  {
+    "label": "Manager attempts system administrator action",
+    "method": "GET",
+    "path": "/api/v1/platform/companies",
+    "status": 403,
+    "body": ""
+  },
+  {
+    "label": "Invalid UUID",
+    "method": "GET",
+    "path": "/api/v1/buildings/not-a-uuid",
+    "status": 404,
+    "body": ""
+  },
+  {
+    "label": "Nonexistent UUID",
+    "method": "GET",
+    "path": "/api/v1/buildings/00000000-0000-4000-8000-000000000001",
+    "status": 404,
+    "body": {
+      "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+      "title": "Resource Not Found",
+      "status": 404,
+      "detail": "Building with ID 00000000-0000-4000-8000-000000000001 was not found."
+    }
+  },
+  {
+    "label": "Physical storage upload URL contract",
+    "method": "POST",
+    "path": "/api/v1/files/upload-request",
+    "status": 200,
+    "body": {
+      "fileId": "01a08360-787e-7179-a0a4-d1844050da2e",
+      "storageKey": "01a0835b-c3cf-7d52-b5aa-23a6cf60ce56/leasing/00000000-0000-4000-8000-000000000001/01a08360-787e-7179-a0a4-d1844050da2e-qa.pdf",
+      "uploadUrl": "/api/v1/files/upload?[signed parameters redacted]",
+      "expirationMinutes": 5
+    }
+  }
+]

@@ -1,0 +1,3250 @@
+{
+  "endpoints": [
+    {
+      "module": "network",
+      "file": "mobile/lib/core/network/api_client.dart",
+      "line": 214,
+      "method": "POST",
+      "route": "/api/v1/auth/refresh",
+      "backendMatches": "POST /api/v1/auth/refresh",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 28,
+      "method": "POST",
+      "route": "/api/v1/auth/login",
+      "backendMatches": "POST /api/v1/auth/login",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 51,
+      "method": "POST",
+      "route": "/api/v1/auth/register",
+      "backendMatches": "POST /api/v1/auth/register",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 69,
+      "method": "POST",
+      "route": "/api/v1/auth/otp/request",
+      "backendMatches": "POST /api/v1/auth/otp/request",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 78,
+      "method": "POST",
+      "route": "/api/v1/auth/otp/verify",
+      "backendMatches": "POST /api/v1/auth/otp/verify",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 86,
+      "method": "POST",
+      "route": "/api/v1/auth/password-reset/request",
+      "backendMatches": "POST /api/v1/auth/password-reset/request",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 94,
+      "method": "POST",
+      "route": "/api/v1/auth/password-reset/verify-otp",
+      "backendMatches": "POST /api/v1/auth/password-reset/verify-otp",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 108,
+      "method": "POST",
+      "route": "/api/v1/auth/password-reset/complete",
+      "backendMatches": "POST /api/v1/auth/password-reset/complete",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 116,
+      "method": "GET",
+      "route": "/api/v1/auth/tenant-activation-status",
+      "backendMatches": "GET /api/v1/auth/tenant-activation-status",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 124,
+      "method": "POST",
+      "route": "/api/v1/auth/tenant-activate",
+      "backendMatches": "POST /api/v1/auth/tenant-activate",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 136,
+      "method": "GET",
+      "route": "/api/v1/auth/me",
+      "backendMatches": "GET /api/v1/auth/me",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 148,
+      "method": "POST",
+      "route": "/api/v1/auth/logout",
+      "backendMatches": "POST /api/v1/auth/logout",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "auth",
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 158,
+      "method": "POST",
+      "route": "/api/v1/auth/logout-all",
+      "backendMatches": "POST /api/v1/auth/logout-all",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "dashboard",
+      "file": "mobile/lib/features/dashboard/data/dashboard_repository.dart",
+      "line": 18,
+      "method": "GET",
+      "route": "/api/v1/dashboard/summary",
+      "backendMatches": "GET /api/v1/dashboard/summary",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "financial_operations",
+      "file": "mobile/lib/features/financial_operations/data/expenses_repository.dart",
+      "line": 36,
+      "method": "GET",
+      "route": "/api/v1/expenses",
+      "backendMatches": "GET /api/v1/expenses",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "financial_operations",
+      "file": "mobile/lib/features/financial_operations/data/expenses_repository.dart",
+      "line": 42,
+      "method": "GET",
+      "route": "/api/v1/expenses/${_id(id)}",
+      "backendMatches": "GET /api/v1/expenses/{id}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "financial_operations",
+      "file": "mobile/lib/features/financial_operations/data/expenses_repository.dart",
+      "line": 47,
+      "method": "GET",
+      "route": "/api/v1/files/${_id(fileId)}/download-url",
+      "backendMatches": "GET /api/v1/files/{id}/download-url",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/lease_files.dart",
+      "line": 86,
+      "method": "POST",
+      "route": "/api/v1/files/upload-request",
+      "backendMatches": "POST /api/v1/files/upload-request",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/lease_files.dart",
+      "line": 159,
+      "method": "POST",
+      "route": "/api/v1/files/confirm",
+      "backendMatches": "POST /api/v1/files/confirm",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 8,
+      "method": "DYNAMIC",
+      "route": "/api/v1/leasing/contracts",
+      "backendMatches": "POST /api/v1/leasing/contracts",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 9,
+      "method": "DYNAMIC",
+      "route": "/api/v1/utility-bills/accounts",
+      "backendMatches": "GET /api/v1/utility-bills/accounts | POST /api/v1/utility-bills/accounts",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 66,
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants",
+      "backendMatches": "GET /api/v1/leasing/tenants",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 71,
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants",
+      "backendMatches": "GET /api/v1/leasing/tenants",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 78,
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(id)}",
+      "backendMatches": "GET /api/v1/leasing/tenants/{tenantId}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 83,
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants",
+      "backendMatches": "POST /api/v1/leasing/tenants",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 85,
+      "method": "PUT",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(id)}",
+      "backendMatches": "PUT /api/v1/leasing/tenants/{tenantId}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 89,
+      "method": "DELETE",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(id)}",
+      "backendMatches": "DELETE /api/v1/leasing/tenants/{tenantId}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 92,
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(id)}/leases",
+      "backendMatches": "GET /api/v1/leasing/tenants/{tenantId}/leases",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 100,
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(id)}/account",
+      "backendMatches": "POST /api/v1/leasing/tenants/{tenantId}/account",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 108,
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(tenantId)}/$collection",
+      "backendMatches": "",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 117,
+      "method": "PUT",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(tenantId)}/$collection/${Uri.encodeComponent(id)}",
+      "backendMatches": "",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "leasing",
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 125,
+      "method": "DELETE",
+      "route": "/api/v1/leasing/tenants/${Uri.encodeComponent(tenantId)}/$collection/${Uri.encodeComponent(id)}",
+      "backendMatches": "",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "notifications",
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 27,
+      "method": "GET",
+      "route": "/api/v1/notifications/me",
+      "backendMatches": "GET /api/v1/notifications/me",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "notifications",
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 35,
+      "method": "GET",
+      "route": "/api/v1/notifications/me/unread-count",
+      "backendMatches": "GET /api/v1/notifications/me/unread-count",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "notifications",
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 38,
+      "method": "PATCH",
+      "route": "/api/v1/notifications/${Uri.encodeComponent(id)}/read",
+      "backendMatches": "PATCH /api/v1/notifications/{id}/read",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "notifications",
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 41,
+      "method": "PATCH",
+      "route": "/api/v1/notifications/me/read-all",
+      "backendMatches": "PATCH /api/v1/notifications/me/read-all",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "parking",
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 25,
+      "method": "GET",
+      "route": "/api/v1/buildings/${Uri.encodeComponent(buildingId)}/parking-spots",
+      "backendMatches": "GET /api/v1/buildings/{buildingId}/parking-spots",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "parking",
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 35,
+      "method": "POST",
+      "route": "/api/v1/buildings/${Uri.encodeComponent(buildingId)}/parking-spots",
+      "backendMatches": "POST /api/v1/buildings/{buildingId}/parking-spots",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "parking",
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 39,
+      "method": "PUT",
+      "route": "/api/v1/parking-spots/${Uri.encodeComponent(existing.id)}",
+      "backendMatches": "PUT /api/v1/parking-spots/{id}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "parking",
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 43,
+      "method": "DELETE",
+      "route": "/api/v1/parking-spots/${Uri.encodeComponent(id)}",
+      "backendMatches": "DELETE /api/v1/parking-spots/{id}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "parking",
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 46,
+      "method": "GET",
+      "route": "/api/v1/parking-spots/${Uri.encodeComponent(id)}/assignment",
+      "backendMatches": "GET /api/v1/parking-spots/{parkingSpotId}/assignment",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "parking",
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 52,
+      "method": "POST",
+      "route": "/api/v1/parking-spots/${Uri.encodeComponent(spotId)}/assignment",
+      "backendMatches": "POST /api/v1/parking-spots/{parkingSpotId}/assignment",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "parking",
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 56,
+      "method": "POST",
+      "route": "/api/v1/parking-assignments/${Uri.encodeComponent(assignmentId)}/end",
+      "backendMatches": "POST /api/v1/parking-assignments/{assignmentId}/end",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 33,
+      "method": "GET",
+      "route": "/api/v1/rent-payments",
+      "backendMatches": "GET /api/v1/rent-payments",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 39,
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/payments",
+      "backendMatches": "GET /api/v1/tenant-portal/payments",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 44,
+      "method": "GET",
+      "route": "/api/v1/rent-payments/${_id(id)}",
+      "backendMatches": "GET /api/v1/rent-payments/{id}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 49,
+      "method": "GET",
+      "route": "/api/v1/owner/payments/pending-verifications",
+      "backendMatches": "GET /api/v1/owner/payments/pending-verifications",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 56,
+      "method": "POST",
+      "route": "/api/v1/owner/payments/${_id(paymentId)}/submissions/${_id(submissionId)}/approve",
+      "backendMatches": "POST /api/v1/owner/payments/{id}/submissions/{submissionId}/approve",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 65,
+      "method": "POST",
+      "route": "/api/v1/owner/payments/${_id(paymentId)}/submissions/${_id(submissionId)}/reject",
+      "backendMatches": "POST /api/v1/owner/payments/{id}/submissions/{submissionId}/reject",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 71,
+      "method": "POST",
+      "route": "/api/v1/tenant/payments/${_id(id)}/submit-verification",
+      "backendMatches": "POST /api/v1/tenant/payments/{id}/submit-verification",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 76,
+      "method": "POST",
+      "route": "/api/v1/rent-payments/${_id(id)}/remind",
+      "backendMatches": "POST /api/v1/rent-payments/{id}/remind",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 81,
+      "method": "GET",
+      "route": "/api/v1/rent-payments/${_id(id)}/receipt",
+      "backendMatches": "GET /api/v1/rent-payments/{id}/receipt",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 90,
+      "method": "GET",
+      "route": "/api/v1/files/${_id(id)}/download-url",
+      "backendMatches": "GET /api/v1/files/{id}/download-url",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 108,
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/payments/${_id(id)}/settlement-statement",
+      "backendMatches": "GET /api/v1/tenant-portal/payments/{id}/settlement-statement",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "payments",
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 109,
+      "method": "GET",
+      "route": "/api/v1/rent-payments/${_id(id)}/settlement-statement",
+      "backendMatches": "GET /api/v1/rent-payments/{id}/settlement-statement",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 59,
+      "method": "GET",
+      "route": "/api/v1/buildings",
+      "backendMatches": "GET /api/v1/buildings",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 66,
+      "method": "GET",
+      "route": "/api/v1/buildings/${Uri.encodeComponent(buildingId)}/floors",
+      "backendMatches": "GET /api/v1/buildings/{buildingId}/floors",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 77,
+      "method": "GET",
+      "route": "/api/v1/apartments",
+      "backendMatches": "GET /api/v1/apartments",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 89,
+      "method": "GET",
+      "route": "/api/v1/buildings/${Uri.encodeComponent(id)}",
+      "backendMatches": "GET /api/v1/buildings/{id}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 96,
+      "method": "GET",
+      "route": "/api/v1/floors/${Uri.encodeComponent(id)}",
+      "backendMatches": "GET /api/v1/floors/{id}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 103,
+      "method": "GET",
+      "route": "/api/v1/apartments/${Uri.encodeComponent(id)}",
+      "backendMatches": "GET /api/v1/apartments/{id}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 118,
+      "method": "DELETE",
+      "route": "/api/v1/${kind.name}/${Uri.encodeComponent(id)}",
+      "backendMatches": "",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/presentation/property_editor_screen.dart",
+      "line": 154,
+      "method": "DYNAMIC",
+      "route": "/api/v1/${widget.kind.name}/${Uri.encodeComponent(widget.record!.id)}",
+      "backendMatches": "",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/presentation/property_editor_screen.dart",
+      "line": 156,
+      "method": "DYNAMIC",
+      "route": "/api/v1/buildings",
+      "backendMatches": "POST /api/v1/buildings | GET /api/v1/buildings",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/presentation/property_editor_screen.dart",
+      "line": 158,
+      "method": "DYNAMIC",
+      "route": "/api/v1/buildings/${Uri.encodeComponent(widget.parentId!)}/floors",
+      "backendMatches": "POST /api/v1/buildings/{buildingId}/floors | GET /api/v1/buildings/{buildingId}/floors",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "properties",
+      "file": "mobile/lib/features/properties/presentation/property_editor_screen.dart",
+      "line": 160,
+      "method": "DYNAMIC",
+      "route": "/api/v1/floors/${Uri.encodeComponent(widget.parentId!)}/apartments",
+      "backendMatches": "POST /api/v1/floors/{floorId}/apartments",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "settings",
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 42,
+      "method": "GET",
+      "route": "/api/v1/companies/me",
+      "backendMatches": "GET /api/v1/companies/me",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "settings",
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 51,
+      "method": "PUT",
+      "route": "/api/v1/companies/${Uri.encodeComponent(id)}",
+      "backendMatches": "PUT /api/v1/companies/{companyId}",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "settings",
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 63,
+      "method": "GET",
+      "route": "/api/v1/companies/${Uri.encodeComponent(id)}/settings",
+      "backendMatches": "GET /api/v1/companies/{companyId}/settings",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "settings",
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 74,
+      "method": "PUT",
+      "route": "/api/v1/companies/${Uri.encodeComponent(id)}/settings",
+      "backendMatches": "PUT /api/v1/companies/{companyId}/settings",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "tenant_portal",
+      "file": "mobile/lib/features/tenant_portal/data/tenant_portal_repository.dart",
+      "line": 67,
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/me",
+      "backendMatches": "GET /api/v1/tenant-portal/me",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "tenant_portal",
+      "file": "mobile/lib/features/tenant_portal/data/tenant_portal_repository.dart",
+      "line": 91,
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/lease",
+      "backendMatches": "GET /api/v1/tenant-portal/lease",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "module": "tenant_portal",
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 7,
+      "method": "DYNAMIC",
+      "route": "/api/v1/utility-bills/my",
+      "backendMatches": "",
+      "runtime": "NOT_TESTED"
+    }
+  ],
+  "screens": [
+    {
+      "screen": "AuthFlowPage",
+      "file": "mobile/lib/features/auth/presentation/auth_flows.dart",
+      "line": 17,
+      "module": "auth",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "OtpVerifyPage",
+      "file": "mobile/lib/features/auth/presentation/auth_flows.dart",
+      "line": 455,
+      "module": "auth",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PasswordResetOtpPage",
+      "file": "mobile/lib/features/auth/presentation/auth_flows.dart",
+      "line": 583,
+      "module": "auth",
+      "kind": "StatelessWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PasswordEntryPage",
+      "file": "mobile/lib/features/auth/presentation/auth_flows.dart",
+      "line": 633,
+      "module": "auth",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "ActivationSuccessPage",
+      "file": "mobile/lib/features/auth/presentation/auth_flows.dart",
+      "line": 751,
+      "module": "auth",
+      "kind": "StatelessWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "LoginScreen",
+      "file": "mobile/lib/features/auth/presentation/login_screen.dart",
+      "line": 7,
+      "module": "auth",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "CompanyDashboardScreen",
+      "file": "mobile/lib/features/dashboard/presentation/company_dashboard_screen.dart",
+      "line": 7,
+      "module": "dashboard",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "ExpensesScreen",
+      "file": "mobile/lib/features/financial_operations/presentation/expenses_screen.dart",
+      "line": 12,
+      "module": "financial_operations",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "ExpenseDetailScreen",
+      "file": "mobile/lib/features/financial_operations/presentation/expense_detail_screen.dart",
+      "line": 9,
+      "module": "financial_operations",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "FinancialOperationsScreen",
+      "file": "mobile/lib/features/financial_operations/presentation/financial_operations_screen.dart",
+      "line": 16,
+      "module": "financial_operations",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "UtilityAccountsScreen",
+      "file": "mobile/lib/features/financial_operations/presentation/utility_accounts_screen.dart",
+      "line": 8,
+      "module": "financial_operations",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "UtilityAccountFormScreen",
+      "file": "mobile/lib/features/financial_operations/presentation/utility_accounts_screen.dart",
+      "line": 248,
+      "module": "financial_operations",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "UtilityAccountDetailScreen",
+      "file": "mobile/lib/features/financial_operations/presentation/utility_accounts_screen.dart",
+      "line": 399,
+      "module": "financial_operations",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "LeaseDetailScreen",
+      "file": "mobile/lib/features/leasing/presentation/lease_detail_screen.dart",
+      "line": 15,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "LeaseDocumentScreen",
+      "file": "mobile/lib/features/leasing/presentation/lease_document_screen.dart",
+      "line": 9,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "LeaseFormScreen",
+      "file": "mobile/lib/features/leasing/presentation/lease_form_screen.dart",
+      "line": 12,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "LeaseListScreen",
+      "file": "mobile/lib/features/leasing/presentation/lease_list_screen.dart",
+      "line": 12,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "LeasingLanding",
+      "file": "mobile/lib/features/leasing/presentation/leasing_landing.dart",
+      "line": 11,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "TenantManagementScreen",
+      "file": "mobile/lib/features/leasing/presentation/tenant_management_screen.dart",
+      "line": 11,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "TenantFormScreen",
+      "file": "mobile/lib/features/leasing/presentation/tenant_management_screen.dart",
+      "line": 148,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "TenantDetailScreen",
+      "file": "mobile/lib/features/leasing/presentation/tenant_management_screen.dart",
+      "line": 296,
+      "module": "leasing",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "NotificationsScreen",
+      "file": "mobile/lib/features/notifications/presentation/notifications_screen.dart",
+      "line": 88,
+      "module": "notifications",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "ParkingScreen",
+      "file": "mobile/lib/features/parking/parking_screen.dart",
+      "line": 22,
+      "module": "parking",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PaymentsScreen",
+      "file": "mobile/lib/features/payments/presentation/payments_screen.dart",
+      "line": 12,
+      "module": "payments",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PaymentDetailScreen",
+      "file": "mobile/lib/features/payments/presentation/payment_detail_screen.dart",
+      "line": 13,
+      "module": "payments",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PaymentSubmissionScreen",
+      "file": "mobile/lib/features/payments/presentation/payment_submission_screen.dart",
+      "line": 7,
+      "module": "payments",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "VerificationScreen",
+      "file": "mobile/lib/features/payments/presentation/verification_screen.dart",
+      "line": 8,
+      "module": "payments",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "ApartmentDetailsScreen",
+      "file": "mobile/lib/features/properties/presentation/apartment_details_screen.dart",
+      "line": 10,
+      "module": "properties",
+      "kind": "StatelessWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "BuildingDetailsScreen",
+      "file": "mobile/lib/features/properties/presentation/building_details_screen.dart",
+      "line": 11,
+      "module": "properties",
+      "kind": "StatelessWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "FloorDetailsScreen",
+      "file": "mobile/lib/features/properties/presentation/floor_details_screen.dart",
+      "line": 11,
+      "module": "properties",
+      "kind": "StatelessWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PropertiesLanding",
+      "file": "mobile/lib/features/properties/presentation/properties_landing.dart",
+      "line": 10,
+      "module": "properties",
+      "kind": "StatelessWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PropertyCollectionScreen",
+      "file": "mobile/lib/features/properties/presentation/property_collection_screen.dart",
+      "line": 42,
+      "module": "properties",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "PropertyEditorScreen",
+      "file": "mobile/lib/features/properties/presentation/property_editor_screen.dart",
+      "line": 10,
+      "module": "properties",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "CompanyProfileScreen",
+      "file": "mobile/lib/features/settings/company_profile_screen.dart",
+      "line": 8,
+      "module": "settings",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "CompanyProfileEditScreen",
+      "file": "mobile/lib/features/settings/company_profile_screen.dart",
+      "line": 155,
+      "module": "settings",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "OperationalSettingsScreen",
+      "file": "mobile/lib/features/settings/operational_settings_screen.dart",
+      "line": 8,
+      "module": "settings",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "SettingsScreen",
+      "file": "mobile/lib/features/settings/settings_screen.dart",
+      "line": 9,
+      "module": "settings",
+      "kind": "StatelessWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "AppShell",
+      "file": "mobile/lib/features/shell/presentation/app_shell.dart",
+      "line": 48,
+      "module": "shell",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "TenantDashboardScreen",
+      "file": "mobile/lib/features/tenant_portal/presentation/tenant_dashboard_screen.dart",
+      "line": 14,
+      "module": "tenant_portal",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "TenantLeaseScreen",
+      "file": "mobile/lib/features/tenant_portal/presentation/tenant_lease_screen.dart",
+      "line": 9,
+      "module": "tenant_portal",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "TenantProfileScreen",
+      "file": "mobile/lib/features/tenant_portal/presentation/tenant_profile_screen.dart",
+      "line": 8,
+      "module": "tenant_portal",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "TenantUtilitiesScreen",
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utilities_screen.dart",
+      "line": 10,
+      "module": "tenant_portal",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    },
+    {
+      "screen": "DesignSystemPlayground",
+      "file": "mobile/lib/playground/design_system_playground.dart",
+      "line": 20,
+      "module": "design_system_playground.dart",
+      "kind": "StatefulWidget",
+      "runtime": "NOT_TESTED"
+    }
+  ],
+  "calls": [
+    {
+      "file": "mobile/lib/core/storage/secure_session_store.dart",
+      "line": 33,
+      "call": "delete",
+      "argument": "key: _accessTokenKey),"
+    },
+    {
+      "file": "mobile/lib/core/storage/secure_session_store.dart",
+      "line": 34,
+      "call": "delete",
+      "argument": "key: _refreshTokenKey),"
+    },
+    {
+      "file": "mobile/lib/core/storage/secure_session_store.dart",
+      "line": 35,
+      "call": "delete",
+      "argument": "key: _persistentKey),"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 27,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/login',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 50,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/register',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 68,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/otp/request',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 77,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/otp/verify',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 85,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/password-reset/request',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 93,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/password-reset/verify-otp',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 107,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/password-reset/complete',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 115,
+      "call": "getJson",
+      "argument": "'/api/v1/auth/tenant-activation-status',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 123,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/tenant-activate',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 136,
+      "call": "getJson",
+      "argument": "'/api/v1/auth/me');"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 147,
+      "call": "postJson",
+      "argument": "'/api/v1/auth/logout',"
+    },
+    {
+      "file": "mobile/lib/features/auth/data/auth_repository.dart",
+      "line": 158,
+      "call": "postVoid",
+      "argument": "'/api/v1/auth/logout-all', body: const {});"
+    },
+    {
+      "file": "mobile/lib/features/dashboard/data/dashboard_repository.dart",
+      "line": 18,
+      "call": "getJson",
+      "argument": "'/api/v1/dashboard/summary');"
+    },
+    {
+      "file": "mobile/lib/features/financial_operations/data/expenses_repository.dart",
+      "line": 35,
+      "call": "getList",
+      "argument": "'/api/v1/expenses',"
+    },
+    {
+      "file": "mobile/lib/features/financial_operations/data/expenses_repository.dart",
+      "line": 42,
+      "call": "getJson",
+      "argument": "'/api/v1/expenses/${_id(id)}')),"
+    },
+    {
+      "file": "mobile/lib/features/financial_operations/data/expenses_repository.dart",
+      "line": 46,
+      "call": "getJson",
+      "argument": "'/api/v1/files/${_id(fileId)}/download-url',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/lease_files.dart",
+      "line": 85,
+      "call": "postJson",
+      "argument": "'/api/v1/files/upload-request',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/lease_files.dart",
+      "line": 158,
+      "call": "postJson",
+      "argument": "'/api/v1/files/confirm',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 39,
+      "call": "getList",
+      "argument": "'$base/search',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 45,
+      "call": "getList",
+      "argument": "'$base/expiring',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 51,
+      "call": "getList",
+      "argument": "'$base/history/apartment/${Uri.encodeComponent(apartmentId)}',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 58,
+      "call": "getJson",
+      "argument": "'$base/${Uri.encodeComponent(id)}'),"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 62,
+      "call": "getJson",
+      "argument": "'$base/next-number'))['value'] as String,"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 65,
+      "call": "getList",
+      "argument": "'/api/v1/leasing/tenants',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 70,
+      "call": "getList",
+      "argument": "'/api/v1/leasing/tenants',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 77,
+      "call": "getJson",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(id)}',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 83,
+      "call": "postId",
+      "argument": "'/api/v1/leasing/tenants', body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 84,
+      "call": "putJson",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(id)}',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 89,
+      "call": "delete",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(id)}');"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 91,
+      "call": "getList",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(id)}/leases',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 99,
+      "call": "postJson",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(id)}/account',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 107,
+      "call": "postId",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(tenantId)}/$collection',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 116,
+      "call": "putJson",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(tenantId)}/$collection/${Uri.encodeComponent(id)}',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 124,
+      "call": "delete",
+      "argument": "'/api/v1/leasing/tenants/${Uri.encodeComponent(tenantId)}/$collection/${Uri.encodeComponent(id)}',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 128,
+      "call": "getList",
+      "argument": "'$base/${Uri.encodeComponent(id)}/parking',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 132,
+      "call": "postId",
+      "argument": "base, body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 134,
+      "call": "putJson",
+      "argument": "'$base/$id', body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 135,
+      "call": "postVoid",
+      "argument": "'$base/$id/activate');"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 137,
+      "call": "postId",
+      "argument": "'$base/$id/renew', body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 139,
+      "call": "postVoid",
+      "argument": "'$base/$id/terminate', body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 141,
+      "call": "postId",
+      "argument": "'$base/$id/documents', body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 143,
+      "call": "putJson",
+      "argument": "'$base/$id/documents/$docId/replace', body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 145,
+      "call": "delete",
+      "argument": "'$base/$id/documents/$docId');"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 148,
+      "call": "getJson",
+      "argument": "'$base/$id/documents/$docId/download',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 162,
+      "call": "getJson",
+      "argument": "utilities,"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 181,
+      "call": "getJson",
+      "argument": "utilities,"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 196,
+      "call": "getJson",
+      "argument": "'$utilities/${Uri.encodeComponent(id)}'),"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 205,
+      "call": "getJson",
+      "argument": "'$utilities/${Uri.encodeComponent(id)}/bills',"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 216,
+      "call": "postId",
+      "argument": "utilities, body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 218,
+      "call": "postId",
+      "argument": "'$utilities/$id/replace', body: body);"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 219,
+      "call": "postVoid",
+      "argument": "'$utilities/$id/sync');"
+    },
+    {
+      "file": "mobile/lib/features/leasing/data/leasing_repository.dart",
+      "line": 220,
+      "call": "delete",
+      "argument": "'$utilities/$id');"
+    },
+    {
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 26,
+      "call": "getList",
+      "argument": "'/api/v1/notifications/me',"
+    },
+    {
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 35,
+      "call": "getInt",
+      "argument": "'/api/v1/notifications/me/unread-count'));"
+    },
+    {
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 38,
+      "call": "patchVoid",
+      "argument": "'/api/v1/notifications/${Uri.encodeComponent(id)}/read'),"
+    },
+    {
+      "file": "mobile/lib/features/notifications/data/notifications_repository.dart",
+      "line": 41,
+      "call": "patchJson",
+      "argument": "'/api/v1/notifications/me/read-all');"
+    },
+    {
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 24,
+      "call": "getList",
+      "argument": "'/api/v1/buildings/${Uri.encodeComponent(buildingId)}/parking-spots',"
+    },
+    {
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 34,
+      "call": "postVoid",
+      "argument": "'/api/v1/buildings/${Uri.encodeComponent(buildingId)}/parking-spots',"
+    },
+    {
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 38,
+      "call": "putJson",
+      "argument": "'/api/v1/parking-spots/${Uri.encodeComponent(existing.id)}',"
+    },
+    {
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 43,
+      "call": "delete",
+      "argument": "'/api/v1/parking-spots/${Uri.encodeComponent(id)}');"
+    },
+    {
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 45,
+      "call": "getOptionalJson",
+      "argument": "'/api/v1/parking-spots/${Uri.encodeComponent(id)}/assignment',"
+    },
+    {
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 51,
+      "call": "postVoid",
+      "argument": "'/api/v1/parking-spots/${Uri.encodeComponent(spotId)}/assignment',"
+    },
+    {
+      "file": "mobile/lib/features/parking/parking.dart",
+      "line": 55,
+      "call": "postVoid",
+      "argument": "'/api/v1/parking-assignments/${Uri.encodeComponent(assignmentId)}/end',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 32,
+      "call": "getList",
+      "argument": "'/api/v1/rent-payments',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 38,
+      "call": "getList",
+      "argument": "'/api/v1/tenant-portal/payments',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 44,
+      "call": "getJson",
+      "argument": "'/api/v1/rent-payments/${_id(id)}')),"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 48,
+      "call": "getJson",
+      "argument": "'/api/v1/owner/payments/pending-verifications',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 55,
+      "call": "postVoid",
+      "argument": "'/api/v1/owner/payments/${_id(paymentId)}/submissions/${_id(submissionId)}/approve',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 64,
+      "call": "postVoid",
+      "argument": "'/api/v1/owner/payments/${_id(paymentId)}/submissions/${_id(submissionId)}/reject',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 70,
+      "call": "postId",
+      "argument": "'/api/v1/tenant/payments/${_id(id)}/submit-verification',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 76,
+      "call": "postVoid",
+      "argument": "'/api/v1/rent-payments/${_id(id)}/remind', body: {}),"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 81,
+      "call": "getJson",
+      "argument": "'/api/v1/rent-payments/${_id(id)}/receipt'),"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 89,
+      "call": "getJson",
+      "argument": "'/api/v1/files/${_id(id)}/download-url',"
+    },
+    {
+      "file": "mobile/lib/features/payments/data/payments_repository.dart",
+      "line": 106,
+      "call": "getPdf",
+      "argument": "tenant"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 58,
+      "call": "getList",
+      "argument": "'/api/v1/buildings',"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 65,
+      "call": "getList",
+      "argument": "'/api/v1/buildings/${Uri.encodeComponent(buildingId)}/floors',"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 76,
+      "call": "getList",
+      "argument": "'/api/v1/apartments',"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 89,
+      "call": "getJson",
+      "argument": "'/api/v1/buildings/${Uri.encodeComponent(id)}'),"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 96,
+      "call": "getJson",
+      "argument": "'/api/v1/floors/${Uri.encodeComponent(id)}'),"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 103,
+      "call": "getJson",
+      "argument": "'/api/v1/apartments/${Uri.encodeComponent(id)}'),"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 110,
+      "call": "putJson",
+      "argument": "path, body: body);"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 112,
+      "call": "postJson",
+      "argument": "path, body: body);"
+    },
+    {
+      "file": "mobile/lib/features/properties/data/properties_repository.dart",
+      "line": 118,
+      "call": "delete",
+      "argument": "'/api/v1/${kind.name}/${Uri.encodeComponent(id)}');"
+    },
+    {
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 42,
+      "call": "getJson",
+      "argument": "'/api/v1/companies/me'));"
+    },
+    {
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 50,
+      "call": "putJson",
+      "argument": "'/api/v1/companies/${Uri.encodeComponent(id)}',"
+    },
+    {
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 62,
+      "call": "getJson",
+      "argument": "'/api/v1/companies/${Uri.encodeComponent(id)}/settings',"
+    },
+    {
+      "file": "mobile/lib/features/settings/settings.dart",
+      "line": 73,
+      "call": "putJson",
+      "argument": "'/api/v1/companies/${Uri.encodeComponent(id)}/settings',"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/data/tenant_portal_repository.dart",
+      "line": 67,
+      "call": "getJson",
+      "argument": "'/api/v1/tenant-portal/me'),"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/data/tenant_portal_repository.dart",
+      "line": 91,
+      "call": "getJson",
+      "argument": "'/api/v1/tenant-portal/lease'),"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 9,
+      "call": "getList",
+      "argument": "'$base/accounts',"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 17,
+      "call": "getJson",
+      "argument": "'$base/bills',"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 27,
+      "call": "getJson",
+      "argument": "'$base/dashboard-summary'),"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 34,
+      "call": "postJson",
+      "argument": "'$base/accounts',"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 48,
+      "call": "postJson",
+      "argument": "'$base/accounts/${Uri.encodeComponent(id)}/replace',"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 54,
+      "call": "delete",
+      "argument": "'$base/accounts/${Uri.encodeComponent(id)}');"
+    },
+    {
+      "file": "mobile/lib/features/tenant_portal/utilities/tenant_utility_repository.dart",
+      "line": 56,
+      "call": "postVoid",
+      "argument": "'$base/accounts/${Uri.encodeComponent(id)}/sync');"
+    }
+  ],
+  "backend": [
+    {
+      "method": "GET",
+      "route": "/api/v1/utility-bills/my/accounts",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/utility-bills/my/accounts",
+      "summary": "",
+      "responses": "201,400,401,403,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/utility-bills/my/accounts/{id}/replace",
+      "summary": "",
+      "responses": "202,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/utility-bills/my/accounts/{id}",
+      "summary": "",
+      "responses": "204,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/utility-bills/my/accounts/{id}/sync",
+      "summary": "",
+      "responses": "202,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/utility-bills/my/bills",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/utility-bills/my/dashboard-summary",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/utility-bills/accounts",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/utility-bills/accounts",
+      "summary": "",
+      "responses": "201,400,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/utility-bills/accounts/{id}/replace",
+      "summary": "",
+      "responses": "202,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/utility-bills/accounts/{id}",
+      "summary": "",
+      "responses": "204,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/utility-bills/accounts/{id}",
+      "summary": "",
+      "responses": "200,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/utility-bills/accounts/{id}/bills",
+      "summary": "",
+      "responses": "200,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/utility-bills/accounts/{id}/sync",
+      "summary": "",
+      "responses": "202,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/companies",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/contact-requests",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/contact-requests/{id}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "PATCH",
+      "route": "/api/v1/platform/contact-requests/{id}/status",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/landlord-registrations/pending",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/landlord-registrations/{registrationId}",
+      "summary": "",
+      "responses": "200,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/landlord-registrations/{registrationId}/approve",
+      "summary": "",
+      "responses": "200,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/landlord-registrations/{registrationId}/reject",
+      "summary": "",
+      "responses": "200,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/plan-change-requests",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/plan-change-requests/{requestId}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/plan-change-requests/{requestId}/approve",
+      "summary": "",
+      "responses": "200,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/plan-change-requests/{requestId}/reject",
+      "summary": "",
+      "responses": "200,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/plans",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/plans",
+      "summary": "",
+      "responses": "201,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/plans/{planId}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/plans/{planId}/activate",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/plans/{planId}/deactivate",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/subscriptions",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/platform/subscriptions",
+      "summary": "",
+      "responses": "201,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/platform/subscriptions/{subscriptionId}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/notifications/me",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/notifications/me/unread-count",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "PATCH",
+      "route": "/api/v1/notifications/{id}/read",
+      "summary": "",
+      "responses": "204,401,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "PATCH",
+      "route": "/api/v1/notifications/me/read-all",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/notifications",
+      "summary": "",
+      "responses": "200,400,401,403",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/notifications",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "PATCH",
+      "route": "/api/v1/notifications/{notificationId}/deliveries/{deliveryId}",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/notification-deliveries/failed",
+      "summary": "",
+      "responses": "200,400,401,403",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/notification-templates",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/notification-templates",
+      "summary": "",
+      "responses": "201,400,401,403,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/notification-templates/{id}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/notification-templates/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/notification-templates/{id}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/listings",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/marketplace/listings",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/marketplace/listings/{id}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/marketplace/listings/{id}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/marketplace/listings/{id}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/listings/{id}/publish",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/listings/{id}/archive",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/listings/{id}/images",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/marketplace/listings/{id}/images/{imageId}",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/listings/{id}/images/{imageId}/cover",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/listings/{id}/images/reorder",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/marketplace/listings/company",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/viewing-requests",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/marketplace/viewing-requests",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/marketplace/viewing-requests/{id}/status",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/maintenance-requests",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/maintenance-requests",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/maintenance-requests/{id}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/maintenance-requests/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/maintenance-requests/{id}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "PATCH",
+      "route": "/api/v1/maintenance-requests/{id}/status",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/maintenance-requests/{id}/comments",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/maintenance-requests/{id}/comments",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/maintenance-requests/{id}/comments/{commentId}",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/maintenance-requests/{id}/comments/{commentId}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/maintenance-requests/{id}/attachments",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/maintenance-requests/{id}/attachments",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/maintenance-requests/{id}/attachments/{attachmentId}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/maintenance-requests/{id}/status-history",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/contracts/next-number",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/contracts",
+      "summary": "",
+      "responses": "201,400,401,403,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/leasing/contracts/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/contracts/{id}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/contracts/{id}/documents",
+      "summary": "",
+      "responses": "201,400,401,403,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/contracts/{id}/documents/{documentId}/download",
+      "summary": "",
+      "responses": "200,302,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/leasing/contracts/{id}/documents/{documentId}/replace",
+      "summary": "",
+      "responses": "204,404",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/leasing/contracts/{id}/documents/{documentId}",
+      "summary": "",
+      "responses": "204,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/contracts/{id}/activate",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/contracts/{id}/terminate",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/contracts/{id}/renew",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/contracts/search",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/contracts/expiring",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/contracts/history/apartment/{apartmentId}",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}/emergency-contacts",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants/{tenantId}/emergency-contacts",
+      "summary": "",
+      "responses": "201,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}/emergency-contacts/{contactId}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/leasing/tenants/{tenantId}/emergency-contacts/{contactId}",
+      "summary": "",
+      "responses": "204,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/leasing/tenants/{tenantId}/emergency-contacts/{contactId}",
+      "summary": "",
+      "responses": "204,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}/family-members",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants/{tenantId}/family-members",
+      "summary": "",
+      "responses": "201,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}/family-members/{familyMemberId}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/leasing/tenants/{tenantId}/family-members/{familyMemberId}",
+      "summary": "",
+      "responses": "204,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/leasing/tenants/{tenantId}/family-members/{familyMemberId}",
+      "summary": "",
+      "responses": "204,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/me",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/lease",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/payments",
+      "summary": "",
+      "responses": "200,401,403",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/tenant-portal/payments/{id}/settlement-statement",
+      "summary": "",
+      "responses": "200,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants",
+      "summary": "",
+      "responses": "201,400,401,403,409",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/leasing/tenants/{tenantId}",
+      "summary": "",
+      "responses": "204,400,401,403,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/leasing/tenants/{tenantId}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}/leases",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants/{tenantId}/account",
+      "summary": "",
+      "responses": "201,400,401,403,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}/vehicles",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leasing/tenants/{tenantId}/vehicles",
+      "summary": "",
+      "responses": "201,400,401,403,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/tenants/{tenantId}/vehicles/{vehicleId}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/leasing/tenants/{tenantId}/vehicles/{vehicleId}",
+      "summary": "",
+      "responses": "204,400,401,403,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/leasing/tenants/{tenantId}/vehicles/{vehicleId}",
+      "summary": "",
+      "responses": "204,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/cheques/{id}/status",
+      "summary": "",
+      "responses": "204,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/cheques",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/cheques/upcoming",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/efawateercom/transactions",
+      "summary": "",
+      "responses": "201,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/efawateercom/transactions",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/efawateercom/transactions/{id}/sent",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/efawateercom/transactions/{id}/cancel",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/efawateercom/transactions/{id}/expire",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/efawateercom/transactions/{externalId}/poll",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/efawateercom/transactions/{id}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/webhooks/efawateercom",
+      "summary": "",
+      "responses": "202,400,401,404,503",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/expenses",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/expenses",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/expenses/{id}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/expenses/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/expenses/{id}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/expenses/{id}/receipts",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/expenses/{id}/receipts/{receiptId}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/owner/payments/pending-verifications",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/owner/payments/{id}/submissions/{submissionId}/approve",
+      "summary": "",
+      "responses": "204,400,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/owner/payments/{id}/submissions/{submissionId}/reject",
+      "summary": "",
+      "responses": "204,400,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/payment-allocations",
+      "summary": "",
+      "responses": "204,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/payment-allocations/{id}/reverse",
+      "summary": "",
+      "responses": "204,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/companies/current/receipt-sequence",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/rent-payments/{id}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leases/{leaseId}/rent-payments",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/tenants/{tenantId}/rent-payments",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/rent-payments/search",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/rent-payments/outstanding",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/rent-payments",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/rent-payments/manual",
+      "summary": "",
+      "responses": "201,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/rent-payments/{id}/cancel",
+      "summary": "",
+      "responses": "204,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/rent-payments/{id}/receipt",
+      "summary": "",
+      "responses": "200,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/rent-payments/{id}/receipt",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/rent-payments/{id}/settlement-statement",
+      "summary": "",
+      "responses": "200,400,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/rent-payment-receipts",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/leases/{leaseId}/installments/generate",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/rent-payments/{id}/remind",
+      "summary": "",
+      "responses": "200,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/tenant/payments/{id}/submit-verification",
+      "summary": "",
+      "responses": "200,400,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/files/upload-request",
+      "summary": "",
+      "responses": "200,400,401,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/files/confirm",
+      "summary": "",
+      "responses": "200,400,401,422",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/files/upload",
+      "summary": "",
+      "responses": "204,401,411,413",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/files/download",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/files/{id}/download-url",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/buildings/{buildingId}/documents",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/buildings/{buildingId}/documents",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/building-documents/{id}",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/building-documents/{id}",
+      "summary": "",
+      "responses": "200,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/building-documents/{id}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/building-documents/{id}/replace",
+      "summary": "",
+      "responses": "201,400,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/documents/expiring",
+      "summary": "",
+      "responses": "200,400,401",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/building-documents/{id}/download-url",
+      "summary": "",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/document-categories",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/document-categories",
+      "summary": "",
+      "responses": "201,400,401,403,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/document-categories/{id}",
+      "summary": "",
+      "responses": "200,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/document-categories/{id}",
+      "summary": "",
+      "responses": "204,401,403,404,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/floors/{floorId}/apartments/next-number",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/floors/{floorId}/apartments",
+      "summary": "",
+      "responses": "204,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/apartments",
+      "summary": "",
+      "responses": "200,401,403",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/apartments/{id}",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/apartments/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/apartments/{id}",
+      "summary": "",
+      "responses": "204,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/register",
+      "summary": "",
+      "responses": "201,400,409,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/login",
+      "summary": "",
+      "responses": "200,400,401,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/refresh",
+      "summary": "",
+      "responses": "200,401,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/logout",
+      "summary": "",
+      "responses": "204,401,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/logout-all",
+      "summary": "",
+      "responses": "204,401,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/otp/request",
+      "summary": "",
+      "responses": "200,400,404,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/otp/verify",
+      "summary": "",
+      "responses": "200,400,401,404,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/password-reset/request",
+      "summary": "",
+      "responses": "200,422,429",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/password-reset/verify-otp",
+      "summary": "",
+      "responses": "200,422,429",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/password-reset/complete",
+      "summary": "",
+      "responses": "200,422,429",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/auth/me",
+      "summary": "",
+      "responses": "200,401,404,500",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/auth/tenant-activation-status",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/auth/tenant-activate",
+      "summary": "",
+      "responses": "200,400,401,500",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/buildings/next-code",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/buildings",
+      "summary": "",
+      "responses": "204,400,401,403,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/buildings",
+      "summary": "",
+      "responses": "200,401,403",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/buildings/{id}",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/buildings/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404,409",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/buildings/{id}",
+      "summary": "",
+      "responses": "204,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/dashboard/summary",
+      "summary": "",
+      "responses": "200,401",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/development/email/test",
+      "summary": "",
+      "responses": "200,400,401,404,502",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/development/seed/owner-payment-verification",
+      "summary": "",
+      "responses": "200,404",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/development/sms/test",
+      "summary": "",
+      "responses": "200,400,401,404,502",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/buildings/{buildingId}/floors/next-number",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/buildings/{buildingId}/floors",
+      "summary": "",
+      "responses": "204,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/buildings/{buildingId}/floors",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/floors/{id}",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/floors/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/floors/{id}",
+      "summary": "",
+      "responses": "204,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/locations/reverse-geocode",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/parking-spots/{parkingSpotId}/assignment",
+      "summary": "",
+      "responses": "201",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/parking-spots/{parkingSpotId}/assignment",
+      "summary": "",
+      "responses": "200,204",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/leasing/contracts/{leaseContractId}/parking",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/parking-assignments/{assignmentId}/end",
+      "summary": "",
+      "responses": "204",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/buildings/{buildingId}/parking-spots",
+      "summary": "",
+      "responses": "204,400,401,403,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/buildings/{buildingId}/parking-spots",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/parking-spots/{id}",
+      "summary": "",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/parking-spots/{id}",
+      "summary": "",
+      "responses": "204,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/v1/parking-spots/{id}",
+      "summary": "",
+      "responses": "204,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/subscriptions/plans",
+      "summary": "",
+      "responses": "200,422",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/subscriptions/me",
+      "summary": "",
+      "responses": "200,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/subscriptions/usage/current",
+      "summary": "",
+      "responses": "200,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/subscriptions/plan-change-requests",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/subscriptions/plan-change-requests",
+      "summary": "",
+      "responses": "201,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/subscriptions/plan-change-requests/{requestId}/cancel",
+      "summary": "",
+      "responses": "200,404,409,422",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/subscriptions/subscribe",
+      "summary": "",
+      "responses": "410",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/subscriptions/change-plan",
+      "summary": "",
+      "responses": "410",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/subscriptions/cancel",
+      "summary": "",
+      "responses": "410",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/test/mutate",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/test/mutate",
+      "summary": "",
+      "responses": "200",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/users/me",
+      "summary": "",
+      "responses": "200,401,404,500",
+      "security": "[]"
+    },
+    {
+      "method": "POST",
+      "route": "/api/v1/contact-requests",
+      "summary": "",
+      "responses": "201,422,429",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/companies/me",
+      "summary": "Get current authenticated company details",
+      "responses": "200,401,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/companies/{companyId}",
+      "summary": "Get company by ID",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/companies/{companyId}",
+      "summary": "Update company profile",
+      "responses": "204,400,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "GET",
+      "route": "/api/v1/companies/{companyId}/settings",
+      "summary": "Get company settings",
+      "responses": "200,401,403,404",
+      "security": "[]"
+    },
+    {
+      "method": "PUT",
+      "route": "/api/v1/companies/{companyId}/settings",
+      "summary": "Update company settings",
+      "responses": "204,400,401,403,404",
+      "security": "[]"
+    }
+  ]
+}
